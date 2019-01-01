@@ -1,0 +1,153 @@
+use std::ops::Deref;
+
+pub mod plain;
+
+#[derive(Debug, Clone)]
+pub enum Language {
+    PlainText,
+}
+
+#[derive(Debug, Clone)]
+pub enum TokenType {
+    Whitespace { token: Token },
+    Keyword { token: Token },
+    String { token: Token },
+    Number { token: Token },
+    Identifier { token: Token },
+}
+
+impl TokenType {
+    pub fn move_to(&self, line: usize, character: usize, start: usize, end: usize) -> Self {
+        match self {
+            TokenType::Whitespace { token } => TokenType::Whitespace {
+                token: token.move_to(line, character, start, end),
+            },
+            TokenType::Keyword { token } => TokenType::Keyword {
+                token: token.move_to(line, character, start, end),
+            },
+            TokenType::String { token } => TokenType::String {
+                token: token.move_to(line, character, start, end),
+            },
+            TokenType::Number { token } => TokenType::Number {
+                token: token.move_to(line, character, start, end),
+            },
+            TokenType::Identifier { token } => TokenType::Identifier {
+                token: token.move_to(line, character, start, end),
+            },
+        }
+    }
+
+    pub fn is_new_line(&self) -> bool {
+        match self {
+            TokenType::Whitespace { token } => token.text() == "\n".to_string(),
+            _ => false,
+        }
+    }
+
+    pub fn is_space(&self) -> bool {
+        match self {
+            TokenType::Whitespace { token } => token.text() == " ".to_string(),
+            _ => false,
+        }
+    }
+
+    pub fn get_start(&self) -> usize {
+        match self {
+            TokenType::Whitespace { token } => token.start(),
+            TokenType::Keyword { token } => token.start(),
+            TokenType::String { token } => token.start(),
+            TokenType::Number { token } => token.start(),
+            TokenType::Identifier { token } => token.start(),
+        }
+    }
+
+    pub fn get_text(&self) -> String {
+        match self {
+            TokenType::Whitespace { token } => token.text(),
+            TokenType::Keyword { token } => token.text(),
+            TokenType::String { token } => token.text(),
+            TokenType::Number { token } => token.text(),
+            TokenType::Identifier { token } => token.text(),
+        }
+    }
+}
+
+impl Deref for TokenType {
+    type Target = Token;
+
+    fn deref(&self) -> &<Self as Deref>::Target {
+        match self {
+            TokenType::Whitespace { token } => token,
+            TokenType::Keyword { token } => token,
+            TokenType::String { token } => token,
+            TokenType::Number { token } => token,
+            TokenType::Identifier { token } => token,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Token {
+    line: usize,
+    character: usize,
+    start: usize,
+    end: usize,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Span {
+    pub lo: usize,
+    pub hi: usize,
+}
+
+impl Token {
+    pub fn new(text: String, line: usize, character: usize, start: usize, end: usize) -> Self {
+        Self {
+            text,
+            line,
+            character,
+            start,
+            end,
+        }
+    }
+
+    pub fn text(&self) -> String {
+        self.text.clone()
+    }
+
+    pub fn line(&self) -> usize {
+        self.line.clone()
+    }
+
+    pub fn character(&self) -> usize {
+        self.character.clone()
+    }
+
+    pub fn start(&self) -> usize {
+        self.start.clone()
+    }
+
+    pub fn end(&self) -> usize {
+        self.end.clone()
+    }
+
+    pub fn move_to(&self, line: usize, character: usize, start: usize, end: usize) -> Self {
+        Self {
+            text: self.text.clone(),
+            line,
+            character,
+            start,
+            end,
+        }
+    }
+}
+
+pub fn parse(text: String, language: Language) -> Vec<TokenType> {
+    match language {
+        Language::PlainText => plain::lexer::Lexer::new(text.as_str())
+            .inspect(|tok| eprintln!("tok: {:?}", tok))
+            .map(|t| t.0)
+            .collect(),
+    }
+}

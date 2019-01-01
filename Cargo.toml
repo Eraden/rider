@@ -1,0 +1,13 @@
+[package]
+name = "editor"
+version = "0.1.0"
+authors = ["Adrian Wozniak <adrian.wozniak@ita-prog.pl>"]
+edition = "2018"
+
+[dependencies]
+rand = "0.5"
+plex = "*"
+
+[dependencies.sdl2]
+version = "0.31.0"
+features = ["gfx", "image", "mixer", "ttf"]
