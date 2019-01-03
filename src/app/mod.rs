@@ -16,6 +16,8 @@ pub type WindowCanvas = Canvas<Window>;
 
 use crate::app::app_state::AppState;
 use crate::app::config::Config;
+use crate::themes::Theme;
+use crate::ui::*;
 use crate::renderer::Renderer;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -71,12 +73,13 @@ impl Application {
         let mut timer: TimerSubsystem = self.sdl_context.timer().unwrap();
         let mut event_pump = self.sdl_context.event_pump().unwrap();
         let font_context = sdl2::ttf::init().unwrap();
+        let texture_creator = self.canvas.texture_creator();
         let sleep_time = Duration::new(0, 1_000_000_000u32 / 60);
         let mut app_state = AppState::new();
         let mut renderer = Renderer::new(
             self.config.clone(),
             &font_context,
-            self.canvas.texture_creator()
+            &texture_creator
         );
 
         'running: loop {
@@ -89,14 +92,7 @@ impl Application {
                 match task {
                     Task::OpenFile { file_path } => {
                         use crate::file::editor_file::*;
-                        app_state.open_file(file_path.clone(), &mut renderer);
-//                        use std::fs::read_to_string;
-//                        if let Ok(buffer) = read_to_string(&file_path) {
-//                            println!("read: {}\n{}", file_path, buffer);
-//                            let file = EditorFile::new(file_path.clone(), buffer, &mut renderer);
-//                            app_state.current_file = app_state.files.len() as i16;
-//                            app_state.files.push(file);
-//                        }
+                        app_state.open_file(file_path.clone());
                     },
                 }
             }

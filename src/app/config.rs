@@ -1,3 +1,5 @@
+use crate::themes::Theme;
+
 #[derive(Debug, Clone)]
 pub struct EditorConfig {
     pub character_size: u16,
@@ -9,6 +11,7 @@ pub struct Config {
     pub width: u32,
     pub height: u32,
     pub editor_config: EditorConfig,
+    pub theme: Theme,
 }
 
 impl Config {
@@ -20,6 +23,7 @@ impl Config {
                 character_size: 24,
                 font_path: "./assets/fonts/hinted-ElaineSans-Medium.ttf".to_string(),
             },
+            theme: Theme::load("default".to_string()),
         }
     }
 }

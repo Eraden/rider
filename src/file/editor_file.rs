@@ -1,39 +1,20 @@
 use sdl2::rect::Rect;
 use crate::file::editor_file_section::EditorFileSection;
 use crate::renderer::Renderer;
-use crate::app::UpdateResult;
-use crate::app::WindowCanvas;
+use crate::app::{UpdateResult, WindowCanvas};
+use crate::ui::*;
 
 #[derive(Clone)]
-pub struct EditorFile<'l> {
+pub struct EditorFile {
     pub path: String,
-    pub sections: Vec<EditorFileSection<'l>>,
+    pub sections: Vec<EditorFileSection>,
 }
 
-impl<'l> EditorFile<'l> {
-    pub fn new(path: String, buffer: String, renderer: &'l mut Renderer) -> Self {
-        let section = EditorFileSection::new(buffer, renderer);
+impl EditorFile {
+    pub fn new(path: String, buffer: String) -> Self {
+        let section = EditorFileSection::new(buffer);
         let sections = vec![section];
         Self { path, sections }
-    }
-
-    pub fn update(&mut self, ticks: i32) -> UpdateResult {
-        let mut result = UpdateResult::NoOp;
-        for section in self.sections.iter_mut() {
-            result = section.update(ticks);
-        }
-
-        if result == UpdateResult::RefreshPositions {
-            self.refresh_characters_position();
-            result = UpdateResult::NoOp;
-        }
-        result
-    }
-
-    pub fn render(&self, canvas: &mut WindowCanvas, renderer: &mut Renderer) {
-        for ref section in self.sections.iter() {
-            section.render(canvas, renderer);
-        }
     }
 
     fn refresh_characters_position(&mut self) {
@@ -41,5 +22,31 @@ impl<'l> EditorFile<'l> {
         for section in self.sections.iter_mut() {
             section.update_positions(&mut current);
         }
+    }
+}
+
+impl Render for EditorFile {
+    fn render(&mut self, canvas: &mut WindowCanvas, renderer: &mut Renderer) -> UpdateResult {
+        let mut res = UpdateResult::NoOp;
+        for section in self.sections.iter_mut() {
+            res = section.render(canvas, renderer);
+        }
+        if res == UpdateResult::RefreshPositions {
+            self.refresh_characters_position();
+            for section in self.sections.iter_mut() {
+                section.render(canvas, renderer);
+            }
+        }
+        UpdateResult::NoOp
+    }
+}
+
+impl Update for EditorFile {
+    fn update(&mut self, ticks: i32) -> UpdateResult {
+        let mut result = UpdateResult::NoOp;
+        for section in self.sections.iter_mut() {
+            result = section.update(ticks);
+        }
+        result
     }
 }

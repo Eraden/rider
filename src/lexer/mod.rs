@@ -14,6 +14,10 @@ pub enum TokenType {
     String { token: Token },
     Number { token: Token },
     Identifier { token: Token },
+    Literal { token: Token },
+    Comment { token: Token },
+    Operator { token: Token },
+    Separator { token: Token },
 }
 
 impl TokenType {
@@ -34,40 +38,32 @@ impl TokenType {
             TokenType::Identifier { token } => TokenType::Identifier {
                 token: token.move_to(line, character, start, end),
             },
+            TokenType::Literal { token } => TokenType::Literal {
+                token: token.move_to(line, character, start, end),
+            },
+            TokenType::Comment { token } => TokenType::Comment {
+                token: token.move_to(line, character, start, end),
+            },
+            TokenType::Operator { token } => TokenType::Operator {
+                token: token.move_to(line, character, start, end),
+            },
+            TokenType::Separator { token } => TokenType::Separator {
+                token: token.move_to(line, character, start, end),
+            },
         }
     }
 
     pub fn is_new_line(&self) -> bool {
         match self {
-            TokenType::Whitespace { token } => token.text() == "\n".to_string(),
+            TokenType::Whitespace { token } => token.text().as_str() == "\n",
             _ => false,
         }
     }
 
     pub fn is_space(&self) -> bool {
         match self {
-            TokenType::Whitespace { token } => token.text() == " ".to_string(),
+            TokenType::Whitespace { token } => token.text().as_str() == " ",
             _ => false,
-        }
-    }
-
-    pub fn get_start(&self) -> usize {
-        match self {
-            TokenType::Whitespace { token } => token.start(),
-            TokenType::Keyword { token } => token.start(),
-            TokenType::String { token } => token.start(),
-            TokenType::Number { token } => token.start(),
-            TokenType::Identifier { token } => token.start(),
-        }
-    }
-
-    pub fn get_text(&self) -> String {
-        match self {
-            TokenType::Whitespace { token } => token.text(),
-            TokenType::Keyword { token } => token.text(),
-            TokenType::String { token } => token.text(),
-            TokenType::Number { token } => token.text(),
-            TokenType::Identifier { token } => token.text(),
         }
     }
 }
@@ -82,6 +78,10 @@ impl Deref for TokenType {
             TokenType::String { token } => token,
             TokenType::Number { token } => token,
             TokenType::Identifier { token } => token,
+            TokenType::Literal { token } => token,
+            TokenType::Comment { token } => token,
+            TokenType::Operator { token } => token,
+            TokenType::Separator { token } => token,
         }
     }
 }
@@ -112,8 +112,8 @@ impl Token {
         }
     }
 
-    pub fn text(&self) -> String {
-        self.text.clone()
+    pub fn text(&self) -> &String {
+        &self.text
     }
 
     pub fn line(&self) -> usize {
@@ -146,7 +146,7 @@ impl Token {
 pub fn parse(text: String, language: Language) -> Vec<TokenType> {
     match language {
         Language::PlainText => plain::lexer::Lexer::new(text.as_str())
-            .inspect(|tok| eprintln!("tok: {:?}", tok))
+            .inspect(|tok| println!("tok: {:?}", tok))
             .map(|t| t.0)
             .collect(),
     }

@@ -26,16 +26,15 @@ pub struct FontDetails {
 pub struct TextDetails {
     pub text: String,
     pub color: Color,
-    pub font_details: FontDetails,
+    pub font: FontDetails,
 }
 
 impl TextDetails {
     pub fn get_cache_key(&self) -> String {
         format!(
             "text({}) size({}) {:?}",
-            self.text, self.font_details.size, self.color
-        )
-        .to_string()
+            self.text, self.font.size, self.color
+        ).to_string()
     }
 }
 
@@ -44,7 +43,7 @@ impl<'a> From<&'a TextDetails> for TextDetails {
         Self {
             text: details.text.clone(),
             color: details.color.clone(),
-            font_details: details.font_details.clone(),
+            font: details.font.clone(),
         }
     }
 }
@@ -72,28 +71,28 @@ pub type FontManager<'l> = ResourceManager<'l, FontDetails, Font<'l, 'static>, S
 
 #[derive(Clone)]
 pub struct ResourceManager<'l, K, R, L>
-where
-    K: Hash + Eq,
-    L: 'l + ResourceLoader<'l, R>,
+    where
+        K: Hash + Eq,
+        L: 'l + ResourceLoader<'l, R>,
 {
     loader: &'l L,
     cache: HashMap<K, Rc<R>>,
 }
 
 impl<'l, K, R, L> ResourceManager<'l, K, R, L>
-where
-    K: Hash + Eq,
-    L: ResourceLoader<'l, R>,
+    where
+        K: Hash + Eq,
+        L: ResourceLoader<'l, R>,
 {
     pub fn new(loader: &'l L) -> Self {
         Self { cache: HashMap::new(), loader }
     }
 
     pub fn load<D>(&mut self, details: &D) -> Result<Rc<R>, String>
-    where
-        L: ResourceLoader<'l, R, Args = D>,
-        D: Eq + Hash + ?Sized,
-        K: Borrow<D> + for<'a> From<&'a D>,
+        where
+            L: ResourceLoader<'l, R, Args=D>,
+            D: Eq + Hash + ?Sized,
+            K: Borrow<D> + for<'a> From<&'a D>,
     {
         self.cache.get(details).cloned().map_or_else(
             || {
@@ -103,6 +102,10 @@ where
             },
             Ok,
         )
+    }
+
+    pub fn loader(&self) -> &L {
+        self.loader
     }
 }
 
@@ -124,25 +127,25 @@ impl<'l> ResourceLoader<'l, Font<'l, 'static>> for Sdl2TtfContext {
     }
 }
 
-//impl<'l, T> TextureManager<'l, T> {
-//    pub fn load_text(
-//        &mut self,
-//        details: &mut TextDetails,
-//        font: &Font,
-//    ) -> Result<Rc<Texture<'l>>, String> {
-//        let key = details.get_cache_key();
-//        self.cache.get(key.as_str()).cloned().map_or_else(
-//            || {
-//                let surface = font
-//                    .render(details.text.as_str())
-//                    .blended(details.color)
-//                    .unwrap();
-//                let texture = self.loader.create_texture_from_surface(&surface).unwrap();
-//                let resource = Rc::new(texture);
-//                self.cache.insert(key, resource.clone());
-//                Ok(resource)
-//            },
-//            Ok,
-//        )
-//    }
-//}
+impl<'l, T> TextureManager<'l, T> {
+    pub fn load_text(
+        &mut self,
+        details: &mut TextDetails,
+        font: &Rc<Font>,
+    ) -> Result<Rc<Texture<'l>>, String> {
+        let key = details.get_cache_key();
+        self.cache.get(key.as_str()).cloned().map_or_else(
+            || {
+                let surface = font
+                    .render(details.text.as_str())
+                    .blended(details.color)
+                    .unwrap();
+                let texture = self.loader.create_texture_from_surface(&surface).unwrap();
+                let resource = Rc::new(texture);
+                self.cache.insert(key, resource.clone());
+                Ok(resource)
+            },
+            Ok,
+        )
+    }
+}

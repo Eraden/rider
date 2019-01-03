@@ -7,6 +7,10 @@ edition = "2018"
 [dependencies]
 rand = "0.5"
 plex = "*"
+dirs = "*"
+serde = "*"
+serde_json = "*"
+serde_derive = "*"
 
 [dependencies.sdl2]
 version = "0.31.0"

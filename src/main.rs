@@ -1,14 +1,22 @@
 #![allow(unused_imports)]
-#![feature(use_extern_macros)]
 
 extern crate plex;
 extern crate rand;
 extern crate sdl2;
+extern crate dirs;
+#[macro_use]
+extern crate serde;
+#[macro_use]
+extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 
 pub mod app;
+pub mod ui;
 pub mod file;
 pub mod lexer;
 pub mod renderer;
+pub mod themes;
 
 use crate::app::Application;
 
