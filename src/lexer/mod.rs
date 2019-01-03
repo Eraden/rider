@@ -92,7 +92,7 @@ pub struct Token {
     character: usize,
     start: usize,
     end: usize,
-    pub text: String,
+    text: String,
 }
 
 #[derive(Debug, Clone, Copy)]

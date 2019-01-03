@@ -1,23 +1,20 @@
-pub mod managers;
-
+use crate::app::WindowCanvas;
+use crate::config::Config;
 use crate::renderer::managers::{FontManager, TextureManager};
-
+use crate::renderer::managers::TextDetails;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::{Texture, TextureCreator};
 use sdl2::ttf::Sdl2TtfContext;
 use sdl2::video::WindowContext;
-
 use std::rc::Rc;
 
-use crate::app::config::Config;
-use crate::app::WindowCanvas;
-use crate::renderer::managers::TextDetails;
+pub mod managers;
 
 pub struct Renderer<'a> {
-    pub config: Config,
-    pub font_manager: FontManager<'a>,
-    pub texture_manager: TextureManager<'a, WindowContext>,
-    pub scroll: Point,
+    config: Config,
+    font_manager: FontManager<'a>,
+    texture_manager: TextureManager<'a, WindowContext>,
+    scroll: Point,
 }
 
 impl<'a> Renderer<'a> {
@@ -34,7 +31,29 @@ impl<'a> Renderer<'a> {
         }
     }
 
-    pub fn render_texture(&mut self, canvas: &mut WindowCanvas, texture: &Rc<Texture>, src: &Rect, dest: &Rect) {
+    pub fn config(&self) -> &Config {
+        &self.config
+    }
+
+    pub fn font_manager(&mut self) -> &mut FontManager<'a> {
+        &mut self.font_manager
+    }
+
+    pub fn texture_manager(&mut self) -> &mut TextureManager<'a, WindowContext> {
+        &mut self.texture_manager
+    }
+
+    pub fn scroll(&self) -> &Point {
+        &self.scroll
+    }
+
+    pub fn render_texture(
+        &mut self,
+        canvas: &mut WindowCanvas,
+        texture: &Rc<Texture>,
+        src: &Rect,
+        dest: &Rect,
+    ) {
         canvas
             .copy_ex(
                 texture,
@@ -50,9 +69,7 @@ impl<'a> Renderer<'a> {
 
     pub fn render_text(&mut self, details: TextDetails) -> Option<Rc<Texture>> {
         let font = self.font_manager.load(&details.font).unwrap();
-        let surface = font
-            .render(details.text.as_str())
-            .blended(details.color);
+        let surface = font.render(details.text.as_str()).blended(details.color);
         let surface = if let Ok(s) = surface {
             s
         } else {

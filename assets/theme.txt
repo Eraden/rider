@@ -37,9 +37,6 @@ italic
 ``keyword
 #CB7832
 
-``keyword
-#CB7832
-
 ``regex
 #A4C260
 

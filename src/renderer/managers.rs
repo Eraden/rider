@@ -1,14 +1,13 @@
+use sdl2::image::LoadTexture;
+use sdl2::pixels::Color;
+use sdl2::render::{Texture, TextureCreator};
+use sdl2::ttf::{Font, Sdl2TtfContext};
 use std::borrow::Borrow;
 use std::collections::HashMap;
 #[allow(unused_imports)]
 use std::env;
 use std::hash::Hash;
 use std::rc::Rc;
-
-use sdl2::image::LoadTexture;
-use sdl2::pixels::Color;
-use sdl2::render::{Texture, TextureCreator};
-use sdl2::ttf::{Font, Sdl2TtfContext};
 
 pub trait ResourceLoader<'l, R> {
     type Args: ?Sized;
@@ -34,7 +33,8 @@ impl TextDetails {
         format!(
             "text({}) size({}) {:?}",
             self.text, self.font.size, self.color
-        ).to_string()
+        )
+            .to_string()
     }
 }
 
@@ -66,6 +66,7 @@ impl<'a> From<&'a FontDetails> for FontDetails {
     }
 }
 
+//noinspection RsWrongLifetimeParametersNumber
 pub type TextureManager<'l, T> = ResourceManager<'l, String, Texture<'l>, TextureCreator<T>>;
 pub type FontManager<'l> = ResourceManager<'l, FontDetails, Font<'l, 'static>, Sdl2TtfContext>;
 
@@ -85,7 +86,10 @@ impl<'l, K, R, L> ResourceManager<'l, K, R, L>
         L: ResourceLoader<'l, R>,
 {
     pub fn new(loader: &'l L) -> Self {
-        Self { cache: HashMap::new(), loader }
+        Self {
+            cache: HashMap::new(),
+            loader,
+        }
     }
 
     pub fn load<D>(&mut self, details: &D) -> Result<Rc<R>, String>
@@ -109,6 +113,7 @@ impl<'l, K, R, L> ResourceManager<'l, K, R, L>
     }
 }
 
+//noinspection RsWrongLifetimeParametersNumber
 impl<'l, T> ResourceLoader<'l, Texture<'l>> for TextureCreator<T> {
     type Args = str;
 
@@ -128,6 +133,7 @@ impl<'l> ResourceLoader<'l, Font<'l, 'static>> for Sdl2TtfContext {
 }
 
 impl<'l, T> TextureManager<'l, T> {
+    //noinspection RsWrongLifetimeParametersNumber
     pub fn load_text(
         &mut self,
         details: &mut TextDetails,
@@ -143,6 +149,7 @@ impl<'l, T> TextureManager<'l, T> {
                 let texture = self.loader.create_texture_from_surface(&surface).unwrap();
                 let resource = Rc::new(texture);
                 self.cache.insert(key, resource.clone());
+                println!("texture for '{}' created", details.text);
                 Ok(resource)
             },
             Ok,

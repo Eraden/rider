@@ -1,15 +1,15 @@
-use std::rc::Rc;
+use crate::app::{UpdateResult, WindowCanvas};
+use crate::config::Config;
+use crate::lexer::TokenType;
+use crate::renderer::managers::FontDetails;
+use crate::renderer::managers::TextDetails;
+use crate::renderer::Renderer;
+use crate::ui::*;
+use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::Texture;
 use sdl2::ttf::Font;
-use sdl2::pixels::Color;
-
-use crate::lexer::TokenType;
-use crate::renderer::Renderer;
-use crate::renderer::managers::TextDetails;
-use crate::app::{UpdateResult, WindowCanvas};
-use crate::renderer::managers::FontDetails;
-use crate::ui::*;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct TextCharacter {
@@ -45,11 +45,11 @@ impl TextCharacter {
         &self.color
     }
 
-    pub fn update_position(&mut self, current: &mut Rect) {
+    pub fn update_position(&mut self, current: &mut Rect, config: &Config) {
         if self.is_new_line() {
-            let y = (self.line * self.source.height() as usize) as i32;
-            current.set_x(0);
-            current.set_y(y);
+            let y = self.source.height() as i32;
+            current.set_x(config.editor_left_margin());
+            current.set_y(current.y() + y);
         } else {
             self.dest.set_x(current.x());
             self.dest.set_y(current.y());
@@ -60,12 +60,11 @@ impl TextCharacter {
     }
 
     pub fn update_view(&mut self, renderer: &mut Renderer) -> UpdateResult {
-        let config = &renderer.config.editor_config;
-        let font_details = FontDetails::new(
-            config.font_path.as_str(),
-            config.character_size.clone(),
-        );
-        let font = renderer.font_manager
+        let config = renderer.config().editor_config();
+        let font_details =
+            FontDetails::new(config.font_path().as_str(), config.character_size().clone());
+        let font = renderer
+            .font_manager()
             .load(&font_details)
             .unwrap_or_else(|_| panic!("Font not found {:?}", font_details));
 
@@ -79,10 +78,10 @@ impl TextCharacter {
             color: self.color.clone(),
             font: font_details.clone(),
         };
-        renderer.texture_manager
+        renderer
+            .texture_manager()
             .load_text(&mut details, &font)
             .unwrap_or_else(|_| panic!("Could not create texture for {:?}", c));
-        println!("texture for '{}' created", self.text_character);
 
         self.pending = false;
         UpdateResult::RefreshPositions
@@ -94,16 +93,16 @@ impl TextCharacter {
     }
 
     #[inline]
-    fn is_pending(&self) -> bool {
+    pub fn is_pending(&self) -> bool {
         self.pending
     }
 }
 
 impl Render for TextCharacter {
     /**
-    * Must first create targets so even if new line appear renderer will know
-    * where move render starting point
-    */
+     * Must first create targets so even if new line appear renderer will know
+     * where move render starting point
+     */
     fn render(&mut self, canvas: &mut WindowCanvas, renderer: &mut Renderer) -> UpdateResult {
         if self.is_pending() {
             return self.update_view(renderer);
@@ -112,12 +111,11 @@ impl Render for TextCharacter {
             return UpdateResult::NoOp;
         }
 
-        let config = &renderer.config.editor_config;
-        let font_details = FontDetails::new(
-            config.font_path.as_str(),
-            config.character_size.clone(),
-        );
-        let font = renderer.font_manager
+        let config = renderer.config().editor_config();
+        let font_details =
+            FontDetails::new(config.font_path().as_str(), config.character_size().clone());
+        let font = renderer
+            .font_manager()
             .load(&font_details)
             .unwrap_or_else(|_| panic!("Could not load font for {:?}", font_details));
 
@@ -127,7 +125,7 @@ impl Render for TextCharacter {
             color: self.color.clone(),
             font: font_details.clone(),
         };
-        if let Ok(texture) = renderer.texture_manager.load_text(&mut details, &font) {
+        if let Ok(texture) = renderer.texture_manager().load_text(&mut details, &font) {
             renderer.render_texture(canvas, &texture, &self.source, &self.dest);
         }
         UpdateResult::NoOp
@@ -137,5 +135,15 @@ impl Render for TextCharacter {
 impl Update for TextCharacter {
     fn update(&mut self, _ticks: i32) -> UpdateResult {
         UpdateResult::NoOp
+    }
+}
+
+impl ClickHandler for TextCharacter {
+    fn on_left_click(&mut self, _point: &Point, _config: &Config) -> UpdateResult {
+        UpdateResult::MoveCaret(self.dest().clone())
+    }
+
+    fn is_left_click_target(&self, point: &Point) -> bool {
+        is_in_rect(point, self.dest())
     }
 }

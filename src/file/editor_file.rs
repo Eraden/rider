@@ -1,26 +1,34 @@
-use sdl2::rect::Rect;
+use crate::app::{UpdateResult, WindowCanvas};
+use crate::config::Config;
 use crate::file::editor_file_section::EditorFileSection;
 use crate::renderer::Renderer;
-use crate::app::{UpdateResult, WindowCanvas};
 use crate::ui::*;
+use sdl2::rect::{Point, Rect};
 
 #[derive(Clone)]
 pub struct EditorFile {
-    pub path: String,
-    pub sections: Vec<EditorFileSection>,
+    path: String,
+    sections: Vec<EditorFileSection>,
+    render_position: Rect,
 }
 
 impl EditorFile {
-    pub fn new(path: String, buffer: String) -> Self {
-        let section = EditorFileSection::new(buffer);
+    pub fn new(path: String, buffer: String, config: &Config) -> Self {
+        let section = EditorFileSection::new(buffer, config);
         let sections = vec![section];
-        Self { path, sections }
+        let x = config.editor_left_margin();
+        let y = config.editor_top_margin();
+        Self {
+            path,
+            sections,
+            render_position: Rect::new(x, y, 0, 0),
+        }
     }
 
-    fn refresh_characters_position(&mut self) {
-        let mut current: Rect = Rect::new(0, 0, 0, 0);
+    fn refresh_characters_position(&mut self, config: &Config) {
+        let mut current: Rect = self.render_position.clone();
         for section in self.sections.iter_mut() {
-            section.update_positions(&mut current);
+            section.update_positions(&mut current, config);
         }
     }
 }
@@ -32,7 +40,7 @@ impl Render for EditorFile {
             res = section.render(canvas, renderer);
         }
         if res == UpdateResult::RefreshPositions {
-            self.refresh_characters_position();
+            self.refresh_characters_position(renderer.config());
             for section in self.sections.iter_mut() {
                 section.render(canvas, renderer);
             }
@@ -48,5 +56,25 @@ impl Update for EditorFile {
             result = section.update(ticks);
         }
         result
+    }
+}
+
+impl ClickHandler for EditorFile {
+    fn on_left_click(&mut self, point: &Point, config: &Config) -> UpdateResult {
+        for section in self.sections.iter_mut() {
+            if section.is_left_click_target(point) {
+                return section.on_left_click(point, config);
+            }
+        }
+        UpdateResult::NoOp
+    }
+
+    fn is_left_click_target(&self, point: &Point) -> bool {
+        for section in self.sections.iter() {
+            if section.is_left_click_target(point) {
+                return true;
+            }
+        }
+        false
     }
 }

@@ -1,31 +1,34 @@
+use crate::config::directories::*;
+use sdl2::pixels::Color;
+use serde::ser::{Serialize, SerializeMap, Serializer, SerializeSeq};
+use serde_json;
+use std::env;
 use std::fs;
 use std::path::PathBuf;
-use std::env;
-use sdl2::pixels::Color;
-use serde_json;
-use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap};
+
+pub mod config_creator;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct SerdeColor {
     pub r: u8,
     pub g: u8,
     pub b: u8,
-    pub a: u8
+    pub a: u8,
 }
 
 impl SerdeColor {
-    pub fn new(r: u8,g: u8,b: u8,a: u8) -> Self {
-        Self { r,g,b,a }
+    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
+        Self { r, g, b, a }
     }
 }
 
-impl Into<Color> for SerdeColor {
+impl Into<Color> for &SerdeColor {
     fn into(self) -> Color {
         Color {
             r: self.r,
             g: self.g,
             b: self.b,
-            a: self.a
+            a: self.a,
         }
     }
 }
@@ -197,8 +200,9 @@ pub struct Theme {
 
 impl Default for Theme {
     fn default() -> Self {
+        use crate::themes::config_creator;
         Self {
-            name: "Default".to_string(),
+            name: "default".to_string(),
             background: SerdeColor::new(255, 255, 255, 0),
             caret: CaretColor::default(),
             code_highlighting: CodeHighlightingColor::default(),
@@ -223,152 +227,26 @@ impl Theme {
         &self.code_highlighting
     }
 
-    fn railscasts() -> Self {
-        Self {
-            name: "railscasts".to_string(),
-            background: SerdeColor {
-                r: 60,
-                g: 60,
-                b: 60,
-                a: 0
-            },
-            caret: CaretColor { bright: ThemeConfig {
-                color: SerdeColor {
-                    r: 0,
-                    g: 0,
-                    b: 0,
-                    a: 0
-                },
-                italic: false,
-                bold: false
-            }, blur: ThemeConfig {
-                color: SerdeColor {
-                    r: 0,
-                    g: 0,
-                    b: 0,
-                    a: 0
-                },
-                italic: false,
-                bold: false
-            } },
-            code_highlighting: CodeHighlightingColor {
-                whitespace: ThemeConfig {
-                    color: SerdeColor {
-                        r: 0,
-                        g: 0,
-                        b: 0,
-                        a: 0
-                    },
-                    italic: false,
-                    bold: false
-                },
-                keyword: ThemeConfig {
-                    color: SerdeColor {
-                        r: 203,
-                        g: 120,
-                        b: 50,
-                        a: 0
-                    },
-                    italic: false,
-                    bold: true
-                },
-                string: ThemeConfig {
-                    color: SerdeColor {
-                        r: 0,
-                        g: 0,
-                        b: 0,
-                        a: 0
-                    },
-                    italic: false,
-                    bold: false
-                },
-                number: ThemeConfig {
-                    color: SerdeColor {
-                        r: 0,
-                        g: 0,
-                        b: 0,
-                        a: 0
-                    },
-                    italic: false,
-                    bold: false
-                },
-                identifier: ThemeConfig {
-                    color: SerdeColor {
-                        r: 0,
-                        g: 0,
-                        b: 0,
-                        a: 0
-                    },
-                    italic: false,
-                    bold: false
-                },
-                literal: ThemeConfig {
-                    color: SerdeColor {
-                        r: 0,
-                        g: 0,
-                        b: 0,
-                        a: 0
-                    },
-                    italic: false,
-                    bold: false
-                },
-                comment: ThemeConfig {
-                    color: SerdeColor {
-                        r: 188,
-                        g: 147,
-                        b: 88,
-                        a: 0
-                    },
-                    italic: true,
-                    bold: false
-                },
-                operator: ThemeConfig {
-                    color: SerdeColor {
-                        r: 0,
-                        g: 0,
-                        b: 0,
-                        a: 0
-                    },
-                    italic: false,
-                    bold: false
-                },
-                separator: ThemeConfig {
-                    color: SerdeColor {
-                        r: 0,
-                        g: 0,
-                        b: 0,
-                        a: 0
-                    },
-                    italic: false,
-                    bold: false
-                }
-            }
-        }
-    }
-
-    pub fn load(_theme_name: String) -> Self {
+    pub fn load(theme_name: String) -> Self {
         use dirs;
         let home_dir = dirs::config_dir().unwrap();
         let mut config_dir = home_dir.clone();
-        config_dir.push("rider/themes");
+        config_dir.push("rider");
         fs::create_dir_all(&config_dir)
             .unwrap_or_else(|_| panic!("Cannot create config directory"));
-        let theme = Self::load_content(&config_dir, "default.json");
-        println!("theme config:\n{:?}", theme);
-        theme
+        Self::load_content(format!("{}.json", theme_name).as_str())
     }
 
-    fn load_content(config_dir: &PathBuf, file_name: &str) -> Theme {
-        let mut config_file = config_dir.clone();
+    fn load_content(file_name: &str) -> Theme {
+        let mut config_file = themes_dir();
         config_file.push(file_name);
         let contents = match fs::read_to_string(&config_file) {
             Ok(s) => s,
             Err(_) => {
-                let contents = serde_json::to_string_pretty(&Theme::default())
-                    .unwrap();
-                fs::write(&config_file, contents.clone())
-                    .unwrap_or_else(|_| panic!("Failed to crate theme config file"));
-                contents.to_string()
+                use crate::themes::config_creator;
+                config_creator::create();
+                fs::read_to_string(&config_file)
+                    .unwrap_or_else(|_| panic!("Failed to load theme config file"))
             }
         };
         serde_json::from_str(&contents).unwrap_or_default()

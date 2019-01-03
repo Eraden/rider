@@ -1,30 +1,31 @@
-pub mod app_state;
-pub mod config;
-
+use crate::app::app_state::AppState;
+use crate::config::Config;
+use crate::renderer::Renderer;
+use crate::themes::*;
+use crate::ui::*;
+use sdl2::{Sdl, TimerSubsystem};
 use sdl2::event::Event;
+use sdl2::EventPump;
 use sdl2::hint;
+use sdl2::mouse::MouseButton;
 use sdl2::pixels::Color;
+use sdl2::rect::{Point, Rect};
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use sdl2::EventPump;
-use sdl2::{Sdl, TimerSubsystem};
-
 use std::thread::sleep;
 use std::time::Duration;
 
-pub type WindowCanvas = Canvas<Window>;
+pub mod app_state;
 
-use crate::app::app_state::AppState;
-use crate::app::config::Config;
-use crate::themes::Theme;
-use crate::ui::*;
-use crate::renderer::Renderer;
+pub type WindowCanvas = Canvas<Window>;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum UpdateResult {
     NoOp,
     Stop,
     RefreshPositions,
+    MouseLeftClicked(Point),
+    MoveCaret(Rect),
 }
 
 pub enum Task {
@@ -36,6 +37,7 @@ pub struct Application {
     sdl_context: Sdl,
     canvas: WindowCanvas,
     tasks: Vec<Task>,
+    clear_color: Color,
 }
 
 impl Application {
@@ -49,7 +51,7 @@ impl Application {
         hint::set("SDL_HINT_VIDEO_ALLOW_SCREENSAVER", "1");
         let video_subsystem = sdl_context.video().unwrap();
         let window = video_subsystem
-            .window("Editor", config.width, config.height)
+            .window("Editor", config.width(), config.height())
             .position_centered()
             .opengl()
             .build()
@@ -58,10 +60,11 @@ impl Application {
         let canvas = window.into_canvas().accelerated().build().unwrap();
 
         Self {
-            config,
             sdl_context,
             canvas,
             tasks: vec![],
+            clear_color: config.theme().background().into(),
+            config,
         }
     }
 
@@ -75,25 +78,25 @@ impl Application {
         let font_context = sdl2::ttf::init().unwrap();
         let texture_creator = self.canvas.texture_creator();
         let sleep_time = Duration::new(0, 1_000_000_000u32 / 60);
-        let mut app_state = AppState::new();
-        let mut renderer = Renderer::new(
-            self.config.clone(),
-            &font_context,
-            &texture_creator
-        );
+        let mut app_state = AppState::new(&self.config);
+        let mut renderer = Renderer::new(self.config.clone(), &font_context, &texture_creator);
 
         'running: loop {
             match self.handle_events(&mut event_pump) {
                 UpdateResult::Stop => break 'running,
                 UpdateResult::RefreshPositions => (),
                 UpdateResult::NoOp => (),
+                UpdateResult::MoveCaret(_) => (),
+                UpdateResult::MouseLeftClicked(point) => {
+                    app_state.on_left_click(&point, renderer.config());
+                }
             }
             for task in self.tasks.iter() {
                 match task {
                     Task::OpenFile { file_path } => {
                         use crate::file::editor_file::*;
-                        app_state.open_file(file_path.clone());
-                    },
+                        app_state.open_file(file_path.clone(), renderer.config());
+                    }
                 }
             }
             self.tasks.clear();
@@ -117,7 +120,7 @@ impl Application {
     }
 
     fn clear(&mut self) {
-        self.canvas.set_draw_color(Color::RGB(255, 255, 255));
+        self.canvas.set_draw_color(self.clear_color.clone());
         self.canvas.clear();
     }
 
@@ -125,6 +128,12 @@ impl Application {
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. } => return UpdateResult::Stop,
+                Event::MouseButtonUp {
+                    mouse_btn, x, y, ..
+                } => match mouse_btn {
+                    MouseButton::Left => return UpdateResult::MouseLeftClicked(Point::new(x, y)),
+                    _ => (),
+                },
                 _ => (),
             }
         }

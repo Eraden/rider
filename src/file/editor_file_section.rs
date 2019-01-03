@@ -1,34 +1,34 @@
-use sdl2::rect::Rect;
-use crate::lexer::Language;
-use crate::app::UpdateResult;
-use crate::app::WindowCanvas;
-use crate::renderer::Renderer;
+use crate::app::{UpdateResult, WindowCanvas};
+use crate::config::Config;
 use crate::file::editor_file_token::EditorFileToken;
+use crate::lexer::Language;
+use crate::renderer::Renderer;
 use crate::ui::*;
+use sdl2::rect::{Point, Rect};
 
 #[derive(Clone)]
 pub struct EditorFileSection {
-    pub tokens: Vec<EditorFileToken>,
-    pub language: Language,
+    tokens: Vec<EditorFileToken>,
+    language: Language,
 }
 
 impl EditorFileSection {
-    pub fn new(buffer: String) -> Self {
+    pub fn new(buffer: String, config: &Config) -> Self {
         use crate::lexer;
         let lexer_tokens = lexer::parse(buffer.clone(), Language::PlainText);
 
         let mut tokens: Vec<EditorFileToken> = vec![];
         for token_type in lexer_tokens {
-            let token = EditorFileToken::new(token_type);
+            let token = EditorFileToken::new(token_type, config);
             tokens.push(token.clone());
         }
         let language = Language::PlainText;
         Self { tokens, language }
     }
 
-    pub fn update_positions(&mut self, current: &mut Rect) {
+    pub fn update_positions(&mut self, current: &mut Rect, config: &Config) {
         for c in self.tokens.iter_mut() {
-            c.update_position(current);
+            c.update_position(current, config);
         }
     }
 }
@@ -53,5 +53,25 @@ impl Update for EditorFileSection {
             result = file_char.update(ticks)
         }
         result
+    }
+}
+
+impl ClickHandler for EditorFileSection {
+    fn on_left_click(&mut self, point: &Point, config: &Config) -> UpdateResult {
+        for token in self.tokens.iter_mut() {
+            if token.is_left_click_target(point) {
+                return token.on_left_click(point, config);
+            }
+        }
+        UpdateResult::NoOp
+    }
+
+    fn is_left_click_target(&self, point: &Point) -> bool {
+        for token in self.tokens.iter() {
+            if token.is_left_click_target(point) {
+                return true;
+            }
+        }
+        false
     }
 }
