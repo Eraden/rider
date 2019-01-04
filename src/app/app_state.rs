@@ -6,33 +6,34 @@ use crate::renderer::Renderer;
 use crate::ui::*;
 use crate::ui::caret::Caret;
 use crate::ui::menu_bar::MenuBar;
-use sdl2::rect::Point;
 use std::boxed::Box;
 use std::rc::Rc;
 use std::sync::Arc;
-use sdl2::rect::Rect;
+use sdl2::rect::{Rect, Point};
 
 pub struct AppState {
     menu_bar: MenuBar,
     files: Vec<EditorFile>,
     current_file: usize,
     caret: Caret,
+    config: Rc<Config>,
 }
 
 impl AppState {
-    pub fn new(config: &Config) -> Self {
+    pub fn new(config: Rc<Config>) -> Self {
         Self {
-            menu_bar: MenuBar::new(),
+            menu_bar: MenuBar::new(config.clone()),
             files: vec![],
             current_file: 0,
-            caret: Caret::new(config),
+            caret: Caret::new(config.clone()),
+            config,
         }
     }
 
-    pub fn open_file(&mut self, file_path: String, config: &Config) {
+    pub fn open_file(&mut self, file_path: String) {
         use std::fs::read_to_string;
         if let Ok(buffer) = read_to_string(&file_path) {
-            let file = EditorFile::new(file_path.clone(), buffer, config);
+            let file = EditorFile::new(file_path.clone(), buffer, self.config.clone());
             self.current_file = self.files.len();
             self.files.push(file);
         };
@@ -42,7 +43,7 @@ impl AppState {
         &mut self.caret
     }
 
-    pub fn delete_front(&mut self, config: &Config) {
+    pub fn delete_front(&mut self) {
         let file: &mut EditorFile = if let Some(file) = self.files.get_mut(self.current_file) {
             file
         } else {
@@ -69,12 +70,12 @@ impl AppState {
         let new_file = EditorFile::new(
             file.path(),
             buffer,
-            config,
+            self.config.clone(),
         );
         self.files[self.current_file] = new_file;
     }
 
-    pub fn delete_back(&mut self, config: &Config) {
+    pub fn delete_back(&mut self) {
         let file: &mut EditorFile = if let Some(file) = self.files.get_mut(self.current_file) {
             file
         } else {
@@ -90,7 +91,7 @@ impl AppState {
         let new_file = EditorFile::new(
             file.path(),
             buffer,
-            config,
+            self.config.clone(),
         );
         self.files[self.current_file] = new_file;
     }
@@ -108,7 +109,7 @@ impl AppState {
         let new_file = EditorFile::new(
             file.path(),
             buffer,
-            renderer.config(),
+            self.config.clone(),
         );
         if let Some(rect) = get_text_character_rect(character, renderer) {
             if let Some(current) = file.get_character_at(position) {
@@ -119,6 +120,29 @@ impl AppState {
             }
         }
         self.files[self.current_file] = new_file;
+    }
+
+    fn current_file(&mut self) -> Option<&mut EditorFile> {
+        self.files.get_mut(self.current_file)
+    }
+
+    fn on_editor_clicked(&mut self, point: &Point) -> UpdateResult {
+        let current_file: &mut EditorFile = if let Some(current_file) = self.current_file() {
+            current_file
+        } else {
+            return UpdateResult::NoOp;
+        };
+        if !current_file.is_left_click_target(point) {
+            return UpdateResult::NoOp;
+        }
+        match current_file.on_left_click(point) {
+            UpdateResult::MoveCaret(rect, position) => {
+                self.caret.move_caret(position, Point::new(rect.x(), rect.y()));
+            }
+            _ => (),
+        };
+
+        UpdateResult::NoOp
     }
 }
 
@@ -145,20 +169,11 @@ impl Update for AppState {
 }
 
 impl ClickHandler for AppState {
-    fn on_left_click(&mut self, point: &Point, config: &Config) -> UpdateResult {
+    fn on_left_click(&mut self, point: &Point) -> UpdateResult {
         if self.menu_bar.is_left_click_target(point) {
-            return self.menu_bar.on_left_click(point, config);
+            return self.menu_bar.on_left_click(point);
         }
-        if let Some(current_file) = self.files.get_mut(self.current_file) {
-            if current_file.is_left_click_target(point) {
-                match current_file.on_left_click(point, config) {
-                    UpdateResult::MoveCaret(rect, position) => {
-                        self.caret.move_caret(position, Point::new(rect.x(), rect.y()));
-                    }
-                    _ => (),
-                };
-            }
-        }
+        self.on_editor_clicked(point);
         UpdateResult::NoOp
     }
 

@@ -2,16 +2,16 @@ use crate::app::WindowCanvas;
 use crate::config::Config;
 use crate::renderer::managers::{FontManager, TextureManager};
 use crate::renderer::managers::TextDetails;
+use std::rc::Rc;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::{Texture, TextureCreator};
 use sdl2::ttf::Sdl2TtfContext;
 use sdl2::video::WindowContext;
-use std::rc::Rc;
 
 pub mod managers;
 
 pub struct Renderer<'a> {
-    config: Config,
+    config: Rc<Config>,
     font_manager: FontManager<'a>,
     texture_manager: TextureManager<'a, WindowContext>,
     scroll: Point,
@@ -19,7 +19,7 @@ pub struct Renderer<'a> {
 
 impl<'a> Renderer<'a> {
     pub fn new(
-        config: Config,
+        config: Rc<Config>,
         font_context: &'a Sdl2TtfContext,
         texture_creator: &'a TextureCreator<WindowContext>,
     ) -> Self {
@@ -31,7 +31,7 @@ impl<'a> Renderer<'a> {
         }
     }
 
-    pub fn config(&self) -> &Config {
+    pub fn config(&self) -> &Rc<Config> {
         &self.config
     }
 

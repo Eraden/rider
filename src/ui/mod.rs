@@ -44,7 +44,7 @@ pub trait Update {
 }
 
 pub trait ClickHandler {
-    fn on_left_click(&mut self, point: &Point, config: &Config) -> UpdateResult;
+    fn on_left_click(&mut self, point: &Point) -> UpdateResult;
 
     fn is_left_click_target(&self, point: &Point) -> bool;
 }

@@ -5,29 +5,31 @@ use crate::renderer::managers::{FontDetails, TextDetails};
 use crate::renderer::Renderer;
 use crate::ui::*;
 use crate::ui::text_character::*;
+use std::rc::Rc;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Texture;
 use sdl2::ttf::Font;
-use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct EditorFileToken {
     characters: Vec<TextCharacter>,
     token_type: TokenType,
+    config: Rc<Config>
 }
 
 impl EditorFileToken {
-    pub fn new(token_type: TokenType, _config: &Config) -> Self {
+    pub fn new(token_type: TokenType, config: Rc<Config>) -> Self {
         Self {
             characters: vec![],
             token_type,
+            config
         }
     }
 
-    pub fn update_position(&mut self, current: &mut Rect, config: &Config) {
+    pub fn update_position(&mut self, current: &mut Rect) {
         for text_character in self.characters.iter_mut() {
-            text_character.update_position(current, config);
+            text_character.update_position(current);
         }
     }
 
@@ -58,7 +60,8 @@ impl EditorFileToken {
                 c.clone(),
                 self.token_type.start() + index,
                 self.token_type.line(),
-                color.clone()
+                color.clone(),
+                    self.config.clone()
             );
             text_character.update_view(renderer);
             self.characters.push(text_character);
@@ -97,10 +100,10 @@ impl Update for EditorFileToken {
 }
 
 impl ClickHandler for EditorFileToken {
-    fn on_left_click(&mut self, point: &Point, config: &Config) -> UpdateResult {
+    fn on_left_click(&mut self, point: &Point) -> UpdateResult {
         for text_character in self.characters.iter_mut() {
             if text_character.is_left_click_target(point) {
-                return text_character.on_left_click(point, config);
+                return text_character.on_left_click(point);
             }
         }
         UpdateResult::NoOp

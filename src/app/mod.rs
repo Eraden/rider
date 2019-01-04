@@ -4,7 +4,11 @@ use crate::renderer::Renderer;
 use crate::themes::*;
 use crate::ui::*;
 
-use sdl2::{Sdl, TimerSubsystem};
+use std::thread::sleep;
+use std::time::Duration;
+use std::rc::Rc;
+
+use sdl2::{Sdl, VideoSubsystem, TimerSubsystem};
 use sdl2::event::Event;
 use sdl2::EventPump;
 use sdl2::keyboard::{Keycode, Mod};
@@ -14,8 +18,7 @@ use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use std::thread::sleep;
-use std::time::Duration;
+use sdl2::ttf::Sdl2TtfContext;
 
 pub mod app_state;
 pub mod keyboard_handler;
@@ -39,34 +42,39 @@ pub enum Task {
 }
 
 pub struct Application {
-    config: Config,
+    config: Rc<Config>,
+    clear_color: Color,
     sdl_context: Sdl,
     canvas: WindowCanvas,
+    video_subsystem: VideoSubsystem,
     tasks: Vec<Task>,
-    clear_color: Color,
 }
 
 impl Application {
     pub fn new() -> Self {
-        let config = Config::new();
+        let config = Rc::new(Config::new());
         let sdl_context = sdl2::init().unwrap();
         hint::set("SDL_GL_MULTISAMPLEBUFFERS", "1");
         hint::set("SDL_GL_MULTISAMPLESAMPLES", "8");
         hint::set("SDL_GL_ACCELERATED_VISUAL", "1");
         hint::set("SDL_HINT_RENDER_SCALE_QUALITY", "2");
         hint::set("SDL_HINT_VIDEO_ALLOW_SCREENSAVER", "1");
+
         let video_subsystem = sdl_context.video().unwrap();
+
         let window = video_subsystem
-            .window("Editor", config.width(), config.height())
+            .window("Rider", config.width(), config.height())
             .position_centered()
             .opengl()
             .build()
             .unwrap();
 
         let canvas = window.into_canvas().accelerated().build().unwrap();
+//        let font_context = Rc::new(sdl2::ttf::init().unwrap());
 
         Self {
             sdl_context,
+            video_subsystem,
             canvas,
             tasks: vec![],
             clear_color: config.theme().background().into(),
@@ -84,7 +92,7 @@ impl Application {
         let font_context = sdl2::ttf::init().unwrap();
         let texture_creator = self.canvas.texture_creator();
         let sleep_time = Duration::new(0, 1_000_000_000u32 / 60);
-        let mut app_state = AppState::new(&self.config);
+        let mut app_state = AppState::new(self.config.clone());
         let mut renderer = Renderer::new(self.config.clone(), &font_context, &texture_creator);
 
         'running: loop {
@@ -94,13 +102,13 @@ impl Application {
                 UpdateResult::NoOp => (),
                 UpdateResult::MoveCaret(_, _pos) => (),
                 UpdateResult::MouseLeftClicked(point) => {
-                    app_state.on_left_click(&point, renderer.config());
+                    app_state.on_left_click(&point);
                 }
                 UpdateResult::DeleteFront => {
-                    app_state.delete_front(renderer.config());
+                    app_state.delete_front();
                 },
                 UpdateResult::DeleteBack => {
-                    app_state.delete_back(renderer.config());
+                    app_state.delete_back();
                 },
                 UpdateResult::Input(text_character) => {
                     app_state.insert_character(text_character, &mut renderer);
@@ -110,7 +118,7 @@ impl Application {
                 match task {
                     Task::OpenFile { file_path } => {
                         use crate::ui::file::editor_file::*;
-                        app_state.open_file(file_path.clone(), renderer.config());
+                        app_state.open_file(file_path.clone());
                     }
                 }
             }

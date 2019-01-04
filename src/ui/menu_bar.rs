@@ -2,19 +2,22 @@ use crate::app::{UpdateResult, WindowCanvas};
 use crate::config::Config;
 use crate::renderer::Renderer;
 use crate::ui::*;
+use std::rc::Rc;
 use sdl2::pixels::Color;
-use sdl2::rect::Rect;
+use sdl2::rect::{Rect, Point};
 
 pub struct MenuBar {
     background_color: Color,
     dest: Rect,
+    config: Rc<Config>,
 }
 
 impl MenuBar {
-    pub fn new() -> Self {
+    pub fn new(config: Rc<Config>) -> Self {
         Self {
             background_color: Color::RGB(10, 10, 10),
             dest: Rect::new(0, 0, 0, 0),
+            config,
         }
     }
 
@@ -28,9 +31,9 @@ impl MenuBar {
 }
 
 impl Render for MenuBar {
-    fn render(&mut self, canvas: &mut WindowCanvas, renderer: &mut Renderer) -> UpdateResult {
-        let width = renderer.config().width();
-        let height = renderer.config().menu_height() as u32;
+    fn render(&mut self, canvas: &mut WindowCanvas, _renderer: &mut Renderer) -> UpdateResult {
+        let width = self.config.width();
+        let height = self.config.menu_height() as u32;
         self.dest = Rect::new(0, 0, width, height);
         canvas.set_draw_color(self.background_color.clone());
         canvas.draw_rect(self.dest.clone()).unwrap();
@@ -45,7 +48,7 @@ impl Update for MenuBar {
 }
 
 impl ClickHandler for MenuBar {
-    fn on_left_click(&mut self, _point: &Point, _config: &Config) -> UpdateResult {
+    fn on_left_click(&mut self, _point: &Point) -> UpdateResult {
         unimplemented!()
     }
 

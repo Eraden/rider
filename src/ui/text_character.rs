@@ -6,11 +6,11 @@ use crate::renderer::managers::TextDetails;
 use crate::renderer::Renderer;
 use crate::ui::*;
 
+use std::rc::Rc;
 use sdl2::pixels::Color;
 use sdl2::rect::{Rect, Point};
 use sdl2::render::Texture;
 use sdl2::ttf::Font;
-use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct TextCharacter {
@@ -21,10 +21,11 @@ pub struct TextCharacter {
     source: Rect,
     dest: Rect,
     color: Color,
+    config: Rc<Config>
 }
 
 impl TextCharacter {
-    pub fn new(text_character: char, position: usize, line: usize, color: Color) -> Self {
+    pub fn new(text_character: char, position: usize, line: usize, color: Color, config: Rc<Config>) -> Self {
         Self {
             pending: true,
             text_character,
@@ -33,6 +34,7 @@ impl TextCharacter {
             source: Rect::new(0, 0, 0, 0),
             dest: Rect::new(0, 0, 0, 0),
             color,
+            config
         }
     }
 
@@ -48,10 +50,10 @@ impl TextCharacter {
         &self.color
     }
 
-    pub fn update_position(&mut self, current: &mut Rect, config: &Config) {
+    pub fn update_position(&mut self, current: &mut Rect) {
         if self.is_new_line() {
             let y = self.source.height() as i32;
-            current.set_x(config.editor_left_margin());
+            current.set_x(self.config.editor_left_margin());
             current.set_y(current.y() + y);
         } else {
             self.dest.set_x(current.x());
@@ -145,7 +147,7 @@ impl Update for TextCharacter {
 }
 
 impl ClickHandler for TextCharacter {
-    fn on_left_click(&mut self, _point: &Point, _config: &Config) -> UpdateResult {
+    fn on_left_click(&mut self, _point: &Point) -> UpdateResult {
         UpdateResult::MoveCaret(
             self.dest().clone(),
             self.position()

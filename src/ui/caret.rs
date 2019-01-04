@@ -3,6 +3,7 @@ use crate::config::Config;
 use crate::renderer::Renderer;
 use crate::ui::*;
 use crate::ui::text_character::TextCharacter;
+use std::rc::Rc;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Texture;
@@ -17,6 +18,7 @@ pub struct Caret {
     pending: bool,
     text_position: usize,
     blink_delay: u8,
+    config: Rc<Config>,
     state: CaretState,
     dest: Rect,
     reset_position: Rect,
@@ -25,7 +27,7 @@ pub struct Caret {
 }
 
 impl Caret {
-    pub fn new(config: &Config) -> Self {
+    pub fn new(config: Rc<Config>) -> Self {
         let bright_character_color = config.theme().caret().bright().color().into();
         let blur_character_color = config.theme().caret().blur().color().into();
         Self {
@@ -47,6 +49,7 @@ impl Caret {
             blur_character_color,
             pending: true,
             text_position: 0,
+            config,
         }
     }
 
@@ -121,7 +124,7 @@ impl Update for Caret {
 }
 
 impl ClickHandler for Caret {
-    fn on_left_click(&mut self, _point: &Point, _config: &Config) -> UpdateResult {
+    fn on_left_click(&mut self, _point: &Point) -> UpdateResult {
         //        self.move_caret(Point::new(self.position.x(), self.position.y()));
         UpdateResult::NoOp
     }

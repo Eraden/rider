@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use sdl2::rect::{Point, Rect};
 
 use crate::app::{UpdateResult, WindowCanvas};
@@ -13,12 +14,13 @@ pub struct EditorFile {
     sections: Vec<EditorFileSection>,
     render_position: Rect,
     buffer: String,
+    config: Rc<Config>
 }
 
 impl EditorFile {
-    pub fn new(path: String, buffer: String, config: &Config) -> Self {
+    pub fn new(path: String, buffer: String, config: Rc<Config>) -> Self {
         let sections = vec![
-            EditorFileSection::new(buffer.clone(), config)
+            EditorFileSection::new(buffer.clone(), config.clone())
         ];
         let x = config.editor_left_margin();
         let y = config.editor_top_margin();
@@ -26,7 +28,8 @@ impl EditorFile {
             path,
             sections,
             render_position: Rect::new(x, y, 0, 0),
-            buffer
+            buffer,
+            config
         }
     }
 
@@ -47,10 +50,10 @@ impl EditorFile {
         None
     }
 
-    fn refresh_characters_position(&mut self, config: &Config) {
+    fn refresh_characters_position(&mut self) {
         let mut current: Rect = self.render_position.clone();
         for section in self.sections.iter_mut() {
-            section.update_positions(&mut current, config);
+            section.update_positions(&mut current);
         }
     }
 }
@@ -62,7 +65,7 @@ impl Render for EditorFile {
             res = section.render(canvas, renderer);
         }
         if res == UpdateResult::RefreshPositions {
-            self.refresh_characters_position(renderer.config());
+            self.refresh_characters_position();
             for section in self.sections.iter_mut() {
                 section.render(canvas, renderer);
             }
@@ -82,10 +85,10 @@ impl Update for EditorFile {
 }
 
 impl ClickHandler for EditorFile {
-    fn on_left_click(&mut self, point: &Point, config: &Config) -> UpdateResult {
+    fn on_left_click(&mut self, point: &Point) -> UpdateResult {
         for section in self.sections.iter_mut() {
             if section.is_left_click_target(point) {
-                return section.on_left_click(point, config);
+                return section.on_left_click(point);
             }
         }
         UpdateResult::NoOp

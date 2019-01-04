@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use sdl2::rect::{Point, Rect};
 
 use crate::app::{UpdateResult, WindowCanvas};
@@ -12,25 +13,26 @@ use crate::ui::text_character::TextCharacter;
 pub struct EditorFileSection {
     tokens: Vec<EditorFileToken>,
     language: Language,
+    config: Rc<Config>,
 }
 
 impl EditorFileSection {
-    pub fn new(buffer: String, config: &Config) -> Self {
+    pub fn new(buffer: String, config: Rc<Config>) -> Self {
         use crate::lexer;
         let lexer_tokens = lexer::parse(buffer.clone(), Language::PlainText);
 
         let mut tokens: Vec<EditorFileToken> = vec![];
         for token_type in lexer_tokens {
-            let token = EditorFileToken::new(token_type, config);
+            let token = EditorFileToken::new(token_type, config.clone());
             tokens.push(token.clone());
         }
         let language = Language::PlainText;
-        Self { tokens, language }
+        Self { tokens, language, config }
     }
 
-    pub fn update_positions(&mut self, current: &mut Rect, config: &Config) {
+    pub fn update_positions(&mut self, current: &mut Rect) {
         for c in self.tokens.iter_mut() {
-            c.update_position(current, config);
+            c.update_position(current);
         }
     }
 
@@ -68,10 +70,10 @@ impl Update for EditorFileSection {
 }
 
 impl ClickHandler for EditorFileSection {
-    fn on_left_click(&mut self, point: &Point, config: &Config) -> UpdateResult {
+    fn on_left_click(&mut self, point: &Point) -> UpdateResult {
         for token in self.tokens.iter_mut() {
             if token.is_left_click_target(point) {
-                return token.on_left_click(point, config);
+                return token.on_left_click(point);
             }
         }
         UpdateResult::NoOp
