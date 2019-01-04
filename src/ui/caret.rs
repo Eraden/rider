@@ -14,12 +14,14 @@ enum CaretState {
 }
 
 pub struct Caret {
-    state: CaretState,
+    pending: bool,
+    text_position: usize,
     blink_delay: u8,
-    position: Rect,
+    state: CaretState,
+    dest: Rect,
+    reset_position: Rect,
     bright_character_color: Color,
     blur_character_color: Color,
-    pending: bool,
 }
 
 impl Caret {
@@ -29,7 +31,13 @@ impl Caret {
         Self {
             state: CaretState::Bright,
             blink_delay: 0,
-            position: Rect::new(
+            dest: Rect::new(
+                config.editor_left_margin(),
+                config.editor_top_margin(),
+                4,
+                0,
+            ),
+            reset_position: Rect::new(
                 config.editor_left_margin(),
                 config.editor_top_margin(),
                 4,
@@ -38,6 +46,7 @@ impl Caret {
             bright_character_color,
             blur_character_color,
             pending: true,
+            text_position: 0,
         }
     }
 
@@ -49,9 +58,19 @@ impl Caret {
         };
     }
 
-    pub fn move_caret(&mut self, pos: Point) {
-        self.position.set_x(pos.x());
-        self.position.set_y(pos.y());
+    pub fn reset_caret(&mut self) {
+        self.dest = self.reset_position.clone();
+        self.text_position = 0;
+    }
+
+    pub fn move_caret(&mut self, position: usize, pos: Point) {
+        self.text_position = position;
+        self.dest.set_x(pos.x());
+        self.dest.set_y(pos.y());
+    }
+
+    pub fn text_position(&self) -> usize {
+        self.text_position
     }
 }
 
@@ -68,14 +87,15 @@ impl Render for Caret {
                 })
                 .unwrap_or_else(|_| panic!("Unable to load font"));
             if let Ok((_, h)) = font.size_of_char('W') {
-                self.position.set_height(h);
+                self.dest.set_height(h);
+                self.reset_position = self.dest.clone();
             }
             self.pending = false;
         }
-        let start = Point::new(self.position.x(), self.position.y());
+        let start = Point::new(self.dest.x(), self.dest.y());
         let end = Point::new(
-            self.position.x(),
-            self.position.y() + self.position.height() as i32,
+            self.dest.x(),
+            self.dest.y() + self.dest.height() as i32,
         );
         let color = match self.state {
             CaretState::Bright => &self.bright_character_color,
@@ -107,6 +127,6 @@ impl ClickHandler for Caret {
     }
 
     fn is_left_click_target(&self, point: &Point) -> bool {
-        is_in_rect(point, &self.position)
+        is_in_rect(point, &self.dest)
     }
 }

@@ -1,28 +1,50 @@
+use sdl2::rect::{Point, Rect};
+
 use crate::app::{UpdateResult, WindowCanvas};
 use crate::config::Config;
-use crate::file::editor_file_section::EditorFileSection;
+use crate::ui::file::editor_file_section::EditorFileSection;
 use crate::renderer::Renderer;
 use crate::ui::*;
-use sdl2::rect::{Point, Rect};
+use crate::ui::text_character::TextCharacter;
 
 #[derive(Clone)]
 pub struct EditorFile {
     path: String,
     sections: Vec<EditorFileSection>,
     render_position: Rect,
+    buffer: String,
 }
 
 impl EditorFile {
     pub fn new(path: String, buffer: String, config: &Config) -> Self {
-        let section = EditorFileSection::new(buffer, config);
-        let sections = vec![section];
+        let sections = vec![
+            EditorFileSection::new(buffer.clone(), config)
+        ];
         let x = config.editor_left_margin();
         let y = config.editor_top_margin();
         Self {
             path,
             sections,
             render_position: Rect::new(x, y, 0, 0),
+            buffer
         }
+    }
+
+    pub fn buffer(&self) -> String {
+        self.buffer.clone()
+    }
+
+    pub fn path(&self) -> String {
+        self.path.clone()
+    }
+
+    pub fn get_character_at(&self, index: usize) -> Option<&TextCharacter> {
+        for section in self.sections.iter() {
+            if let Some(text_character) = section.get_character_at(index) {
+                return Some(text_character)
+            }
+        }
+        None
     }
 
     fn refresh_characters_position(&mut self, config: &Config) {

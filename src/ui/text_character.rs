@@ -5,8 +5,9 @@ use crate::renderer::managers::FontDetails;
 use crate::renderer::managers::TextDetails;
 use crate::renderer::Renderer;
 use crate::ui::*;
+
 use sdl2::pixels::Color;
-use sdl2::rect::Rect;
+use sdl2::rect::{Rect, Point};
 use sdl2::render::Texture;
 use sdl2::ttf::Font;
 use std::rc::Rc;
@@ -15,6 +16,7 @@ use std::rc::Rc;
 pub struct TextCharacter {
     pending: bool,
     text_character: char,
+    position: usize,
     line: usize,
     source: Rect,
     dest: Rect,
@@ -22,10 +24,11 @@ pub struct TextCharacter {
 }
 
 impl TextCharacter {
-    pub fn new(text_character: char, line: usize, color: Color) -> Self {
+    pub fn new(text_character: char, position: usize, line: usize, color: Color) -> Self {
         Self {
             pending: true,
             text_character,
+            position,
             line,
             source: Rect::new(0, 0, 0, 0),
             dest: Rect::new(0, 0, 0, 0),
@@ -68,20 +71,19 @@ impl TextCharacter {
             .load(&font_details)
             .unwrap_or_else(|_| panic!("Font not found {:?}", font_details));
 
-        let c = self.text_character.clone();
-        if let Ok((width, height)) = font.size_of_char(c) {
-            self.source = Rect::new(0, 0, width, height);
-            self.dest = Rect::new(0, 0, width, height);
+        if let Some(rect) = get_text_character_rect(self.text_character.clone(), renderer) {
+            self.source = rect.clone();
+            self.dest = rect.clone();
         }
         let mut details = TextDetails {
-            text: c.to_string(),
+            text: self.text_character.to_string(),
             color: self.color.clone(),
             font: font_details.clone(),
         };
         renderer
             .texture_manager()
             .load_text(&mut details, &font)
-            .unwrap_or_else(|_| panic!("Could not create texture for {:?}", c));
+            .unwrap_or_else(|_| panic!("Could not create texture for {:?}", self.text_character));
 
         self.pending = false;
         UpdateResult::RefreshPositions
@@ -95,6 +97,10 @@ impl TextCharacter {
     #[inline]
     pub fn is_pending(&self) -> bool {
         self.pending
+    }
+
+    pub fn position(&self) -> usize {
+        self.position
     }
 }
 
@@ -140,7 +146,10 @@ impl Update for TextCharacter {
 
 impl ClickHandler for TextCharacter {
     fn on_left_click(&mut self, _point: &Point, _config: &Config) -> UpdateResult {
-        UpdateResult::MoveCaret(self.dest().clone())
+        UpdateResult::MoveCaret(
+            self.dest().clone(),
+            self.position()
+        )
     }
 
     fn is_left_click_target(&self, point: &Point) -> bool {

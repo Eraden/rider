@@ -1,10 +1,12 @@
+use sdl2::rect::{Point, Rect};
+
 use crate::app::{UpdateResult, WindowCanvas};
 use crate::config::Config;
-use crate::file::editor_file_token::EditorFileToken;
+use crate::ui::file::editor_file_token::EditorFileToken;
 use crate::lexer::Language;
 use crate::renderer::Renderer;
 use crate::ui::*;
-use sdl2::rect::{Point, Rect};
+use crate::ui::text_character::TextCharacter;
 
 #[derive(Clone)]
 pub struct EditorFileSection {
@@ -30,6 +32,15 @@ impl EditorFileSection {
         for c in self.tokens.iter_mut() {
             c.update_position(current, config);
         }
+    }
+
+    pub fn get_character_at(&self, index: usize) -> Option<&TextCharacter> {
+        for token in self.tokens.iter() {
+            if let Some(text_character) = token.get_character_at(index) {
+                return Some(text_character)
+            }
+        }
+        None
     }
 }
 

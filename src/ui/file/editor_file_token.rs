@@ -31,6 +31,15 @@ impl EditorFileToken {
         }
     }
 
+    pub fn get_character_at(&self, index: usize) -> Option<&TextCharacter> {
+        for character in self.characters.iter() {
+            if character.position() == index {
+                return Some(&character)
+            }
+        }
+        None
+    }
+
     fn update_view(&mut self, renderer: &mut Renderer) -> UpdateResult {
         let config = renderer.config().theme().code_highlighting();
         let color: Color = match self.token_type {
@@ -44,9 +53,13 @@ impl EditorFileToken {
             TokenType::Operator { .. } => config.operator().color().into(),
             TokenType::Separator { .. } => config.separator().color().into(),
         };
-        for c in self.token_type.text().chars() {
-            let mut text_character =
-                TextCharacter::new(c.clone(), self.token_type.line(), color.clone());
+        for (index, c) in self.token_type.text().chars().enumerate() {
+            let mut text_character = TextCharacter::new(
+                c.clone(),
+                self.token_type.start() + index,
+                self.token_type.line(),
+                color.clone()
+            );
             text_character.update_view(renderer);
             self.characters.push(text_character);
         }

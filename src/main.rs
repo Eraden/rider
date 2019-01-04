@@ -15,7 +15,6 @@ use crate::app::Application;
 
 pub mod app;
 pub mod config;
-pub mod file;
 pub mod lexer;
 pub mod renderer;
 pub mod themes;

@@ -3,9 +3,11 @@ use crate::config::Config;
 use crate::renderer::Renderer;
 use crate::themes::*;
 use crate::ui::*;
+
 use sdl2::{Sdl, TimerSubsystem};
 use sdl2::event::Event;
 use sdl2::EventPump;
+use sdl2::keyboard::{Keycode, Mod};
 use sdl2::hint;
 use sdl2::mouse::MouseButton;
 use sdl2::pixels::Color;
@@ -16,6 +18,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 pub mod app_state;
+pub mod keyboard_handler;
 
 pub type WindowCanvas = Canvas<Window>;
 
@@ -25,7 +28,10 @@ pub enum UpdateResult {
     Stop,
     RefreshPositions,
     MouseLeftClicked(Point),
-    MoveCaret(Rect),
+    MoveCaret(Rect, usize),
+    DeleteFront,
+    DeleteBack,
+    Input(char)
 }
 
 pub enum Task {
@@ -86,15 +92,24 @@ impl Application {
                 UpdateResult::Stop => break 'running,
                 UpdateResult::RefreshPositions => (),
                 UpdateResult::NoOp => (),
-                UpdateResult::MoveCaret(_) => (),
+                UpdateResult::MoveCaret(_, _pos) => (),
                 UpdateResult::MouseLeftClicked(point) => {
                     app_state.on_left_click(&point, renderer.config());
                 }
+                UpdateResult::DeleteFront => {
+                    app_state.delete_front(renderer.config());
+                },
+                UpdateResult::DeleteBack => {
+                    app_state.delete_back(renderer.config());
+                },
+                UpdateResult::Input(text_character) => {
+                    app_state.insert_character(text_character, &mut renderer);
+                },
             }
             for task in self.tasks.iter() {
                 match task {
                     Task::OpenFile { file_path } => {
-                        use crate::file::editor_file::*;
+                        use crate::ui::file::editor_file::*;
                         app_state.open_file(file_path.clone(), renderer.config());
                     }
                 }
@@ -134,6 +149,17 @@ impl Application {
                     MouseButton::Left => return UpdateResult::MouseLeftClicked(Point::new(x, y)),
                     _ => (),
                 },
+                Event::KeyDown { keycode, .. } => {
+                    let keycode = if keycode.is_some() {
+                        keycode.unwrap()
+                    } else {
+                        return UpdateResult::NoOp;
+                    };
+                    return keyboard_handler::resolve_action(
+                        keycode,
+                    event_pump
+                    );
+                }
                 _ => (),
             }
         }
