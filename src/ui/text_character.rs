@@ -1,10 +1,10 @@
 use crate::app::{UpdateResult, WindowCanvas};
 use crate::config::Config;
 use crate::lexer::TokenType;
-use crate::renderer::managers::FontDetails;
-use crate::renderer::managers::TextDetails;
+use crate::renderer::managers::{TextDetails, FontDetails};
 use crate::renderer::Renderer;
 use crate::ui::*;
+use crate::ui::caret::CaretPosition;
 
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
@@ -79,7 +79,11 @@ impl TextCharacter {
             .load(&font_details)
             .unwrap_or_else(|_| panic!("Font not found {:?}", font_details));
 
-        if let Some(rect) = get_text_character_rect(self.text_character.clone(), renderer) {
+        let c = match self.text_character {
+            '\n' => 'W',
+            c => c,
+        };
+        if let Some(rect) = get_text_character_rect(c, renderer) {
             self.source = rect.clone();
             self.dest = rect.clone();
         }
@@ -98,7 +102,7 @@ impl TextCharacter {
     }
 
     #[inline]
-    fn is_new_line(&self) -> bool {
+    pub fn is_new_line(&self) -> bool {
         self.text_character == '\n'
     }
 
@@ -109,6 +113,14 @@ impl TextCharacter {
 
     pub fn position(&self) -> usize {
         self.position
+    }
+
+    pub fn line(&self) -> usize {
+        self.line
+    }
+
+    pub fn text_character(&self) -> char {
+        self.text_character.clone()
     }
 }
 
@@ -154,7 +166,14 @@ impl Update for TextCharacter {
 
 impl ClickHandler for TextCharacter {
     fn on_left_click(&mut self, _point: &Point) -> UpdateResult {
-        UpdateResult::MoveCaret(self.dest().clone(), self.position())
+        UpdateResult::MoveCaret(
+            self.dest().clone(),
+            CaretPosition::new(
+                self.position(),
+                self.line(),
+                0,
+            ),
+        )
     }
 
     fn is_left_click_target(&self, point: &Point) -> bool {

@@ -48,6 +48,21 @@ impl EditorFileSection {
         }
         None
     }
+
+    pub fn get_line(&self, line: &usize) -> Option<Vec<&TextCharacter>> {
+        let mut vec: Vec<&TextCharacter> = vec![];
+        for token in self.tokens.iter() {
+            match token.get_line(line) {
+                Some(v) => vec.append(&mut v.clone()),
+                _ => (),
+            };
+        }
+        if vec.is_empty() {
+            None
+        } else {
+            Some(vec)
+        }
+    }
 }
 
 impl Render for EditorFileSection {

@@ -3,6 +3,7 @@ use crate::config::Config;
 use crate::renderer::Renderer;
 use crate::themes::*;
 use crate::ui::*;
+use crate::ui::caret::{CaretPosition,MoveDirection};
 
 use std::rc::Rc;
 use std::thread::sleep;
@@ -30,10 +31,15 @@ pub enum UpdateResult {
     Stop,
     RefreshPositions,
     MouseLeftClicked(Point),
-    MoveCaret(Rect, usize),
+    MoveCaret(Rect, CaretPosition),
     DeleteFront,
     DeleteBack,
     Input(String),
+    InsertNewLine,
+    MoveCaretLeft,
+    MoveCaretRight,
+    MoveCaretUp,
+    MoveCaretDown,
 }
 
 pub enum Task {
@@ -109,8 +115,22 @@ impl Application {
                     app_state.delete_back();
                 }
                 UpdateResult::Input(text) => {
-                    println!("text input: {}", text);
                     app_state.insert_text(text, &mut renderer);
+                }
+                UpdateResult::InsertNewLine => {
+                    app_state.insert_new_line(&mut renderer);
+                }
+                UpdateResult::MoveCaretLeft => {
+                    app_state.move_caret(MoveDirection::Left);
+                }
+                UpdateResult::MoveCaretRight => {
+                    app_state.move_caret(MoveDirection::Right);
+                }
+                UpdateResult::MoveCaretUp => {
+                    app_state.move_caret(MoveDirection::Up);
+                }
+                UpdateResult::MoveCaretDown => {
+                    app_state.move_caret(MoveDirection::Down);
                 }
             }
             for task in self.tasks.iter() {
@@ -165,6 +185,11 @@ impl Application {
                     match keycode {
                         Keycode::Backspace => return UpdateResult::DeleteFront,
                         Keycode::Delete => return UpdateResult::DeleteBack,
+                        Keycode::KpEnter | Keycode::Return => return UpdateResult::InsertNewLine,
+                        Keycode::Left => return UpdateResult::MoveCaretLeft,
+                        Keycode::Right => return UpdateResult::MoveCaretRight,
+                        Keycode::Up => return UpdateResult::MoveCaretUp,
+                        Keycode::Down => return UpdateResult::MoveCaretDown,
                         _ => UpdateResult::NoOp,
                     };
                 }

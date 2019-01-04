@@ -48,6 +48,23 @@ impl EditorFile {
         None
     }
 
+    pub fn get_line(&self, line: &usize) -> Option<Vec<&TextCharacter>> {
+        let mut vec: Vec<&TextCharacter> = vec![];
+
+        for section in self.sections.iter() {
+            match section.get_line(line) {
+                Some(v) => vec.append(&mut v.clone()),
+                _ => (),
+            }
+        }
+
+        if vec.is_empty() {
+            None
+        } else {
+            Some(vec)
+        }
+    }
+
     fn refresh_characters_position(&mut self) {
         let mut current: Rect = self.render_position.clone();
         for section in self.sections.iter_mut() {
