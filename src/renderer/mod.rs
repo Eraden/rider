@@ -1,12 +1,12 @@
 use crate::app::WindowCanvas;
 use crate::config::Config;
-use crate::renderer::managers::{FontManager, TextureManager};
 use crate::renderer::managers::TextDetails;
-use std::rc::Rc;
+use crate::renderer::managers::{FontManager, TextureManager};
 use sdl2::rect::{Point, Rect};
 use sdl2::render::{Texture, TextureCreator};
 use sdl2::ttf::Sdl2TtfContext;
 use sdl2::video::WindowContext;
+use std::rc::Rc;
 
 pub mod managers;
 

@@ -2,13 +2,13 @@ use sdl2::rect::{Point, Rect};
 
 use crate::app::{UpdateResult, WindowCanvas};
 use crate::config::Config;
-use crate::renderer::Renderer;
 use crate::renderer::managers::FontDetails;
+use crate::renderer::Renderer;
 
 pub mod caret;
+pub mod file;
 pub mod menu_bar;
 pub mod text_character;
-pub mod file;
 
 pub fn is_in_rect(point: &Point, rect: &Rect) -> bool {
     let start = Point::new(rect.x(), rect.y());

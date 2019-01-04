@@ -1,6 +1,6 @@
 use crate::config::directories::*;
 use sdl2::pixels::Color;
-use serde::ser::{Serialize, SerializeMap, Serializer, SerializeSeq};
+use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
 use serde_json;
 use std::env;
 use std::fs;

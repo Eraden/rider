@@ -4,24 +4,23 @@ use crate::renderer::Renderer;
 use crate::themes::*;
 use crate::ui::*;
 
+use std::rc::Rc;
 use std::thread::sleep;
 use std::time::Duration;
-use std::rc::Rc;
 
-use sdl2::{Sdl, VideoSubsystem, TimerSubsystem};
 use sdl2::event::Event;
-use sdl2::EventPump;
-use sdl2::keyboard::{Keycode, Mod};
 use sdl2::hint;
+use sdl2::keyboard::{Keycode, Mod};
 use sdl2::mouse::MouseButton;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Canvas;
-use sdl2::video::Window;
 use sdl2::ttf::Sdl2TtfContext;
+use sdl2::video::Window;
+use sdl2::EventPump;
+use sdl2::{Sdl, TimerSubsystem, VideoSubsystem};
 
 pub mod app_state;
-pub mod keyboard_handler;
 
 pub type WindowCanvas = Canvas<Window>;
 
@@ -34,7 +33,7 @@ pub enum UpdateResult {
     MoveCaret(Rect, usize),
     DeleteFront,
     DeleteBack,
-    Input(char)
+    Input(String),
 }
 
 pub enum Task {
@@ -70,7 +69,6 @@ impl Application {
             .unwrap();
 
         let canvas = window.into_canvas().accelerated().build().unwrap();
-//        let font_context = Rc::new(sdl2::ttf::init().unwrap());
 
         Self {
             sdl_context,
@@ -102,17 +100,18 @@ impl Application {
                 UpdateResult::NoOp => (),
                 UpdateResult::MoveCaret(_, _pos) => (),
                 UpdateResult::MouseLeftClicked(point) => {
-                    app_state.on_left_click(&point);
+                    app_state.on_left_click(&point, &mut self.video_subsystem);
                 }
                 UpdateResult::DeleteFront => {
                     app_state.delete_front();
-                },
+                }
                 UpdateResult::DeleteBack => {
                     app_state.delete_back();
-                },
-                UpdateResult::Input(text_character) => {
-                    app_state.insert_character(text_character, &mut renderer);
-                },
+                }
+                UpdateResult::Input(text) => {
+                    println!("text input: {}", text);
+                    app_state.insert_text(text, &mut renderer);
+                }
             }
             for task in self.tasks.iter() {
                 match task {
@@ -163,10 +162,15 @@ impl Application {
                     } else {
                         return UpdateResult::NoOp;
                     };
-                    return keyboard_handler::resolve_action(
-                        keycode,
-                    event_pump
-                    );
+                    match keycode {
+                        Keycode::Backspace => return UpdateResult::DeleteFront,
+                        Keycode::Delete => return UpdateResult::DeleteBack,
+                        _ => UpdateResult::NoOp,
+                    };
+                }
+                Event::TextInput { text, .. } => {
+                    println!("text input: {}", text);
+                    return UpdateResult::Input(text);
                 }
                 _ => (),
             }

@@ -6,11 +6,11 @@ use crate::renderer::managers::TextDetails;
 use crate::renderer::Renderer;
 use crate::ui::*;
 
-use std::rc::Rc;
 use sdl2::pixels::Color;
-use sdl2::rect::{Rect, Point};
+use sdl2::rect::{Point, Rect};
 use sdl2::render::Texture;
 use sdl2::ttf::Font;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct TextCharacter {
@@ -21,11 +21,17 @@ pub struct TextCharacter {
     source: Rect,
     dest: Rect,
     color: Color,
-    config: Rc<Config>
+    config: Rc<Config>,
 }
 
 impl TextCharacter {
-    pub fn new(text_character: char, position: usize, line: usize, color: Color, config: Rc<Config>) -> Self {
+    pub fn new(
+        text_character: char,
+        position: usize,
+        line: usize,
+        color: Color,
+        config: Rc<Config>,
+    ) -> Self {
         Self {
             pending: true,
             text_character,
@@ -34,7 +40,7 @@ impl TextCharacter {
             source: Rect::new(0, 0, 0, 0),
             dest: Rect::new(0, 0, 0, 0),
             color,
-            config
+            config,
         }
     }
 
@@ -148,10 +154,7 @@ impl Update for TextCharacter {
 
 impl ClickHandler for TextCharacter {
     fn on_left_click(&mut self, _point: &Point) -> UpdateResult {
-        UpdateResult::MoveCaret(
-            self.dest().clone(),
-            self.position()
-        )
+        UpdateResult::MoveCaret(self.dest().clone(), self.position())
     }
 
     fn is_left_click_target(&self, point: &Point) -> bool {

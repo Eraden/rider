@@ -147,7 +147,7 @@ impl Token {
 pub fn parse(text: String, language: Language) -> Vec<TokenType> {
     match language {
         Language::PlainText => plain::lexer::Lexer::new(text.as_str())
-            //            .inspect(|tok| println!("tok: {:?}", tok))
+//            .inspect(|tok| println!("tok: {:?}", tok))
             .map(|t| t.0)
             .collect(),
     }

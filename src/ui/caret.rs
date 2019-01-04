@@ -1,12 +1,12 @@
 use crate::app::{UpdateResult, WindowCanvas};
 use crate::config::Config;
 use crate::renderer::Renderer;
-use crate::ui::*;
 use crate::ui::text_character::TextCharacter;
-use std::rc::Rc;
+use crate::ui::*;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Texture;
+use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq)]
 enum CaretState {
@@ -14,11 +14,12 @@ enum CaretState {
     Blur,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct Caret {
     pending: bool,
     text_position: usize,
     blink_delay: u8,
-    config: Rc<Config>,
+//    config: Rc<Config>,
     state: CaretState,
     dest: Rect,
     reset_position: Rect,
@@ -49,7 +50,7 @@ impl Caret {
             blur_character_color,
             pending: true,
             text_position: 0,
-            config,
+//            config,
         }
     }
 
@@ -96,10 +97,7 @@ impl Render for Caret {
             self.pending = false;
         }
         let start = Point::new(self.dest.x(), self.dest.y());
-        let end = Point::new(
-            self.dest.x(),
-            self.dest.y() + self.dest.height() as i32,
-        );
+        let end = Point::new(self.dest.x(), self.dest.y() + self.dest.height() as i32);
         let color = match self.state {
             CaretState::Bright => &self.bright_character_color,
             CaretState::Blur => &self.blur_character_color,

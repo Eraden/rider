@@ -3,19 +3,19 @@ use crate::config::Config;
 use crate::lexer::TokenType;
 use crate::renderer::managers::{FontDetails, TextDetails};
 use crate::renderer::Renderer;
-use crate::ui::*;
 use crate::ui::text_character::*;
-use std::rc::Rc;
+use crate::ui::*;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Texture;
 use sdl2::ttf::Font;
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct EditorFileToken {
     characters: Vec<TextCharacter>,
     token_type: TokenType,
-    config: Rc<Config>
+    config: Rc<Config>,
 }
 
 impl EditorFileToken {
@@ -23,7 +23,7 @@ impl EditorFileToken {
         Self {
             characters: vec![],
             token_type,
-            config
+            config,
         }
     }
 
@@ -36,7 +36,7 @@ impl EditorFileToken {
     pub fn get_character_at(&self, index: usize) -> Option<&TextCharacter> {
         for character in self.characters.iter() {
             if character.position() == index {
-                return Some(&character)
+                return Some(&character);
             }
         }
         None
@@ -61,7 +61,7 @@ impl EditorFileToken {
                 self.token_type.start() + index,
                 self.token_type.line(),
                 color.clone(),
-                    self.config.clone()
+                self.config.clone(),
             );
             text_character.update_view(renderer);
             self.characters.push(text_character);

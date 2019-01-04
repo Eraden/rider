@@ -1,13 +1,13 @@
-use std::rc::Rc;
 use sdl2::rect::{Point, Rect};
+use std::rc::Rc;
 
 use crate::app::{UpdateResult, WindowCanvas};
 use crate::config::Config;
-use crate::ui::file::editor_file_token::EditorFileToken;
 use crate::lexer::Language;
 use crate::renderer::Renderer;
-use crate::ui::*;
+use crate::ui::file::editor_file_token::EditorFileToken;
 use crate::ui::text_character::TextCharacter;
+use crate::ui::*;
 
 #[derive(Clone)]
 pub struct EditorFileSection {
@@ -27,7 +27,11 @@ impl EditorFileSection {
             tokens.push(token.clone());
         }
         let language = Language::PlainText;
-        Self { tokens, language, config }
+        Self {
+            tokens,
+            language,
+            config,
+        }
     }
 
     pub fn update_positions(&mut self, current: &mut Rect) {
@@ -39,7 +43,7 @@ impl EditorFileSection {
     pub fn get_character_at(&self, index: usize) -> Option<&TextCharacter> {
         for token in self.tokens.iter() {
             if let Some(text_character) = token.get_character_at(index) {
-                return Some(text_character)
+                return Some(text_character);
             }
         }
         None

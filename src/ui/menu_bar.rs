@@ -2,9 +2,9 @@ use crate::app::{UpdateResult, WindowCanvas};
 use crate::config::Config;
 use crate::renderer::Renderer;
 use crate::ui::*;
-use std::rc::Rc;
 use sdl2::pixels::Color;
-use sdl2::rect::{Rect, Point};
+use sdl2::rect::{Point, Rect};
+use std::rc::Rc;
 
 pub struct MenuBar {
     background_color: Color,
