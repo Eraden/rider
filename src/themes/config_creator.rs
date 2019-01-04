@@ -102,9 +102,9 @@ fn railscasts_theme() -> Theme {
             },
             identifier: ThemeConfig {
                 color: SerdeColor {
-                    r: 21,
-                    g: 21,
-                    b: 21,
+                    r: 121,
+                    g: 121,
+                    b: 121,
                     a: 0,
                 },
                 italic: false,
@@ -112,9 +112,9 @@ fn railscasts_theme() -> Theme {
             },
             literal: ThemeConfig {
                 color: SerdeColor {
-                    r: 21,
-                    g: 21,
-                    b: 21,
+                    r: 121,
+                    g: 121,
+                    b: 121,
                     a: 0,
                 },
                 italic: false,
@@ -142,9 +142,9 @@ fn railscasts_theme() -> Theme {
             },
             separator: ThemeConfig {
                 color: SerdeColor {
-                    r: 21,
-                    g: 21,
-                    b: 21,
+                    r: 121,
+                    g: 121,
+                    b: 121,
                     a: 0,
                 },
                 italic: false,

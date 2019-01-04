@@ -1,10 +1,10 @@
 use crate::app::{UpdateResult, WindowCanvas};
 use crate::config::Config;
 use crate::lexer::TokenType;
-use crate::renderer::managers::{TextDetails, FontDetails};
+use crate::renderer::managers::{FontDetails, TextDetails};
 use crate::renderer::Renderer;
-use crate::ui::*;
 use crate::ui::caret::CaretPosition;
+use crate::ui::*;
 
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
@@ -168,11 +168,7 @@ impl ClickHandler for TextCharacter {
     fn on_left_click(&mut self, _point: &Point) -> UpdateResult {
         UpdateResult::MoveCaret(
             self.dest().clone(),
-            CaretPosition::new(
-                self.position(),
-                self.line(),
-                0,
-            ),
+            CaretPosition::new(self.position(), self.line(), 0),
         )
     }
 

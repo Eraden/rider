@@ -1,6 +1,12 @@
 use dirs;
 use std::path::PathBuf;
 
+pub fn log_dir() -> PathBuf {
+    let mut log_dir = config_dir();
+    log_dir.push("log");
+    log_dir
+}
+
 pub fn themes_dir() -> PathBuf {
     let mut themes_dir = config_dir();
     themes_dir.push("themes");

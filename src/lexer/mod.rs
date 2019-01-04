@@ -6,6 +6,7 @@ pub mod rust_lang;
 #[derive(Debug, Clone)]
 pub enum Language {
     PlainText,
+    Rust,
 }
 
 #[derive(Debug, Clone)]
@@ -144,10 +145,13 @@ impl Token {
     }
 }
 
-pub fn parse(text: String, language: Language) -> Vec<TokenType> {
+pub fn parse(text: String, language: &Language) -> Vec<TokenType> {
     match language {
-        Language::PlainText => plain::lexer::Lexer::new(text.as_str())
+        &Language::PlainText => plain::lexer::Lexer::new(text.as_str())
             //            .inspect(|tok| println!("tok: {:?}", tok))
+            .map(|t| t.0)
+            .collect(),
+        &Language::Rust => rust_lang::lexer::Lexer::new(text.as_str())
             .map(|t| t.0)
             .collect(),
     }

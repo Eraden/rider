@@ -19,9 +19,18 @@ pub struct EditorFile {
 
 impl EditorFile {
     pub fn new(path: String, buffer: String, config: Rc<Config>) -> Self {
-        let sections = vec![EditorFileSection::new(buffer.clone(), config.clone())];
+        use std::path::Path;
+
+        let p = Path::new(&path);
+        let ext = match p.extension() {
+            Some(s) => s.to_str().unwrap_or("txt"),
+            None => "txt",
+        }
+        .to_string();
+        let sections = vec![EditorFileSection::new(buffer.clone(), ext, config.clone())];
         let x = config.editor_left_margin();
         let y = config.editor_top_margin();
+
         Self {
             path,
             sections,

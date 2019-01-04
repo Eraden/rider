@@ -45,21 +45,28 @@ impl EditorFileToken {
     pub fn get_line(&self, line: &usize) -> Option<Vec<&TextCharacter>> {
         let mut vec: Vec<&TextCharacter> = vec![];
         for c in self.characters.iter() {
-            let _tmp = (line.clone(), c.line().clone(), self.token_type.is_new_line(), c.text_character());
-            match (line.clone(), c.line().clone(), self.token_type.is_new_line()) {
+            let _tmp = (
+                line.clone(),
+                c.line().clone(),
+                self.token_type.is_new_line(),
+                c.text_character(),
+            );
+            match (
+                line.clone(),
+                c.line().clone(),
+                self.token_type.is_new_line(),
+            ) {
                 (0, 0, true) => {
                     vec.push(c);
-                },
+                }
                 (a, b, true) if (a + 1) == b => {
                     vec.push(c);
-                },
-                (a, b, true) if a != (b + 1) =>
-                    (),
+                }
+                (a, b, true) if a != (b + 1) => (),
                 (a, b, false) if a == b => {
                     vec.push(c);
                 }
-                _t =>
-                    (),
+                _t => (),
             }
         }
         if vec.is_empty() {

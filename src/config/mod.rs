@@ -1,9 +1,13 @@
+use crate::lexer::Language;
 use crate::themes::Theme;
 use dirs;
+use std::collections::HashMap;
 use std::fs;
 
 mod creator;
 pub mod directories;
+
+type LanguageMapping = HashMap<String, Language>;
 
 #[derive(Debug, Clone)]
 pub struct EditorConfig {
@@ -19,7 +23,7 @@ impl EditorConfig {
         let mut default_font_path = directories::fonts_dir();
         default_font_path.push("DejaVuSansMono.ttf");
         Self {
-            character_size: 24,
+            character_size: 16,
             font_path: default_font_path.to_str().unwrap().to_string(),
             current_theme: "railscasts".to_string(),
             margin_left: 10,
@@ -55,18 +59,25 @@ pub struct Config {
     menu_height: u16,
     editor_config: EditorConfig,
     theme: Theme,
+    extensions_mapping: LanguageMapping,
 }
 
 impl Config {
     pub fn new() -> Self {
         creator::create();
         let editor_config = EditorConfig::new();
+        let mut extensions_mapping = HashMap::new();
+        extensions_mapping.insert(".".to_string(), Language::PlainText);
+        extensions_mapping.insert("txt".to_string(), Language::PlainText);
+        extensions_mapping.insert("rs".to_string(), Language::Rust);
+
         Self {
             width: 1024,
             height: 860,
             menu_height: 60,
             theme: Theme::load(editor_config.current_theme().clone()),
             editor_config,
+            extensions_mapping,
         }
     }
     pub fn width(&self) -> u32 {
@@ -95,5 +106,9 @@ impl Config {
 
     pub fn editor_left_margin(&self) -> i32 {
         self.editor_config().margin_left() as i32
+    }
+
+    pub fn extensions_mapping(&self) -> &LanguageMapping {
+        &self.extensions_mapping
     }
 }

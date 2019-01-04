@@ -11,7 +11,11 @@ pub mod lexer {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 
-        r"(let|fn|type|struct|pub|impl|for|self|Self)" => (TokenType::Keyword {
+        r"[+-/*%=]" => (TokenType::Operator {
+            token: Token::new(text.to_string(), 0, 0, 0, 0)
+        }, text),
+
+        r"(let|fn|type|struct|pub|impl|for|self|Self|mod|use|enum)" => (TokenType::Keyword {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 

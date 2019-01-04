@@ -15,6 +15,10 @@ pub fn create() {
             .unwrap_or_else(|_| panic!("Cannot create fonts config directory"));
         write_default_fonts();
     }
+
+    if !log_dir().exists() {
+        fs::create_dir_all(&log_dir()).unwrap_or_else(|_| panic!("Cannot create log directory"));
+    }
 }
 
 fn write_default_fonts() {

@@ -1,9 +1,9 @@
-use crate::app::app_state::AppState;
-use crate::config::Config;
-use crate::renderer::Renderer;
+pub use crate::app::app_state::AppState;
+pub use crate::config::Config;
+pub use crate::renderer::Renderer;
 use crate::themes::*;
+use crate::ui::caret::{CaretPosition, MoveDirection};
 use crate::ui::*;
-use crate::ui::caret::{CaretPosition,MoveDirection};
 
 use std::rc::Rc;
 use std::thread::sleep;
@@ -22,6 +22,8 @@ use sdl2::EventPump;
 use sdl2::{Sdl, TimerSubsystem, VideoSubsystem};
 
 pub mod app_state;
+pub mod caret_manager;
+pub mod file_content_manager;
 
 pub type WindowCanvas = Canvas<Window>;
 
@@ -201,5 +203,9 @@ impl Application {
             }
         }
         UpdateResult::NoOp
+    }
+
+    pub fn config(&self) -> &Rc<Config> {
+        &self.config
     }
 }

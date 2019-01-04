@@ -1,5 +1,5 @@
 [package]
-name = "editor"
+name = "rider"
 version = "0.1.0"
 authors = ["Adrian Wozniak <adrian.wozniak@ita-prog.pl>"]
 edition = "2018"
@@ -11,6 +11,9 @@ dirs = "*"
 serde = "*"
 serde_json = "*"
 serde_derive = "*"
+log = "*"
+env_logger = "*"
+simplelog = "*"
 
 [dependencies.sdl2]
 version = "0.31.0"

@@ -17,9 +17,14 @@ pub struct EditorFileSection {
 }
 
 impl EditorFileSection {
-    pub fn new(buffer: String, config: Rc<Config>) -> Self {
+    pub fn new(buffer: String, ext: String, config: Rc<Config>) -> Self {
         use crate::lexer;
-        let lexer_tokens = lexer::parse(buffer.clone(), Language::PlainText);
+
+        let language = config
+            .extensions_mapping()
+            .get(ext.as_str())
+            .unwrap_or(&Language::PlainText);
+        let lexer_tokens = lexer::parse(buffer.clone(), language);
 
         let mut tokens: Vec<EditorFileToken> = vec![];
         for token_type in lexer_tokens {

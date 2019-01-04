@@ -6,8 +6,8 @@ use crate::ui::*;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Texture;
-use std::rc::Rc;
 use std::ops::Deref;
+use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq)]
 enum CaretState {
@@ -20,7 +20,7 @@ pub enum MoveDirection {
     Left,
     Right,
     Up,
-    Down
+    Down,
 }
 
 //#[derive(Clone, Debug, PartialEq)]
@@ -42,11 +42,11 @@ pub struct CaretPosition {
 }
 
 impl CaretPosition {
-    pub fn new(text_position: usize, line_number: usize, line_position: usize,) -> Self {
+    pub fn new(text_position: usize, line_number: usize, line_position: usize) -> Self {
         Self {
             text_position,
             line_number,
-            line_position
+            line_position,
         }
     }
 
@@ -80,11 +80,11 @@ impl CaretPosition {
         self.line_position = n;
     }
 
-    pub fn moved(&self, text_position: usize, line_number: usize, line_position: usize) -> Self {
+    pub fn moved(&self, text_position: i32, line_number: i32, line_position: i32) -> Self {
         Self {
-            text_position: self.text_position + text_position,
-            line_number: self.line_number + line_number,
-            line_position: self.line_position + line_position
+            text_position: (self.text_position as i32 + text_position) as usize,
+            line_number: (self.line_number as i32 + line_number) as usize,
+            line_position: (self.line_position as i32 + line_position) as usize,
         }
     }
 }

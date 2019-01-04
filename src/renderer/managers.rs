@@ -127,7 +127,7 @@ impl<'l> ResourceLoader<'l, Font<'l, 'static>> for Sdl2TtfContext {
     type Args = FontDetails;
 
     fn load(&'l self, data: &FontDetails) -> Result<Font<'l, 'static>, String> {
-        println!("Loading font {}...", data.path);
+        info!("Loading font {}...", data.path);
         self.load_font(&data.path, data.size)
     }
 }
@@ -149,7 +149,9 @@ impl<'l, T> TextureManager<'l, T> {
                 let texture = self.loader.create_texture_from_surface(&surface).unwrap();
                 let resource = Rc::new(texture);
                 self.cache.insert(key, resource.clone());
-                println!("texture for '{}' created", details.text);
+                for c in details.text.chars() {
+                    info!("texture for '{:?}' created", c);
+                }
                 Ok(resource)
             },
             Ok,
