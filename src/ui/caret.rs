@@ -121,6 +121,10 @@ pub struct CaretColor {
 }
 
 impl CaretColor {
+    pub fn new(bright: Color, blur: Color) -> Self {
+        Self { bright, blur }
+    }
+
     pub fn bright(&self) -> &Color {
         &self.bright
     }
