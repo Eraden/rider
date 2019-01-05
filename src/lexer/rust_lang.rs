@@ -7,11 +7,19 @@ pub mod lexer {
     lexer! {
         fn next_token(text: 'a) -> (TokenType, &'a str);
 
-        r"[ \t\r\n]" => (TokenType::Whitespace {
+        r"( +|\t+|\n+)" => (TokenType::Whitespace {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 
-        r"[+-/*%=]" => (TokenType::Operator {
+        r"(\d+|\d+\.\d+|'[\S]')" => (TokenType::Literal {
+            token: Token::new(text.to_string(), 0, 0, 0, 0)
+        }, text),
+
+        r"[+-/*%=<>]" => (TokenType::Operator {
+            token: Token::new(text.to_string(), 0, 0, 0, 0)
+        }, text),
+
+        r"(:|::|\{|\}|\[|\]|,)" => (TokenType::Separator {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 
@@ -19,7 +27,7 @@ pub mod lexer {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 
-        r"[^ \t\r\n]+" => (TokenType::Identifier {
+        r"[^ \t\r\n:+-/*,]+" => (TokenType::Identifier {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
     }

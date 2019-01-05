@@ -148,10 +148,11 @@ impl Token {
 pub fn parse(text: String, language: &Language) -> Vec<TokenType> {
     match language {
         &Language::PlainText => plain::lexer::Lexer::new(text.as_str())
-            //            .inspect(|tok| println!("tok: {:?}", tok))
+            .inspect(|tok| warn!("tok: {:?}", tok))
             .map(|t| t.0)
             .collect(),
         &Language::Rust => rust_lang::lexer::Lexer::new(text.as_str())
+            .inspect(|tok| warn!("tok: {:?}", tok))
             .map(|t| t.0)
             .collect(),
     }

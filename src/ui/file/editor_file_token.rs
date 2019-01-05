@@ -45,12 +45,6 @@ impl EditorFileToken {
     pub fn get_line(&self, line: &usize) -> Option<Vec<&TextCharacter>> {
         let mut vec: Vec<&TextCharacter> = vec![];
         for c in self.characters.iter() {
-            let _tmp = (
-                line.clone(),
-                c.line().clone(),
-                self.token_type.is_new_line(),
-                c.text_character(),
-            );
             match (
                 line.clone(),
                 c.line().clone(),
@@ -94,7 +88,7 @@ impl EditorFileToken {
                 c.clone(),
                 self.token_type.start() + index,
                 self.token_type.line(),
-                color.clone(),
+                color,
                 self.config.clone(),
             );
             text_character.update_view(renderer);

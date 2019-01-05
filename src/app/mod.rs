@@ -13,13 +13,15 @@ use sdl2::event::Event;
 use sdl2::hint;
 use sdl2::keyboard::{Keycode, Mod};
 use sdl2::mouse::MouseButton;
-use sdl2::pixels::Color;
+use sdl2::pixels::{Color, PixelFormatEnum};
+use sdl2::surface::Surface;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Canvas;
 use sdl2::ttf::Sdl2TtfContext;
 use sdl2::video::Window;
 use sdl2::EventPump;
 use sdl2::{Sdl, TimerSubsystem, VideoSubsystem};
+use sdl2::rwops::RWops;
 
 pub mod app_state;
 pub mod caret_manager;
@@ -61,6 +63,7 @@ impl Application {
     pub fn new() -> Self {
         let config = Rc::new(Config::new());
         let sdl_context = sdl2::init().unwrap();
+
         hint::set("SDL_GL_MULTISAMPLEBUFFERS", "1");
         hint::set("SDL_GL_MULTISAMPLESAMPLES", "8");
         hint::set("SDL_GL_ACCELERATED_VISUAL", "1");
@@ -69,12 +72,20 @@ impl Application {
 
         let video_subsystem = sdl_context.video().unwrap();
 
-        let window = video_subsystem
+        let mut window: Window = video_subsystem
             .window("Rider", config.width(), config.height())
             .position_centered()
             .opengl()
             .build()
             .unwrap();
+        let icon_bytes = include_bytes!("../../assets/gear-64x64.bmp").clone();
+        let mut rw = RWops::from_bytes(&icon_bytes).unwrap();
+        let mut icon = Surface::load_bmp_rw(&mut rw).unwrap();
+//        let mut icon = Surface::from_data(
+//            &mut icon_bytes,
+//            64, 64, 64, PixelFormatEnum::RGB24
+//        ).unwrap();
+        window.set_icon(&mut icon);
 
         let canvas = window.into_canvas().accelerated().build().unwrap();
 

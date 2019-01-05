@@ -23,7 +23,7 @@ impl EditorConfig {
         let mut default_font_path = directories::fonts_dir();
         default_font_path.push("DejaVuSansMono.ttf");
         Self {
-            character_size: 16,
+            character_size: 14,
             font_path: default_font_path.to_str().unwrap().to_string(),
             current_theme: "railscasts".to_string(),
             margin_left: 10,

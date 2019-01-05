@@ -132,7 +132,7 @@ fn railscasts_theme() -> Theme {
             },
             operator: ThemeConfig {
                 color: SerdeColor {
-                    r: 0,
+                    r: 200,
                     g: 0,
                     b: 0,
                     a: 0,
@@ -142,9 +142,9 @@ fn railscasts_theme() -> Theme {
             },
             separator: ThemeConfig {
                 color: SerdeColor {
-                    r: 121,
-                    g: 121,
-                    b: 121,
+                    r: 221,
+                    g: 221,
+                    b: 221,
                     a: 0,
                 },
                 italic: false,

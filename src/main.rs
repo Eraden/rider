@@ -46,10 +46,7 @@ fn init_logger() {
 fn main() {
     let mut app = Application::new();
     app.init();
-
     init_logger();
-
-    //    app.open_file("./assets/examples/example.txt".to_string());
     app.open_file("./assets/examples/test.rs".to_string());
     app.run();
 }
