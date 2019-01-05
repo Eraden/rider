@@ -7,11 +7,21 @@ use crate::renderer::Renderer;
 
 pub mod caret;
 pub mod file;
+pub mod file_editor;
 pub mod menu_bar;
+pub mod project_tree;
 pub mod text_character;
 
+pub use crate::ui::caret::*;
+pub use crate::ui::file::*;
+pub use crate::ui::file_editor::*;
+pub use crate::ui::menu_bar::*;
+pub use crate::ui::project_tree::*;
+pub use crate::ui::text_character::*;
+
+#[inline]
 pub fn is_in_rect(point: &Point, rect: &Rect) -> bool {
-    let start = Point::new(rect.x(), rect.y());
+    let start = rect.top_left();
     let end = Point::new(
         rect.x() + (rect.width() as i32),
         rect.y() + (rect.height() as i32),
@@ -35,8 +45,20 @@ pub fn get_text_character_rect(c: char, renderer: &mut Renderer) -> Option<Rect>
     }
 }
 
+#[inline]
+pub fn move_render_point(p: Point, d: &Rect) -> Rect {
+    Rect::new(d.x() + p.x(), d.y() + p.y(), d.width(), d.height())
+}
+
 pub trait Render {
-    fn render(&mut self, canvas: &mut WindowCanvas, renderer: &mut Renderer) -> UpdateResult;
+    fn render(
+        &self,
+        canvas: &mut WindowCanvas,
+        renderer: &mut Renderer,
+        parent: Option<&RenderBox>,
+    ) -> UpdateResult;
+
+    fn prepare_ui(&mut self, renderer: &mut Renderer);
 }
 
 pub trait Update {
@@ -47,4 +69,8 @@ pub trait ClickHandler {
     fn on_left_click(&mut self, point: &Point) -> UpdateResult;
 
     fn is_left_click_target(&self, point: &Point) -> bool;
+}
+
+pub trait RenderBox {
+    fn render_start_point(&self) -> Point;
 }

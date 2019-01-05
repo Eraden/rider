@@ -83,18 +83,23 @@ impl EditorFile {
 }
 
 impl Render for EditorFile {
-    fn render(&mut self, canvas: &mut WindowCanvas, renderer: &mut Renderer) -> UpdateResult {
-        let mut res = UpdateResult::NoOp;
-        for section in self.sections.iter_mut() {
-            res = section.render(canvas, renderer);
-        }
-        if res == UpdateResult::RefreshPositions {
-            self.refresh_characters_position();
-            for section in self.sections.iter_mut() {
-                section.render(canvas, renderer);
-            }
+    fn render(
+        &self,
+        canvas: &mut WindowCanvas,
+        renderer: &mut Renderer,
+        _parent: Option<&RenderBox>,
+    ) -> UpdateResult {
+        for section in self.sections.iter() {
+            section.render(canvas, renderer, Some(self));
         }
         UpdateResult::NoOp
+    }
+
+    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+        for section in self.sections.iter_mut() {
+            section.prepare_ui(renderer);
+        }
+        self.refresh_characters_position();
     }
 }
 
@@ -125,5 +130,11 @@ impl ClickHandler for EditorFile {
             }
         }
         false
+    }
+}
+
+impl RenderBox for EditorFile {
+    fn render_start_point(&self) -> Point {
+        self.render_position.top_left()
     }
 }

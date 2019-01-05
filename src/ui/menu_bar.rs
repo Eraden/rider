@@ -10,6 +10,7 @@ pub struct MenuBar {
     background_color: Color,
     dest: Rect,
     config: Rc<Config>,
+    pending: bool,
 }
 
 impl MenuBar {
@@ -18,6 +19,7 @@ impl MenuBar {
             background_color: Color::RGB(10, 10, 10),
             dest: Rect::new(0, 0, 0, 0),
             config,
+            pending: true,
         }
     }
 
@@ -31,13 +33,30 @@ impl MenuBar {
 }
 
 impl Render for MenuBar {
-    fn render(&mut self, canvas: &mut WindowCanvas, _renderer: &mut Renderer) -> UpdateResult {
+    fn render(
+        &self,
+        canvas: &mut WindowCanvas,
+        _renderer: &mut Renderer,
+        parent: Option<&RenderBox>,
+    ) -> UpdateResult {
+        canvas.set_draw_color(self.background_color.clone());
+        canvas
+            .draw_rect(match parent {
+                None => self.dest.clone(),
+                Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
+            })
+            .unwrap();
+        UpdateResult::NoOp
+    }
+
+    fn prepare_ui(&mut self, _renderer: &mut Renderer) {
+        if !self.pending {
+            return;
+        }
         let width = self.config.width();
         let height = self.config.menu_height() as u32;
         self.dest = Rect::new(0, 0, width, height);
-        canvas.set_draw_color(self.background_color.clone());
-        canvas.draw_rect(self.dest.clone()).unwrap();
-        UpdateResult::NoOp
+        self.pending = false;
     }
 }
 
@@ -54,5 +73,11 @@ impl ClickHandler for MenuBar {
 
     fn is_left_click_target(&self, point: &Point) -> bool {
         is_in_rect(point, self.dest())
+    }
+}
+
+impl RenderBox for MenuBar {
+    fn render_start_point(&self) -> Point {
+        self.dest.top_left()
     }
 }

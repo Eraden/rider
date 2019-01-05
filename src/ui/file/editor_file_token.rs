@@ -104,17 +104,26 @@ impl Render for EditorFileToken {
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    fn render(&mut self, canvas: &mut WindowCanvas, renderer: &mut Renderer) -> UpdateResult {
-        if self.characters.is_empty() {
-            return self.update_view(renderer);
-        }
+    fn render(
+        &self,
+        canvas: &mut WindowCanvas,
+        renderer: &mut Renderer,
+        parent: Option<&RenderBox>,
+    ) -> UpdateResult {
         if self.token_type.is_new_line() {
             return UpdateResult::NoOp;
         }
-        for text_character in self.characters.iter_mut() {
-            text_character.render(canvas, renderer);
+        for text_character in self.characters.iter() {
+            text_character.render(canvas, renderer, parent);
         }
         UpdateResult::NoOp
+    }
+
+    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+        if !self.characters.is_empty() {
+            return;
+        }
+        self.update_view(renderer);
     }
 }
 

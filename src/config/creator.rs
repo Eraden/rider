@@ -19,6 +19,11 @@ pub fn create() {
     if !log_dir().exists() {
         fs::create_dir_all(&log_dir()).unwrap_or_else(|_| panic!("Cannot create log directory"));
     }
+
+    if !project_dir().exists() {
+        fs::create_dir_all(&project_dir())
+            .unwrap_or_else(|_| panic!("Cannot create project directory"));
+    }
 }
 
 fn write_default_fonts() {

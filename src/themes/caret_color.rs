@@ -10,16 +10,8 @@ pub struct CaretColor {
 impl Default for CaretColor {
     fn default() -> Self {
         Self {
-            bright: ThemeConfig::new(
-                SerdeColor::new(0, 0, 0, 0),
-                false,
-                false,
-            ),
-            blur: ThemeConfig::new(
-                SerdeColor::new(0, 0, 0, 0),
-                false,
-                false,
-            ),
+            bright: ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false),
+            blur: ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false),
         }
     }
 }

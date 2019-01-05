@@ -129,10 +129,12 @@ impl Render for TextCharacter {
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    fn render(&mut self, canvas: &mut WindowCanvas, renderer: &mut Renderer) -> UpdateResult {
-        if self.is_pending() {
-            return self.update_view(renderer);
-        }
+    fn render(
+        &self,
+        canvas: &mut WindowCanvas,
+        renderer: &mut Renderer,
+        parent: Option<&RenderBox>,
+    ) -> UpdateResult {
         if self.is_new_line() {
             return UpdateResult::NoOp;
         }
@@ -152,9 +154,21 @@ impl Render for TextCharacter {
             font: font_details.clone(),
         };
         if let Ok(texture) = renderer.texture_manager().load_text(&mut details, &font) {
-            renderer.render_texture(canvas, &texture, &self.source, &self.dest);
+            let dest = match parent {
+                None => self.dest.clone(),
+                Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
+            };
+            renderer.render_texture(canvas, &texture, &self.source, &dest);
         }
         UpdateResult::NoOp
+    }
+
+    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+        if !self.is_pending() {
+            return;
+        }
+        self.update_view(renderer);
+        self.pending = false;
     }
 }
 
@@ -174,5 +188,11 @@ impl ClickHandler for TextCharacter {
 
     fn is_left_click_target(&self, point: &Point) -> bool {
         is_in_rect(point, self.dest())
+    }
+}
+
+impl RenderBox for TextCharacter {
+    fn render_start_point(&self) -> Point {
+        self.dest.top_left()
     }
 }

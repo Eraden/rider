@@ -71,15 +71,22 @@ impl EditorFileSection {
 }
 
 impl Render for EditorFileSection {
-    fn render(&mut self, canvas: &mut WindowCanvas, renderer: &mut Renderer) -> UpdateResult {
-        let mut res = UpdateResult::NoOp;
-        for character in self.tokens.iter_mut() {
-            let r = character.render(canvas, renderer);
-            if res == UpdateResult::NoOp {
-                res = r;
-            }
+    fn render(
+        &self,
+        canvas: &mut WindowCanvas,
+        renderer: &mut Renderer,
+        parent: Option<&RenderBox>,
+    ) -> UpdateResult {
+        for token in self.tokens.iter() {
+            token.render(canvas, renderer, parent);
         }
-        res
+        UpdateResult::NoOp
+    }
+
+    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+        for token in self.tokens.iter_mut() {
+            token.prepare_ui(renderer);
+        }
     }
 }
 

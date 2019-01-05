@@ -35,11 +35,12 @@ impl AppState {
         }
     }
 
-    pub fn open_file(&mut self, file_path: String) {
+    pub fn open_file(&mut self, file_path: String, renderer: &mut Renderer) {
         use std::fs::read_to_string;
 
         if let Ok(buffer) = read_to_string(&file_path) {
-            let file = EditorFile::new(file_path.clone(), buffer, self.config.clone());
+            let mut file = EditorFile::new(file_path.clone(), buffer, self.config.clone());
+            file.prepare_ui(renderer);
             self.current_file = self.files.len();
             self.files.push(file);
         } else {
@@ -119,13 +120,23 @@ impl AppState {
 }
 
 impl Render for AppState {
-    fn render(&mut self, canvas: &mut WindowCanvas, renderer: &mut Renderer) -> UpdateResult {
-        self.menu_bar.render(canvas, renderer);
-        if let Some(file) = self.current_file_mut() {
-            file.render(canvas, renderer);
+    fn render(
+        &self,
+        canvas: &mut WindowCanvas,
+        renderer: &mut Renderer,
+        _parent: Option<&RenderBox>,
+    ) -> UpdateResult {
+        self.menu_bar.render(canvas, renderer, None);
+        if let Some(file) = self.current_file() {
+            file.render(canvas, renderer, None);
         }
-        self.caret.render(canvas, renderer);
+        self.caret.render(canvas, renderer, None);
         UpdateResult::NoOp
+    }
+
+    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+        self.menu_bar.prepare_ui(renderer);
+        self.caret.prepare_ui(renderer);
     }
 }
 

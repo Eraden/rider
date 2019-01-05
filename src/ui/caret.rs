@@ -10,7 +10,7 @@ use std::ops::Deref;
 use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq)]
-enum CaretState {
+pub enum CaretState {
     Bright,
     Blur,
 }
@@ -208,31 +208,46 @@ impl Deref for Caret {
 }
 
 impl Render for Caret {
-    fn render(&mut self, canvas: &mut WindowCanvas, renderer: &mut Renderer) -> UpdateResult {
-        if self.pending {
-            if let Some(rect) = get_text_character_rect('W', renderer) {
-                let mut dest = self.render_position.dest().clone();
-                dest.set_height(rect.height());
-                let reset_position = dest.clone();
-                self.render_position = CaretRenderPosition {
-                    dest,
-                    reset_position,
-                };
+    fn render(
+        &self,
+        canvas: &mut WindowCanvas,
+        _renderer: &mut Renderer,
+        parent: Option<&RenderBox>,
+    ) -> UpdateResult {
+        let dest = match parent {
+            Some(parent) => {
+                move_render_point(parent.render_start_point(), self.render_position.dest())
             }
-            self.pending = false;
-        }
-        let dest = self.render_position.dest();
+            None => self.render_position.dest().clone(),
+        };
         let start = Point::new(dest.x(), dest.y());
         let end = Point::new(dest.x(), dest.y() + dest.height() as i32);
         let color = match self.state {
             CaretState::Bright => self.colors.bright(),
             CaretState::Blur => self.colors.blur(),
-        };
-        canvas.set_draw_color(color.clone());
+        }.clone();
+        canvas.set_draw_color(color);
         canvas
             .draw_line(start, end)
             .unwrap_or_else(|_| panic!("Failed to draw a caret"));
         UpdateResult::NoOp
+    }
+
+    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+        if !self.pending {
+            return;
+        }
+
+        if let Some(rect) = get_text_character_rect('W', renderer) {
+            let mut dest = self.render_position.dest().clone();
+            dest.set_height(rect.height());
+            let reset_position = dest.clone();
+            self.render_position = CaretRenderPosition {
+                dest,
+                reset_position,
+            };
+        }
+        self.pending = false;
     }
 }
 
@@ -255,5 +270,11 @@ impl ClickHandler for Caret {
 
     fn is_left_click_target(&self, point: &Point) -> bool {
         is_in_rect(point, &self.render_position.dest())
+    }
+}
+
+impl RenderBox for Caret {
+    fn render_start_point(&self) -> Point {
+        self.render_position.dest().top_left()
     }
 }
