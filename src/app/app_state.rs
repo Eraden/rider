@@ -14,29 +14,21 @@ use sdl2::rect::{Point, Rect};
 use sdl2::VideoSubsystem as VS;
 use std::boxed::Box;
 use std::rc::Rc;
-use std::sync::Arc;
+use std::sync::*;
 
 pub struct AppState {
     menu_bar: MenuBar,
     files: Vec<EditorFile>,
-    config: Rc<Config>,
+    config: Arc<RwLock<Config>>,
     file_editor: FileEditor,
 }
 
 impl AppState {
-    pub fn new(config: Rc<Config>) -> Self {
+    pub fn new(config: Arc<RwLock<Config>>) -> Self {
         Self {
-            menu_bar: MenuBar::new(config.clone()),
+            menu_bar: MenuBar::new(Arc::clone(&config)),
             files: vec![],
-            file_editor: FileEditor::new(
-                Rect::new(
-                    config.editor_left_margin(),
-                    config.editor_top_margin(),
-                    config.width() - config.editor_left_margin() as u32,
-                    config.height() - config.editor_top_margin() as u32,
-                ),
-                config.clone(),
-            ),
+            file_editor: FileEditor::new(Arc::clone(&config)),
             config,
         }
     }
@@ -56,7 +48,7 @@ impl AppState {
         };
     }
 
-    pub fn config(&self) -> &Rc<Config> {
+    pub fn config(&self) -> &Arc<RwLock<Config>> {
         &self.config
     }
 

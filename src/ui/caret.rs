@@ -8,6 +8,7 @@ use sdl2::rect::{Point, Rect};
 use sdl2::render::Texture;
 use std::ops::Deref;
 use std::rc::Rc;
+use std::sync::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CaretState {
@@ -126,9 +127,10 @@ pub struct Caret {
 }
 
 impl Caret {
-    pub fn new(config: Rc<Config>) -> Self {
-        let bright = config.theme().caret().bright().color().into();
-        let blur = config.theme().caret().blur().color().into();
+    pub fn new(config: Arc<RwLock<Config>>) -> Self {
+        let read_config = config.read().unwrap();
+        let bright = read_config.theme().caret().bright().color().into();
+        let blur = read_config.theme().caret().blur().color().into();
         Self {
             state: CaretState::Bright,
             blink_delay: 0,

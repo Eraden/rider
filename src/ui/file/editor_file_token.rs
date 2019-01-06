@@ -9,20 +9,22 @@ use sdl2::rect::{Point, Rect};
 use sdl2::render::Texture;
 use sdl2::ttf::Font;
 use std::rc::Rc;
+use std::sync::*;
 
 impl TokenType {
-    pub fn to_color(&self, config: &Rc<Config>) -> Color {
-        let config = config.theme().code_highlighting();
+    pub fn to_color(&self, config: &Arc<RwLock<Config>>) -> Color {
+        let config = config.read().unwrap();
+        let ch = config.theme().code_highlighting();
         match self {
-            &TokenType::Whitespace { .. } => config.whitespace().color().into(),
-            &TokenType::Keyword { .. } => config.keyword().color().into(),
-            &TokenType::String { .. } => config.string().color().into(),
-            &TokenType::Number { .. } => config.number().color().into(),
-            &TokenType::Identifier { .. } => config.identifier().color().into(),
-            &TokenType::Literal { .. } => config.literal().color().into(),
-            &TokenType::Comment { .. } => config.comment().color().into(),
-            &TokenType::Operator { .. } => config.operator().color().into(),
-            &TokenType::Separator { .. } => config.separator().color().into(),
+            &TokenType::Whitespace { .. } => ch.whitespace().color().into(),
+            &TokenType::Keyword { .. } => ch.keyword().color().into(),
+            &TokenType::String { .. } => ch.string().color().into(),
+            &TokenType::Number { .. } => ch.number().color().into(),
+            &TokenType::Identifier { .. } => ch.identifier().color().into(),
+            &TokenType::Literal { .. } => ch.literal().color().into(),
+            &TokenType::Comment { .. } => ch.comment().color().into(),
+            &TokenType::Operator { .. } => ch.operator().color().into(),
+            &TokenType::Separator { .. } => ch.separator().color().into(),
         }
     }
 }
@@ -32,11 +34,11 @@ pub struct EditorFileToken {
     last_in_line: bool,
     characters: Vec<TextCharacter>,
     token_type: Rc<TokenType>,
-    config: Rc<Config>,
+    config: Arc<RwLock<Config>>,
 }
 
 impl EditorFileToken {
-    pub fn new(token_type: &TokenType, last_in_line: bool, config: Rc<Config>) -> Self {
+    pub fn new(token_type: &TokenType, last_in_line: bool, config: Arc<RwLock<Config>>) -> Self {
         Self {
             last_in_line,
             characters: vec![],

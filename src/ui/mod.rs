@@ -39,9 +39,22 @@ pub fn is_in_rect(point: &Point, rect: &Rect) -> bool {
 }
 
 pub fn get_text_character_rect(c: char, renderer: &mut Renderer) -> Option<Rect> {
-    let config = renderer.config().editor_config();
-    let font_details =
-        FontDetails::new(config.font_path().as_str(), config.character_size().clone());
+    let font_details = FontDetails::new(
+        renderer
+            .config()
+            .read()
+            .unwrap()
+            .editor_config()
+            .font_path()
+            .as_str(),
+        renderer
+            .config()
+            .read()
+            .unwrap()
+            .editor_config()
+            .character_size()
+            .clone(),
+    );
     let font = renderer
         .font_manager()
         .load(&font_details)

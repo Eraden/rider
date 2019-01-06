@@ -2,6 +2,7 @@ use crate::app::*;
 use crate::renderer::Renderer;
 use crate::ui::*;
 use sdl2::rect::*;
+use std::sync::*;
 
 fn current_file_path(file_editor: &mut FileEditor) -> String {
     file_editor
@@ -119,7 +120,7 @@ pub fn insert_new_line(file_editor: &mut FileEditor, renderer: &mut Renderer) {
     buffer.insert(position.text_position(), '\n');
     if let Some(rect) = get_text_character_rect('\n', renderer) {
         pos = Point::new(
-            file_editor.config().editor_left_margin(),
+            file_editor.config().read().unwrap().editor_left_margin(),
             pos.y() + rect.height() as i32,
         );
         position = position.moved(0, 1, 0);
@@ -129,7 +130,7 @@ pub fn insert_new_line(file_editor: &mut FileEditor, renderer: &mut Renderer) {
     let mut new_file = EditorFile::new(
         current_file_path(file_editor),
         buffer,
-        file_editor.config().clone(),
+        Arc::clone(file_editor.config()),
     );
     new_file.prepare_ui(renderer);
     file_editor.replace_current_file(new_file);

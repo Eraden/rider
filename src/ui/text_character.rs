@@ -11,6 +11,7 @@ use sdl2::rect::{Point, Rect};
 use sdl2::render::Texture;
 use sdl2::ttf::Font;
 use std::rc::Rc;
+use std::sync::*;
 
 #[derive(Clone, Debug)]
 pub struct TextCharacter {
@@ -21,7 +22,7 @@ pub struct TextCharacter {
     source: Rect,
     dest: Rect,
     color: Color,
-    config: Rc<Config>,
+    config: Arc<RwLock<Config>>,
 }
 
 impl TextCharacter {
@@ -31,7 +32,7 @@ impl TextCharacter {
         line: usize,
         last_in_line: bool,
         color: Color,
-        config: Rc<Config>,
+        config: Arc<RwLock<Config>>,
     ) -> Self {
         Self {
             text_character,
@@ -105,9 +106,11 @@ impl Render for TextCharacter {
             return UR::NoOp;
         }
 
-        let config = renderer.config().editor_config();
-        let font_details =
-            FontDetails::new(config.font_path().as_str(), config.character_size().clone());
+        let font_details = {
+            let config = renderer.config().read().unwrap();
+            let ec = config.editor_config();
+            FontDetails::new(ec.font_path().as_str(), ec.character_size().clone())
+        };
         let font = renderer
             .font_manager()
             .load(&font_details)
@@ -133,9 +136,11 @@ impl Render for TextCharacter {
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
-        let config = renderer.config().editor_config();
-        let font_details =
-            FontDetails::new(config.font_path().as_str(), config.character_size().clone());
+        let font_details = {
+            let config = renderer.config().read().unwrap();
+            let ec = config.editor_config();
+            FontDetails::new(ec.font_path().as_str(), ec.character_size().clone())
+        };
         let font = renderer
             .font_manager()
             .load(&font_details)

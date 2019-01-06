@@ -2,6 +2,7 @@ use sdl2::rect::*;
 use std::borrow::*;
 use std::mem;
 use std::rc::Rc;
+use std::sync::*;
 
 use crate::app::*;
 use crate::app::{UpdateResult as UR, WindowCanvas as WS};
@@ -12,21 +13,30 @@ pub struct FileEditor {
     scroll: Point,
     caret: Caret,
     file: Option<EditorFile>,
-    config: Rc<Config>,
+    config: Arc<RwLock<Config>>,
 }
 
 impl FileEditor {
-    pub fn new(dest: Rect, config: Rc<Config>) -> Self {
+    pub fn new(config: Arc<RwLock<Config>>) -> Self {
+        let dest = {
+            let c = config.read().unwrap();
+            Rect::new(
+                c.editor_left_margin(),
+                c.editor_top_margin(),
+                c.width() - c.editor_left_margin() as u32,
+                c.height() - c.editor_top_margin() as u32,
+            )
+        };
         Self {
             dest,
             scroll: Point::new(0, 0),
-            caret: Caret::new(config.clone()),
+            caret: Caret::new(Arc::clone(&config)),
             file: None,
             config,
         }
     }
 
-    pub fn config(&self) -> &Rc<Config> {
+    pub fn config(&self) -> &Arc<RwLock<Config>> {
         &self.config
     }
 
@@ -96,10 +106,11 @@ impl FileEditor {
     }
 
     pub fn scroll_to(&mut self, x: i32, y: i32) {
+        let read_config = self.config.read().unwrap();
         self.scroll = self.scroll
             + Point::new(
-                self.config.scroll_speed() * x,
-                self.config.scroll_speed() * y,
+                read_config.scroll_speed() * x,
+                read_config.scroll_speed() * y,
             );
     }
 
@@ -156,6 +167,7 @@ impl FileEditor {
 
 impl Render for FileEditor {
     fn render(&self, canvas: &mut WS, renderer: &mut Renderer, _parent: Parent) -> UR {
+        canvas.set_clip_rect(self.dest.clone());
         match self.file() {
             Some(file) => file.render(canvas, renderer, Some(self)),
             _ => UR::NoOp,
@@ -170,6 +182,13 @@ impl Render for FileEditor {
 
 impl Update for FileEditor {
     fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
+        {
+            let config = self.config.read().unwrap();
+            self.dest
+                .set_width(config.width() - config.editor_left_margin() as u32);
+            self.dest
+                .set_height(config.height() - config.editor_top_margin() as u32);
+        }
         self.caret.update(ticks, context);
         match self.file_mut() {
             Some(file) => file.update(ticks, context),
@@ -220,11 +239,12 @@ mod tests {
     use sdl2::*;
     use std::borrow::*;
     use std::rc::*;
+    use std::sync::*;
 
     #[test]
     fn replace_file() {
-        let config = Rc::new(Config::new());
-        let mut editor = FileEditor::new(Rect::new(0, 0, 100, 100), config.clone());
+        let config = Arc::new(RwLock::new(Config::new()));
+        let mut editor = FileEditor::new(Arc::clone(&config));
         let first_file =
             EditorFile::new("./foo.txt".to_string(), "foo".to_string(), config.clone());
         let second_file =
@@ -239,7 +259,7 @@ mod tests {
 
     #[test]
     fn add_text() {
-        let config = Rc::new(Config::new());
+        let config = Arc::new(RwLock::new(Config::new()));
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
         let window = video_subsystem
@@ -253,7 +273,7 @@ mod tests {
         let texture_creator = canvas.texture_creator();
         let mut renderer = Renderer::new(config.clone(), &font_context, &texture_creator);
 
-        let mut editor = FileEditor::new(Rect::new(0, 0, 100, 100), config.clone());
+        let mut editor = FileEditor::new(Arc::clone(&config));
         let mut file = EditorFile::new("./foo.txt".to_string(), "foo".to_string(), config.clone());
         file.prepare_ui(&mut renderer);
         assert_eq!(editor.open_file(file).is_none(), true);

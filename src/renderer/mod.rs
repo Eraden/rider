@@ -7,11 +7,12 @@ use sdl2::render::{Texture, TextureCreator};
 use sdl2::ttf::Sdl2TtfContext;
 use sdl2::video::WindowContext;
 use std::rc::Rc;
+use std::sync::*;
 
 pub mod managers;
 
 pub struct Renderer<'a> {
-    config: Rc<Config>,
+    config: Arc<RwLock<Config>>,
     font_manager: FontManager<'a>,
     texture_manager: TextureManager<'a, WindowContext>,
     scroll: Point,
@@ -19,7 +20,7 @@ pub struct Renderer<'a> {
 
 impl<'a> Renderer<'a> {
     pub fn new(
-        config: Rc<Config>,
+        config: Arc<RwLock<Config>>,
         font_context: &'a Sdl2TtfContext,
         texture_creator: &'a TextureCreator<WindowContext>,
     ) -> Self {
@@ -31,7 +32,7 @@ impl<'a> Renderer<'a> {
         }
     }
 
-    pub fn config(&self) -> &Rc<Config> {
+    pub fn config(&self) -> &Arc<RwLock<Config>> {
         &self.config
     }
 
