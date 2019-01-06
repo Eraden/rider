@@ -29,18 +29,24 @@ impl TokenType {
 
 #[derive(Clone, Debug)]
 pub struct EditorFileToken {
+    last_in_line: bool,
     characters: Vec<TextCharacter>,
     token_type: Rc<TokenType>,
     config: Rc<Config>,
 }
 
 impl EditorFileToken {
-    pub fn new(token_type: TokenType, config: Rc<Config>) -> Self {
+    pub fn new(token_type: &TokenType, last_in_line: bool, config: Rc<Config>) -> Self {
         Self {
+            last_in_line,
             characters: vec![],
-            token_type: Rc::new(token_type),
+            token_type: Rc::new(token_type.clone()),
             config,
         }
+    }
+
+    pub fn is_last_in_line(&self) -> bool {
+        self.last_in_line
     }
 
     pub fn update_position(&mut self, current: &mut Rect) {
@@ -89,6 +95,9 @@ impl EditorFileToken {
     pub fn get_last_at_line(&self, line: usize) -> Option<TextCharacter> {
         let mut current: Option<&TextCharacter> = None;
         for text_character in self.characters.iter() {
+            if !text_character.is_last_in_line() {
+                continue;
+            }
             if text_character.line() == line {
                 current = Some(text_character);
             }
@@ -117,11 +126,14 @@ impl Render for EditorFileToken {
             return;
         }
         let color: Color = self.token_type.to_color(renderer.config());
-        for (index, c) in self.token_type.text().chars().enumerate() {
+        let chars: Vec<char> = self.token_type.text().chars().collect();
+        for (index, c) in chars.iter().enumerate() {
+            let last_in_line = self.last_in_line && index + 1 == chars.len();
             let mut text_character: TextCharacter = TextCharacter::new(
                 c.clone(),
                 self.token_type.start() + index,
                 self.token_type.line(),
+                last_in_line,
                 color,
                 self.config.clone(),
             );

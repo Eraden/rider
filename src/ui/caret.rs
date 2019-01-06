@@ -1,4 +1,4 @@
-use crate::app::{UpdateResult, WindowCanvas};
+use crate::app::{UpdateResult as UR, WindowCanvas as WC};
 use crate::config::Config;
 use crate::renderer::Renderer;
 use crate::ui::text_character::TextCharacter;
@@ -95,25 +95,6 @@ pub struct CaretRenderPosition {
     reset_position: Rect,
 }
 
-impl CaretRenderPosition {
-    pub fn dest(&self) -> &Rect {
-        &self.dest
-    }
-
-    pub fn reset_position(&self) -> &Rect {
-        &self.reset_position
-    }
-
-    pub fn reset(&mut self) {
-        self.dest = self.reset_position.clone()
-    }
-
-    pub fn move_to(&mut self, p: &Point) {
-        self.dest.set_x(p.x());
-        self.dest.set_y(p.y());
-    }
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct CaretColor {
     bright: Color,
@@ -140,7 +121,7 @@ pub struct Caret {
     blink_delay: u8,
     state: CaretState,
     position: CaretPosition,
-    render_position: CaretRenderPosition,
+    dest: Rect,
     colors: CaretColor,
 }
 
@@ -151,10 +132,7 @@ impl Caret {
         Self {
             state: CaretState::Bright,
             blink_delay: 0,
-            render_position: CaretRenderPosition {
-                dest: Rect::new(0, 0, 4, 0),
-                reset_position: Rect::new(0, 0, 4, 0),
-            },
+            dest: Rect::new(0, 0, 6, 0),
             colors: CaretColor { bright, blur },
             pending: true,
             position: CaretPosition {
@@ -174,13 +152,19 @@ impl Caret {
     }
 
     pub fn reset_caret(&mut self) {
-        self.render_position.reset();
+        self.dest.set_x(0);
+        self.dest.set_y(0);
         self.position.reset();
     }
 
     pub fn move_caret(&mut self, position: CaretPosition, pos: Point) {
         self.position = position;
-        self.render_position.move_to(&pos);
+        self.dest.set_x(pos.x());
+        self.dest.set_y(pos.y());
+    }
+
+    pub fn dest(&self) -> &Rect {
+        &self.dest
     }
 
     pub fn position(&self) -> &CaretPosition {
@@ -197,17 +181,12 @@ impl Deref for Caret {
 }
 
 impl Render for Caret {
-    fn render(
-        &self,
-        canvas: &mut WindowCanvas,
-        _renderer: &mut Renderer,
-        parent: Parent,
-    ) -> UpdateResult {
+    fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, parent: Parent) -> UR {
         let dest = match parent {
             Some(parent) => {
-                move_render_point(parent.render_start_point(), self.render_position.dest())
+                move_render_point(parent.render_start_point(), self.dest())
             }
-            None => self.render_position.dest().clone(),
+            None => self.dest().clone(),
         };
         let start = Point::new(dest.x(), dest.y());
         let end = Point::new(dest.x(), dest.y() + dest.height() as i32);
@@ -220,7 +199,7 @@ impl Render for Caret {
         canvas
             .draw_line(start, end)
             .unwrap_or_else(|_| panic!("Failed to draw a caret"));
-        UpdateResult::NoOp
+        UR::NoOp
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
@@ -229,42 +208,34 @@ impl Render for Caret {
         }
 
         if let Some(rect) = get_text_character_rect('W', renderer) {
-            let mut dest = self.render_position.dest().clone();
-            dest.set_height(rect.height());
-            let reset_position = dest.clone();
-            self.render_position = CaretRenderPosition {
-                dest,
-                reset_position,
-            };
+            self.dest.set_height(rect.height());
         }
         self.pending = false;
     }
 }
 
 impl Update for Caret {
-    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UpdateResult {
+    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UR {
         self.blink_delay += 1;
         if self.blink_delay >= 30 {
             self.blink_delay = 0;
             self.toggle_state();
         }
-        UpdateResult::NoOp
+        UR::NoOp
     }
 }
 
 impl ClickHandler for Caret {
-    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UpdateResult {
-        UpdateResult::NoOp
+    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UR {
+        UR::NoOp
     }
 
     fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
         is_in_rect(
             point,
             &match context {
-                &UpdateContext::ParentPosition(p) => {
-                    move_render_point(p, self.render_position.dest())
-                }
-                _ => self.render_position.dest().clone(),
+                &UpdateContext::ParentPosition(p) => move_render_point(p, self.dest()),
+                _ => self.dest().clone(),
             },
         )
     }
@@ -272,6 +243,6 @@ impl ClickHandler for Caret {
 
 impl RenderBox for Caret {
     fn render_start_point(&self) -> Point {
-        self.render_position.dest().top_left()
+        self.dest().top_left()
     }
 }

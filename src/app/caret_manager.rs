@@ -7,41 +7,67 @@ pub fn move_caret_right(file_editor: &mut FileEditor) {
         None => return,
         Some(f) => f,
     };
-    let line = match file.get_character_at(file_editor.caret().text_position()) {
-        Some(ref t) if t.is_new_line() => file_editor.caret().line_number().clone() + 1,
-        Some(_) => file_editor.caret().line_number().clone(),
-        None => 0,
-    };
-
-    let characters: Vec<&TextCharacter> = match file.get_line(&line) {
-        None => return,
-        Some(characters) => characters,
-    };
-    let mut idx = 0;
-    for (i, c) in characters.iter().enumerate() {
-        if c.position() == file_editor.caret().text_position() {
-            idx = i + 1;
-            break;
-        }
-    }
-    let text_character: &TextCharacter = match characters.get(idx) {
+    let c: TextCharacter = match file.get_character_at(file_editor.caret().text_position() + 1) {
         Some(text_character) => text_character,
-        None => return,
+        None => return, // EOF
     };
-    let line = line - file_editor.caret().line_number();
-    let pos = file_editor.caret().position().moved(1, line as i32, 0);
-    let mut d: Rect = text_character.dest().clone();
-    if text_character.is_new_line() && idx > 0 {
-        let prev: &TextCharacter = match characters.get(idx - 1) {
-            Some(c) => c,
-            _ => return,
-        };
-        d = prev.dest().clone();
-        d.set_x(d.x() + d.width() as i32);
-    }
+    let caret_rect = file_editor.caret().dest().clone();
+    let pos = file_editor.caret().position();
+    let (d, p): (Rect, CaretPosition) = match (
+        c.is_last_in_line(),
+        c.is_new_line(),
+        c.dest().y() == caret_rect.y(),
+    ) {
+        (true, true, false) => {
+            let prev: TextCharacter = if c.position() != 0 {
+                file.get_character_at(c.position() - 1).unwrap_or(c.clone())
+            } else {
+                c.clone()
+            };
+            let mut dest = prev.dest().clone();
+            dest.set_x(dest.x() + dest.width() as i32);
+            (
+                dest,
+                pos.moved(1, 0, 0),
+            )
+        }
+        (false, true, false) => {
+            let prev: TextCharacter = if c.position() != 0 {
+                file.get_character_at(c.position() - 1).unwrap_or(c.clone())
+            } else {
+                c.clone()
+            };
+            let mut dest = prev.dest().clone();
+            if !prev.is_new_line() {
+                dest.set_x(dest.x() + dest.width() as i32);
+            }
+            (
+                dest,
+                pos.moved(1, 0, 0),
+            )
+        }
+        (true, false, false) => {
+            // move after character, stay on current line
+            (
+                c.dest().clone(),
+                pos.moved(1, 0, 0),
+            )
+        }
+        (true, false, true) => {
+            // move to new line
+            (
+                c.dest().clone(),
+                pos.moved(1, 0, 0),
+            )
+        }
+        _ => (
+            c.dest().clone(),
+            pos.moved(1, 0, 0),
+        ),
+    };
     file_editor
         .caret_mut()
-        .move_caret(pos, Point::new(d.x(), d.y()));
+        .move_caret(p, Point::new(d.x(), d.y()));
 }
 
 pub fn move_caret_left(file_editor: &mut FileEditor) {

@@ -125,12 +125,15 @@ impl FileEditor {
         while line >= 0 {
             match file.get_last_at_line(line.clone() as usize) {
                 Some(text_character) => {
-                    println!("last was {:?}", text_character);
                     let rect = text_character.dest();
                     let position =
                         CaretPosition::new(text_character.position() + 1, line as usize, 0);
-                    println!("target caret position {:?}", position);
-                    self.caret.move_caret(position, rect.top_right());
+                    let p = if text_character.is_last_in_line() && text_character.is_new_line() {
+                        rect.top_left()
+                    } else {
+                        rect.top_right()
+                    };
+                    self.caret.move_caret(position, p);
                     break;
                 }
                 _ => {

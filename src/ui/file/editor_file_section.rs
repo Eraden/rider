@@ -28,8 +28,18 @@ impl EditorFileSection {
         let lexer_tokens = lexer::parse(buffer.clone(), language);
 
         let mut tokens: Vec<EditorFileToken> = vec![];
-        for token_type in lexer_tokens {
-            let token = EditorFileToken::new(token_type, config.clone());
+        let mut iterator = lexer_tokens.iter().peekable();
+        loop {
+            let token_type = match iterator.next() {
+                Some(t) => t,
+                _ => break,
+            };
+            let next = iterator.peek();
+            let token = EditorFileToken::new(
+                token_type,
+                next.map_or(true, |t| t.is_new_line()),
+                config.clone(),
+            );
             tokens.push(token);
         }
         let language = Language::PlainText;
@@ -74,6 +84,9 @@ impl EditorFileSection {
     pub fn get_last_at_line(&self, line: usize) -> Option<TextCharacter> {
         let mut current: Option<TextCharacter> = None;
         for token in self.tokens.iter() {
+            if !token.is_last_in_line() {
+                continue;
+            }
             let c = token.get_last_at_line(line);
             if c.is_some() {
                 current = c;

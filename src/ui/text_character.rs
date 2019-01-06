@@ -17,6 +17,7 @@ pub struct TextCharacter {
     text_character: char,
     position: usize,
     line: usize,
+    last_in_line: bool,
     source: Rect,
     dest: Rect,
     color: Color,
@@ -28,6 +29,7 @@ impl TextCharacter {
         text_character: char,
         position: usize,
         line: usize,
+        last_in_line: bool,
         color: Color,
         config: Rc<Config>,
     ) -> Self {
@@ -35,11 +37,16 @@ impl TextCharacter {
             text_character,
             position,
             line,
+            last_in_line,
             source: Rect::new(0, 0, 0, 0),
             dest: Rect::new(0, 0, 0, 0),
             color,
             config,
         }
+    }
+
+    pub fn is_last_in_line(&self) -> bool {
+        self.last_in_line
     }
 
     pub fn dest(&self) -> &Rect {
@@ -59,6 +66,8 @@ impl TextCharacter {
             let y = self.source.height() as i32;
             current.set_x(0);
             current.set_y(current.y() + y);
+            self.dest.set_x(current.x());
+            self.dest.set_y(current.y());
         } else {
             self.dest.set_x(current.x());
             self.dest.set_y(current.y());
@@ -117,9 +126,9 @@ impl Render for TextCharacter {
         if let Ok(texture) = renderer.texture_manager().load_text(&mut details, &font) {
             renderer.render_texture(canvas, &texture, &self.source, &dest);
         }
-        let c = Color::RGB(255, 0, 0);
-        canvas.set_draw_color(c);
-        canvas.draw_rect(dest.clone()).unwrap();
+//        let c = Color::RGB(255, 0, 0);
+//        canvas.set_draw_color(c);
+//        canvas.draw_rect(dest.clone()).unwrap();
         UR::NoOp
     }
 
