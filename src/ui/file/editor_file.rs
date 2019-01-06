@@ -27,7 +27,11 @@ impl EditorFile {
             .and_then(|p| p.to_str())
             .map_or("txt", |s| s)
             .to_string();
-        let sections = vec![EditorFileSection::new(buffer.clone(), ext, Arc::clone(&config))];
+        let sections = vec![EditorFileSection::new(
+            buffer.clone(),
+            ext,
+            Arc::clone(&config),
+        )];
         let render_position = {
             let c = config.read().unwrap();
             let x = c.editor_left_margin();

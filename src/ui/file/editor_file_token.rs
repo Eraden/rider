@@ -13,12 +13,8 @@ use std::sync::*;
 
 impl TokenType {
     pub fn to_color(&self, config: &Arc<RwLock<Config>>) -> Color {
-        let config = config
-            .read()
-            .unwrap();
-        let ch = config
-            .theme()
-            .code_highlighting();
+        let config = config.read().unwrap();
+        let ch = config.theme().code_highlighting();
         match self {
             &TokenType::Whitespace { .. } => ch.whitespace().color().into(),
             &TokenType::Keyword { .. } => ch.keyword().color().into(),

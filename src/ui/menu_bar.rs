@@ -1,4 +1,4 @@
-use crate::app::{UpdateResult, WindowCanvas};
+use crate::app::{UpdateResult as UR, WindowCanvas as WC};
 use crate::config::Config;
 use crate::renderer::Renderer;
 use crate::ui::*;
@@ -17,9 +17,7 @@ pub struct MenuBar {
 
 impl MenuBar {
     pub fn new(config: Arc<RwLock<Config>>) -> Self {
-        let background_color = {
-            config.read().unwrap().theme().background().into()
-        };
+        let background_color = { config.read().unwrap().theme().background().into() };
         Self {
             border_color: Color::RGB(10, 10, 10),
             background_color,
@@ -39,12 +37,8 @@ impl MenuBar {
 }
 
 impl Render for MenuBar {
-    fn render(
-        &self,
-        canvas: &mut WindowCanvas,
-        _renderer: &mut Renderer,
-        parent: Parent,
-    ) -> UpdateResult {
+    fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, parent: Parent) -> UR {
+        canvas.set_clip_rect(self.dest.clone());
         canvas.set_draw_color(self.background_color.clone());
         canvas
             .fill_rect(match parent {
@@ -61,7 +55,7 @@ impl Render for MenuBar {
             })
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
 
-        UpdateResult::NoOp
+        UR::NoOp
     }
 
     fn prepare_ui(&mut self, _renderer: &mut Renderer) {
@@ -76,15 +70,15 @@ impl Render for MenuBar {
 }
 
 impl Update for MenuBar {
-    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UpdateResult {
+    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UR {
         let config = self.config.read().unwrap();
         self.dest.set_width(config.width());
-        UpdateResult::NoOp
+        UR::NoOp
     }
 }
 
 impl ClickHandler for MenuBar {
-    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UpdateResult {
+    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UR {
         unimplemented!()
     }
 

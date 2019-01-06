@@ -167,6 +167,7 @@ impl FileEditor {
 
 impl Render for FileEditor {
     fn render(&self, canvas: &mut WS, renderer: &mut Renderer, _parent: Parent) -> UR {
+        canvas.set_clip_rect(self.dest.clone());
         match self.file() {
             Some(file) => file.render(canvas, renderer, Some(self)),
             _ => UR::NoOp,
@@ -183,7 +184,10 @@ impl Update for FileEditor {
     fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
         {
             let config = self.config.read().unwrap();
-            self.dest.set_width(config.width());
+            self.dest
+                .set_width(config.width() - config.editor_left_margin() as u32);
+            self.dest
+                .set_height(config.height() - config.editor_top_margin() as u32);
         }
         self.caret.update(ticks, context);
         match self.file_mut() {
