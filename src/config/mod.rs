@@ -56,6 +56,7 @@ impl EditorConfig {
 pub struct Config {
     width: u32,
     height: u32,
+    scroll_speed: i32,
     menu_height: u16,
     editor_config: EditorConfig,
     theme: Theme,
@@ -74,12 +75,18 @@ impl Config {
         Self {
             width: 1024,
             height: 860,
+            scroll_speed: 10,
             menu_height: 60,
             theme: Theme::load(editor_config.current_theme().clone()),
             editor_config,
             extensions_mapping,
         }
     }
+
+    pub fn scroll_speed(&self) -> i32 {
+        self.scroll_speed
+    }
+
     pub fn width(&self) -> u32 {
         self.width
     }

@@ -1,9 +1,8 @@
-use crate::app::{UpdateResult, WindowCanvas};
+use crate::app::{UpdateResult as UR, WindowCanvas as WC};
 use crate::config::Config;
 use crate::lexer::TokenType;
 use crate::renderer::managers::{FontDetails, TextDetails};
 use crate::renderer::Renderer;
-use crate::ui::text_character::*;
 use crate::ui::*;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
@@ -11,20 +10,43 @@ use sdl2::render::Texture;
 use sdl2::ttf::Font;
 use std::rc::Rc;
 
-#[derive(Clone)]
+impl TokenType {
+    pub fn to_color(&self, config: &Rc<Config>) -> Color {
+        let config = config.theme().code_highlighting();
+        match self {
+            &TokenType::Whitespace { .. } => config.whitespace().color().into(),
+            &TokenType::Keyword { .. } => config.keyword().color().into(),
+            &TokenType::String { .. } => config.string().color().into(),
+            &TokenType::Number { .. } => config.number().color().into(),
+            &TokenType::Identifier { .. } => config.identifier().color().into(),
+            &TokenType::Literal { .. } => config.literal().color().into(),
+            &TokenType::Comment { .. } => config.comment().color().into(),
+            &TokenType::Operator { .. } => config.operator().color().into(),
+            &TokenType::Separator { .. } => config.separator().color().into(),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct EditorFileToken {
+    last_in_line: bool,
     characters: Vec<TextCharacter>,
-    token_type: TokenType,
+    token_type: Rc<TokenType>,
     config: Rc<Config>,
 }
 
 impl EditorFileToken {
-    pub fn new(token_type: TokenType, config: Rc<Config>) -> Self {
+    pub fn new(token_type: &TokenType, last_in_line: bool, config: Rc<Config>) -> Self {
         Self {
+            last_in_line,
             characters: vec![],
-            token_type,
+            token_type: Rc::new(token_type.clone()),
             config,
         }
+    }
+
+    pub fn is_last_in_line(&self) -> bool {
+        self.last_in_line
     }
 
     pub fn update_position(&mut self, current: &mut Rect) {
@@ -33,10 +55,10 @@ impl EditorFileToken {
         }
     }
 
-    pub fn get_character_at(&self, index: usize) -> Option<&TextCharacter> {
+    pub fn get_character_at(&self, index: usize) -> Option<TextCharacter> {
         for character in self.characters.iter() {
             if character.position() == index {
-                return Some(&character);
+                return Some(character.clone());
             }
         }
         None
@@ -70,32 +92,17 @@ impl EditorFileToken {
         }
     }
 
-    fn update_view(&mut self, renderer: &mut Renderer) -> UpdateResult {
-        let config = renderer.config().theme().code_highlighting();
-        let color: Color = match self.token_type {
-            TokenType::Whitespace { .. } => config.whitespace().color().into(),
-            TokenType::Keyword { .. } => config.keyword().color().into(),
-            TokenType::String { .. } => config.string().color().into(),
-            TokenType::Number { .. } => config.number().color().into(),
-            TokenType::Identifier { .. } => config.identifier().color().into(),
-            TokenType::Literal { .. } => config.literal().color().into(),
-            TokenType::Comment { .. } => config.comment().color().into(),
-            TokenType::Operator { .. } => config.operator().color().into(),
-            TokenType::Separator { .. } => config.separator().color().into(),
-        };
-        for (index, c) in self.token_type.text().chars().enumerate() {
-            let mut text_character = TextCharacter::new(
-                c.clone(),
-                self.token_type.start() + index,
-                self.token_type.line(),
-                color,
-                self.config.clone(),
-            );
-            text_character.update_view(renderer);
-            self.characters.push(text_character);
+    pub fn get_last_at_line(&self, line: usize) -> Option<TextCharacter> {
+        let mut current: Option<&TextCharacter> = None;
+        for text_character in self.characters.iter() {
+            if !text_character.is_last_in_line() {
+                continue;
+            }
+            if text_character.line() == line {
+                current = Some(text_character);
+            }
         }
-
-        UpdateResult::RefreshPositions
+        current.map(|c| c.clone())
     }
 }
 
@@ -104,42 +111,60 @@ impl Render for EditorFileToken {
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    fn render(&mut self, canvas: &mut WindowCanvas, renderer: &mut Renderer) -> UpdateResult {
-        if self.characters.is_empty() {
-            return self.update_view(renderer);
-        }
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) -> UR {
         if self.token_type.is_new_line() {
-            return UpdateResult::NoOp;
+            return UR::NoOp;
         }
-        for text_character in self.characters.iter_mut() {
-            text_character.render(canvas, renderer);
+        for text_character in self.characters.iter() {
+            text_character.render(canvas, renderer, parent);
         }
-        UpdateResult::NoOp
+        UR::NoOp
+    }
+
+    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+        if !self.characters.is_empty() {
+            return;
+        }
+        let color: Color = self.token_type.to_color(renderer.config());
+        let chars: Vec<char> = self.token_type.text().chars().collect();
+        for (index, c) in chars.iter().enumerate() {
+            let last_in_line = self.last_in_line && index + 1 == chars.len();
+            let mut text_character: TextCharacter = TextCharacter::new(
+                c.clone(),
+                self.token_type.start() + index,
+                self.token_type.line(),
+                last_in_line,
+                color,
+                self.config.clone(),
+            );
+            text_character.prepare_ui(renderer);
+            self.characters.push(text_character);
+        }
     }
 }
 
 impl Update for EditorFileToken {
-    fn update(&mut self, ticks: i32) -> UpdateResult {
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
         for text_character in self.characters.iter_mut() {
-            text_character.update(ticks);
+            text_character.update(ticks, context);
         }
-        UpdateResult::NoOp
+        UR::NoOp
     }
 }
 
 impl ClickHandler for EditorFileToken {
-    fn on_left_click(&mut self, point: &Point) -> UpdateResult {
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UR {
         for text_character in self.characters.iter_mut() {
-            if text_character.is_left_click_target(point) {
-                return text_character.on_left_click(point);
+            if text_character.is_left_click_target(point, context) {
+                return text_character.on_left_click(point, context);
             }
         }
-        UpdateResult::NoOp
+        UR::NoOp
     }
 
-    fn is_left_click_target(&self, point: &Point) -> bool {
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
         for text_character in self.characters.iter() {
-            if text_character.is_left_click_target(point) {
+            if text_character.is_left_click_target(point, context) {
                 return true;
             }
         }

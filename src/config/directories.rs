@@ -26,3 +26,11 @@ pub fn config_dir() -> PathBuf {
     config_dir.push("rider");
     config_dir
 }
+
+pub fn project_dir() -> PathBuf {
+    let runtime = dirs::runtime_dir().unwrap();
+
+    let mut project_dir = runtime.clone();
+    project_dir.push(".rider");
+    project_dir
+}

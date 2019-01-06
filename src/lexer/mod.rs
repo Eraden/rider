@@ -3,7 +3,7 @@ use std::ops::Deref;
 pub mod plain;
 pub mod rust_lang;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Language {
     PlainText,
     Rust,

@@ -1,7 +1,8 @@
 use sdl2::rect::{Point, Rect};
+use std::cell::Cell;
 use std::rc::Rc;
 
-use crate::app::{UpdateResult, WindowCanvas};
+use crate::app::{UpdateResult as UR, WindowCanvas as WC};
 use crate::config::Config;
 use crate::lexer::Language;
 use crate::renderer::Renderer;
@@ -9,7 +10,7 @@ use crate::ui::file::editor_file_token::EditorFileToken;
 use crate::ui::text_character::TextCharacter;
 use crate::ui::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct EditorFileSection {
     tokens: Vec<EditorFileToken>,
     language: Language,
@@ -27,9 +28,19 @@ impl EditorFileSection {
         let lexer_tokens = lexer::parse(buffer.clone(), language);
 
         let mut tokens: Vec<EditorFileToken> = vec![];
-        for token_type in lexer_tokens {
-            let token = EditorFileToken::new(token_type, config.clone());
-            tokens.push(token.clone());
+        let mut iterator = lexer_tokens.iter().peekable();
+        loop {
+            let token_type = match iterator.next() {
+                Some(t) => t,
+                _ => break,
+            };
+            let next = iterator.peek();
+            let token = EditorFileToken::new(
+                token_type,
+                next.map_or(true, |t| t.is_new_line()),
+                config.clone(),
+            );
+            tokens.push(token);
         }
         let language = Language::PlainText;
         Self {
@@ -45,10 +56,11 @@ impl EditorFileSection {
         }
     }
 
-    pub fn get_character_at(&self, index: usize) -> Option<&TextCharacter> {
+    pub fn get_character_at(&self, index: usize) -> Option<TextCharacter> {
         for token in self.tokens.iter() {
-            if let Some(text_character) = token.get_character_at(index) {
-                return Some(text_character);
+            let character = token.get_character_at(index);
+            if character.is_some() {
+                return character;
             }
         }
         None
@@ -68,46 +80,72 @@ impl EditorFileSection {
             Some(vec)
         }
     }
+
+    pub fn get_last_at_line(&self, line: usize) -> Option<TextCharacter> {
+        let mut current: Option<TextCharacter> = None;
+        for token in self.tokens.iter() {
+            if !token.is_last_in_line() {
+                continue;
+            }
+            let c = token.get_last_at_line(line);
+            if c.is_some() {
+                current = c;
+            }
+        }
+        current
+    }
 }
 
 impl Render for EditorFileSection {
-    fn render(&mut self, canvas: &mut WindowCanvas, renderer: &mut Renderer) -> UpdateResult {
-        let mut res = UpdateResult::NoOp;
-        for character in self.tokens.iter_mut() {
-            let r = character.render(canvas, renderer);
-            if res == UpdateResult::NoOp {
-                res = r;
-            }
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) -> UR {
+        for token in self.tokens.iter() {
+            token.render(canvas, renderer, parent);
         }
-        res
+        UR::NoOp
+    }
+
+    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+        for token in self.tokens.iter_mut() {
+            token.prepare_ui(renderer);
+        }
     }
 }
 
 impl Update for EditorFileSection {
-    fn update(&mut self, ticks: i32) -> UpdateResult {
-        let mut result = UpdateResult::NoOp;
-        for file_char in self.tokens.iter_mut() {
-            result = file_char.update(ticks)
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
+        let mut result = UR::NoOp;
+        for token in self.tokens.iter_mut() {
+            result = token.update(ticks, context)
         }
         result
     }
 }
 
 impl ClickHandler for EditorFileSection {
-    fn on_left_click(&mut self, point: &Point) -> UpdateResult {
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UR {
         for token in self.tokens.iter_mut() {
-            if token.is_left_click_target(point) {
-                return token.on_left_click(point);
+            if token.is_left_click_target(point, context) {
+                return token.on_left_click(point, context);
             }
         }
-        UpdateResult::NoOp
+        UR::NoOp
     }
 
-    fn is_left_click_target(&self, point: &Point) -> bool {
-        for token in self.tokens.iter() {
-            if token.is_left_click_target(point) {
-                return true;
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
+        let mut i = 0;
+        loop {
+            if i == self.tokens.len() {
+                break;
             }
+            match self.tokens.get(i) {
+                Some(token) => {
+                    if token.is_left_click_target(point, context) {
+                        return true;
+                    }
+                }
+                None => break,
+            }
+            i += 1;
         }
         false
     }
