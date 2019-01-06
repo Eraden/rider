@@ -7,7 +7,7 @@ pub mod lexer {
     lexer! {
         fn next_token(text: 'a) -> (TokenType, &'a str);
 
-        r"( +|\t+|\n+)" => (TokenType::Whitespace {
+        r"( +|\t+|\n)" => (TokenType::Whitespace {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 

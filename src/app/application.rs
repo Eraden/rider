@@ -71,6 +71,7 @@ impl Application {
         let mut window: Window = video_subsystem
             .window("Rider", config.width(), config.height())
             .position_centered()
+            .resizable()
             .opengl()
             .build()
             .unwrap();
@@ -115,28 +116,28 @@ impl Application {
                     app_state.on_left_click(&point, &mut self.video_subsystem);
                 }
                 UpdateResult::DeleteFront => {
-                    app_state.delete_front();
+                    app_state.file_editor_mut().delete_front(&mut renderer);
                 }
                 UpdateResult::DeleteBack => {
-                    app_state.delete_back();
+                    app_state.file_editor_mut().delete_back(&mut renderer);
                 }
                 UpdateResult::Input(text) => {
-                    app_state.insert_text(text, &mut renderer);
+                    app_state.file_editor_mut().insert_text(text, &mut renderer);
                 }
                 UpdateResult::InsertNewLine => {
-                    app_state.insert_new_line(&mut renderer);
+                    app_state.file_editor_mut().insert_new_line(&mut renderer);
                 }
                 UpdateResult::MoveCaretLeft => {
-                    app_state.move_caret(MoveDirection::Left);
+                    app_state.file_editor_mut().move_caret(MoveDirection::Left);
                 }
                 UpdateResult::MoveCaretRight => {
-                    app_state.move_caret(MoveDirection::Right);
+                    app_state.file_editor_mut().move_caret(MoveDirection::Right);
                 }
                 UpdateResult::MoveCaretUp => {
-                    app_state.move_caret(MoveDirection::Up);
+                    app_state.file_editor_mut().move_caret(MoveDirection::Up);
                 }
                 UpdateResult::MoveCaretDown => {
-                    app_state.move_caret(MoveDirection::Down);
+                    app_state.file_editor_mut().move_caret(MoveDirection::Down);
                 }
             }
             for task in self.tasks.iter() {
@@ -151,7 +152,7 @@ impl Application {
 
             self.clear();
 
-            app_state.update(timer.ticks() as i32);
+            app_state.update(timer.ticks() as i32, &UpdateContext::Nothing);
             app_state.render(&mut self.canvas, &mut renderer, None);
 
             self.present();

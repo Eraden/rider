@@ -1,4 +1,5 @@
 use sdl2::rect::{Point, Rect};
+use std::cell::Cell;
 use std::rc::Rc;
 
 use crate::app::{UpdateResult, WindowCanvas};
@@ -9,7 +10,7 @@ use crate::ui::file::editor_file_token::EditorFileToken;
 use crate::ui::text_character::TextCharacter;
 use crate::ui::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct EditorFileSection {
     tokens: Vec<EditorFileToken>,
     language: Language,
@@ -29,7 +30,7 @@ impl EditorFileSection {
         let mut tokens: Vec<EditorFileToken> = vec![];
         for token_type in lexer_tokens {
             let token = EditorFileToken::new(token_type, config.clone());
-            tokens.push(token.clone());
+            tokens.push(token);
         }
         let language = Language::PlainText;
         Self {
@@ -45,10 +46,11 @@ impl EditorFileSection {
         }
     }
 
-    pub fn get_character_at(&self, index: usize) -> Option<&TextCharacter> {
+    pub fn get_character_at(&self, index: usize) -> Option<TextCharacter> {
         for token in self.tokens.iter() {
-            if let Some(text_character) = token.get_character_at(index) {
-                return Some(text_character);
+            let character = token.get_character_at(index);
+            if character.is_some() {
+                return character;
             }
         }
         None
@@ -68,6 +70,17 @@ impl EditorFileSection {
             Some(vec)
         }
     }
+
+    pub fn get_last_at_line(&self, line: usize) -> Option<TextCharacter> {
+        let mut current: Option<TextCharacter> = None;
+        for token in self.tokens.iter() {
+            let c = token.get_last_at_line(line);
+            if c.is_some() {
+                current = c;
+            }
+        }
+        current
+    }
 }
 
 impl Render for EditorFileSection {
@@ -75,7 +88,7 @@ impl Render for EditorFileSection {
         &self,
         canvas: &mut WindowCanvas,
         renderer: &mut Renderer,
-        parent: Option<&RenderBox>,
+        parent: Parent,
     ) -> UpdateResult {
         for token in self.tokens.iter() {
             token.render(canvas, renderer, parent);
@@ -91,30 +104,40 @@ impl Render for EditorFileSection {
 }
 
 impl Update for EditorFileSection {
-    fn update(&mut self, ticks: i32) -> UpdateResult {
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
         let mut result = UpdateResult::NoOp;
-        for file_char in self.tokens.iter_mut() {
-            result = file_char.update(ticks)
+        for token in self.tokens.iter_mut() {
+            result = token.update(ticks, context)
         }
         result
     }
 }
 
 impl ClickHandler for EditorFileSection {
-    fn on_left_click(&mut self, point: &Point) -> UpdateResult {
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UpdateResult {
         for token in self.tokens.iter_mut() {
-            if token.is_left_click_target(point) {
-                return token.on_left_click(point);
+            if token.is_left_click_target(point, context) {
+                return token.on_left_click(point, context);
             }
         }
         UpdateResult::NoOp
     }
 
-    fn is_left_click_target(&self, point: &Point) -> bool {
-        for token in self.tokens.iter() {
-            if token.is_left_click_target(point) {
-                return true;
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
+        let mut i = 0;
+        loop {
+            if i == self.tokens.len() {
+                break;
             }
+            match self.tokens.get(i) {
+                Some(token) => {
+                    if token.is_left_click_target(point, context) {
+                        return true;
+                    }
+                }
+                None => break,
+            }
+            i += 1;
         }
         false
     }

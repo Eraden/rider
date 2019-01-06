@@ -1,4 +1,4 @@
-use crate::app::{UpdateResult, WindowCanvas};
+use crate::app::{UpdateResult as UR, WindowCanvas as WC};
 use crate::config::Config;
 use crate::lexer::TokenType;
 use crate::renderer::managers::{FontDetails, TextDetails};
@@ -12,9 +12,8 @@ use sdl2::render::Texture;
 use sdl2::ttf::Font;
 use std::rc::Rc;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TextCharacter {
-    pending: bool,
     text_character: char,
     position: usize,
     line: usize,
@@ -33,7 +32,6 @@ impl TextCharacter {
         config: Rc<Config>,
     ) -> Self {
         Self {
-            pending: true,
             text_character,
             position,
             line,
@@ -59,7 +57,7 @@ impl TextCharacter {
     pub fn update_position(&mut self, current: &mut Rect) {
         if self.is_new_line() {
             let y = self.source.height() as i32;
-            current.set_x(self.config.editor_left_margin());
+            current.set_x(0);
             current.set_y(current.y() + y);
         } else {
             self.dest.set_x(current.x());
@@ -70,7 +68,62 @@ impl TextCharacter {
         }
     }
 
-    pub fn update_view(&mut self, renderer: &mut Renderer) -> UpdateResult {
+    #[inline]
+    pub fn is_new_line(&self) -> bool {
+        self.text_character == '\n'
+    }
+
+    pub fn position(&self) -> usize {
+        self.position
+    }
+
+    pub fn line(&self) -> usize {
+        self.line
+    }
+
+    pub fn text_character(&self) -> char {
+        self.text_character.clone()
+    }
+}
+
+impl Render for TextCharacter {
+    /**
+     * Must first create targets so even if new line appear renderer will know
+     * where move render starting point
+     */
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) -> UR {
+        if self.is_new_line() {
+            return UR::NoOp;
+        }
+
+        let config = renderer.config().editor_config();
+        let font_details =
+            FontDetails::new(config.font_path().as_str(), config.character_size().clone());
+        let font = renderer
+            .font_manager()
+            .load(&font_details)
+            .unwrap_or_else(|_| panic!("Could not load font for {:?}", font_details));
+
+        let c = self.text_character.clone();
+        let mut details = TextDetails {
+            text: c.to_string(),
+            color: self.color.clone(),
+            font: font_details.clone(),
+        };
+        let dest = match parent {
+            None => self.dest.clone(),
+            Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
+        };
+        if let Ok(texture) = renderer.texture_manager().load_text(&mut details, &font) {
+            renderer.render_texture(canvas, &texture, &self.source, &dest);
+        }
+        let c = Color::RGB(255, 0, 0);
+        canvas.set_draw_color(c);
+        canvas.draw_rect(dest.clone()).unwrap();
+        UR::NoOp
+    }
+
+    fn prepare_ui(&mut self, renderer: &mut Renderer) {
         let config = renderer.config().editor_config();
         let font_details =
             FontDetails::new(config.font_path().as_str(), config.character_size().clone());
@@ -96,98 +149,31 @@ impl TextCharacter {
             .texture_manager()
             .load_text(&mut details, &font)
             .unwrap_or_else(|_| panic!("Could not create texture for {:?}", self.text_character));
-
-        self.pending = false;
-        UpdateResult::RefreshPositions
-    }
-
-    #[inline]
-    pub fn is_new_line(&self) -> bool {
-        self.text_character == '\n'
-    }
-
-    #[inline]
-    pub fn is_pending(&self) -> bool {
-        self.pending
-    }
-
-    pub fn position(&self) -> usize {
-        self.position
-    }
-
-    pub fn line(&self) -> usize {
-        self.line
-    }
-
-    pub fn text_character(&self) -> char {
-        self.text_character.clone()
-    }
-}
-
-impl Render for TextCharacter {
-    /**
-     * Must first create targets so even if new line appear renderer will know
-     * where move render starting point
-     */
-    fn render(
-        &self,
-        canvas: &mut WindowCanvas,
-        renderer: &mut Renderer,
-        parent: Option<&RenderBox>,
-    ) -> UpdateResult {
-        if self.is_new_line() {
-            return UpdateResult::NoOp;
-        }
-
-        let config = renderer.config().editor_config();
-        let font_details =
-            FontDetails::new(config.font_path().as_str(), config.character_size().clone());
-        let font = renderer
-            .font_manager()
-            .load(&font_details)
-            .unwrap_or_else(|_| panic!("Could not load font for {:?}", font_details));
-
-        let c = self.text_character.clone();
-        let mut details = TextDetails {
-            text: c.to_string(),
-            color: self.color.clone(),
-            font: font_details.clone(),
-        };
-        if let Ok(texture) = renderer.texture_manager().load_text(&mut details, &font) {
-            let dest = match parent {
-                None => self.dest.clone(),
-                Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
-            };
-            renderer.render_texture(canvas, &texture, &self.source, &dest);
-        }
-        UpdateResult::NoOp
-    }
-
-    fn prepare_ui(&mut self, renderer: &mut Renderer) {
-        if !self.is_pending() {
-            return;
-        }
-        self.update_view(renderer);
-        self.pending = false;
     }
 }
 
 impl Update for TextCharacter {
-    fn update(&mut self, _ticks: i32) -> UpdateResult {
-        UpdateResult::NoOp
+    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UR {
+        UR::NoOp
     }
 }
 
 impl ClickHandler for TextCharacter {
-    fn on_left_click(&mut self, _point: &Point) -> UpdateResult {
-        UpdateResult::MoveCaret(
+    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UR {
+        UR::MoveCaret(
             self.dest().clone(),
             CaretPosition::new(self.position(), self.line(), 0),
         )
     }
 
-    fn is_left_click_target(&self, point: &Point) -> bool {
-        is_in_rect(point, self.dest())
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
+        is_in_rect(
+            point,
+            &match context {
+                &UpdateContext::ParentPosition(p) => move_render_point(p.clone(), self.dest()),
+                _ => self.dest().clone(),
+            },
+        )
     }
 }
 

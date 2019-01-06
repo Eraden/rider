@@ -37,7 +37,7 @@ impl Render for MenuBar {
         &self,
         canvas: &mut WindowCanvas,
         _renderer: &mut Renderer,
-        parent: Option<&RenderBox>,
+        parent: Parent,
     ) -> UpdateResult {
         canvas.set_draw_color(self.background_color.clone());
         canvas
@@ -45,7 +45,7 @@ impl Render for MenuBar {
                 None => self.dest.clone(),
                 Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
             })
-            .unwrap();
+            .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
         UpdateResult::NoOp
     }
 
@@ -61,18 +61,24 @@ impl Render for MenuBar {
 }
 
 impl Update for MenuBar {
-    fn update(&mut self, _ticks: i32) -> UpdateResult {
+    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UpdateResult {
         UpdateResult::NoOp
     }
 }
 
 impl ClickHandler for MenuBar {
-    fn on_left_click(&mut self, _point: &Point) -> UpdateResult {
+    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UpdateResult {
         unimplemented!()
     }
 
-    fn is_left_click_target(&self, point: &Point) -> bool {
-        is_in_rect(point, self.dest())
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
+        is_in_rect(
+            point,
+            &match context {
+                &UpdateContext::ParentPosition(p) => move_render_point(p, self.dest()),
+                _ => self.dest().clone(),
+            },
+        )
     }
 }
 

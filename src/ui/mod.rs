@@ -19,6 +19,15 @@ pub use crate::ui::menu_bar::*;
 pub use crate::ui::project_tree::*;
 pub use crate::ui::text_character::*;
 
+pub type Parent<'l> = Option<&'l RenderBox>;
+pub type ParentMut<'l> = Option<&'l mut RenderBox>;
+
+pub enum UpdateContext<'l> {
+    Nothing,
+    ParentPosition(Point),
+    CurrentFile(&'l mut EditorFile),
+}
+
 #[inline]
 pub fn is_in_rect(point: &Point, rect: &Rect) -> bool {
     let start = rect.top_left();
@@ -55,20 +64,20 @@ pub trait Render {
         &self,
         canvas: &mut WindowCanvas,
         renderer: &mut Renderer,
-        parent: Option<&RenderBox>,
+        parent: Parent,
     ) -> UpdateResult;
 
     fn prepare_ui(&mut self, renderer: &mut Renderer);
 }
 
 pub trait Update {
-    fn update(&mut self, ticks: i32) -> UpdateResult;
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult;
 }
 
 pub trait ClickHandler {
-    fn on_left_click(&mut self, point: &Point) -> UpdateResult;
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UpdateResult;
 
-    fn is_left_click_target(&self, point: &Point) -> bool;
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool;
 }
 
 pub trait RenderBox {

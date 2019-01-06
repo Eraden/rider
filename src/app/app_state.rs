@@ -1,6 +1,6 @@
 use crate::app::caret_manager;
 use crate::app::file_content_manager;
-use crate::app::{UpdateResult, WindowCanvas};
+use crate::app::{UpdateResult, WindowCanvas as WC};
 use crate::config::Config;
 use crate::renderer::Renderer;
 use crate::ui::caret::Caret;
@@ -19,9 +19,8 @@ use std::sync::Arc;
 pub struct AppState {
     menu_bar: MenuBar,
     files: Vec<EditorFile>,
-    current_file: usize,
-    caret: Caret,
     config: Rc<Config>,
+    file_editor: FileEditor,
 }
 
 impl AppState {
@@ -29,8 +28,15 @@ impl AppState {
         Self {
             menu_bar: MenuBar::new(config.clone()),
             files: vec![],
-            current_file: 0,
-            caret: Caret::new(config.clone()),
+            file_editor: FileEditor::new(
+                Rect::new(
+                    config.editor_left_margin(),
+                    config.editor_top_margin(),
+                    config.width() - config.editor_left_margin() as u32,
+                    config.height() - config.editor_top_margin() as u32,
+                ),
+                config.clone(),
+            ),
             config,
         }
     }
@@ -41,8 +47,10 @@ impl AppState {
         if let Ok(buffer) = read_to_string(&file_path) {
             let mut file = EditorFile::new(file_path.clone(), buffer, self.config.clone());
             file.prepare_ui(renderer);
-            self.current_file = self.files.len();
-            self.files.push(file);
+            match self.file_editor.open_file(file) {
+                Some(old) => self.files.push(old),
+                _ => (),
+            }
         } else {
             eprintln!("Failed to open file: {}", file_path);
         };
@@ -52,112 +60,55 @@ impl AppState {
         &self.config
     }
 
-    pub fn caret(&self) -> &Caret {
-        &self.caret
+    pub fn file_editor(&self) -> &FileEditor {
+        &self.file_editor
     }
 
-    pub fn caret_mut(&mut self) -> &mut Caret {
-        &mut self.caret
-    }
-
-    pub fn current_file(&self) -> Option<&EditorFile> {
-        self.files.get(self.current_file)
-    }
-
-    pub fn current_file_mut(&mut self) -> Option<&mut EditorFile> {
-        self.files.get_mut(self.current_file)
-    }
-
-    fn on_editor_clicked(&mut self, point: &Point, video_subsystem: &mut VS) -> UpdateResult {
-        let current_file: &mut EditorFile = if let Some(current_file) = self.current_file_mut() {
-            current_file
-        } else {
-            return UpdateResult::NoOp;
-        };
-        if !current_file.is_left_click_target(point) {
-            return UpdateResult::NoOp;
-        }
-        video_subsystem.text_input().start();
-        match current_file.on_left_click(point) {
-            UpdateResult::MoveCaret(rect, position) => {
-                self.caret
-                    .move_caret(position, Point::new(rect.x(), rect.y()));
-            }
-            _ => (),
-        };
-
-        UpdateResult::NoOp
-    }
-
-    pub fn move_caret(&mut self, dir: MoveDirection) {
-        match dir {
-            MoveDirection::Left => {}
-            MoveDirection::Right => caret_manager::move_caret_right(self),
-            MoveDirection::Up => {}
-            MoveDirection::Down => {}
-        }
-    }
-
-    pub fn delete_front(&mut self) {
-        file_content_manager::delete_front(self);
-    }
-
-    pub fn delete_back(&mut self) {
-        file_content_manager::delete_back(self);
-    }
-
-    pub fn insert_text(&mut self, text: String, renderer: &mut Renderer) {
-        file_content_manager::insert_text(self, text, renderer);
-    }
-
-    pub fn insert_new_line(&mut self, renderer: &mut Renderer) {
-        file_content_manager::insert_new_line(self, renderer);
-    }
-
-    pub fn replace_current_file(&mut self, file: EditorFile) {
-        self.files[self.current_file] = file;
+    pub fn file_editor_mut(&mut self) -> &mut FileEditor {
+        &mut self.file_editor
     }
 }
 
 impl Render for AppState {
-    fn render(
-        &self,
-        canvas: &mut WindowCanvas,
-        renderer: &mut Renderer,
-        _parent: Option<&RenderBox>,
-    ) -> UpdateResult {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, _parent: Parent) -> UpdateResult {
         self.menu_bar.render(canvas, renderer, None);
-        if let Some(file) = self.current_file() {
-            file.render(canvas, renderer, None);
-        }
-        self.caret.render(canvas, renderer, None);
-        UpdateResult::NoOp
+        self.file_editor.render(canvas, renderer, None)
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
         self.menu_bar.prepare_ui(renderer);
-        self.caret.prepare_ui(renderer);
+        self.file_editor.prepare_ui(renderer);
     }
 }
 
 impl Update for AppState {
-    fn update(&mut self, ticks: i32) -> UpdateResult {
-        self.menu_bar.update(ticks);
-        if let Some(file) = self.files.get_mut(self.current_file) {
-            file.update(ticks);
-        }
-        self.caret.update(ticks);
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
+        self.menu_bar.update(ticks, context);
+        self.file_editor.update(ticks, context);
         UpdateResult::NoOp
     }
 }
 
 impl AppState {
     pub fn on_left_click(&mut self, point: &Point, video_subsystem: &mut VS) -> UpdateResult {
-        if self.menu_bar.is_left_click_target(point) {
+        if self
+            .menu_bar
+            .is_left_click_target(point, &UpdateContext::Nothing)
+        {
             video_subsystem.text_input().stop();
-            return self.menu_bar.on_left_click(point);
+            return self.menu_bar.on_left_click(point, &UpdateContext::Nothing);
+        } else {
+            if !self
+                .file_editor
+                .is_left_click_target(point, &UpdateContext::Nothing)
+            {
+                return UpdateResult::NoOp;
+            } else {
+                video_subsystem.text_input().start();
+                self.file_editor
+                    .on_left_click(point, &UpdateContext::Nothing);
+            }
         }
-        self.on_editor_clicked(point, video_subsystem);
         UpdateResult::NoOp
     }
 

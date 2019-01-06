@@ -152,18 +152,8 @@ impl Caret {
             state: CaretState::Bright,
             blink_delay: 0,
             render_position: CaretRenderPosition {
-                dest: Rect::new(
-                    config.editor_left_margin(),
-                    config.editor_top_margin(),
-                    4,
-                    0,
-                ),
-                reset_position: Rect::new(
-                    config.editor_left_margin(),
-                    config.editor_top_margin(),
-                    4,
-                    0,
-                ),
+                dest: Rect::new(0, 0, 4, 0),
+                reset_position: Rect::new(0, 0, 4, 0),
             },
             colors: CaretColor { bright, blur },
             pending: true,
@@ -172,7 +162,6 @@ impl Caret {
                 line_number: 0,
                 line_position: 0,
             },
-            //            config,
         }
     }
 
@@ -212,7 +201,7 @@ impl Render for Caret {
         &self,
         canvas: &mut WindowCanvas,
         _renderer: &mut Renderer,
-        parent: Option<&RenderBox>,
+        parent: Parent,
     ) -> UpdateResult {
         let dest = match parent {
             Some(parent) => {
@@ -225,7 +214,8 @@ impl Render for Caret {
         let color = match self.state {
             CaretState::Bright => self.colors.bright(),
             CaretState::Blur => self.colors.blur(),
-        }.clone();
+        }
+        .clone();
         canvas.set_draw_color(color);
         canvas
             .draw_line(start, end)
@@ -252,7 +242,7 @@ impl Render for Caret {
 }
 
 impl Update for Caret {
-    fn update(&mut self, _ticks: i32) -> UpdateResult {
+    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UpdateResult {
         self.blink_delay += 1;
         if self.blink_delay >= 30 {
             self.blink_delay = 0;
@@ -263,13 +253,20 @@ impl Update for Caret {
 }
 
 impl ClickHandler for Caret {
-    fn on_left_click(&mut self, _point: &Point) -> UpdateResult {
-        //        self.move_caret(Point::new(self.position.x(), self.position.y()));
+    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UpdateResult {
         UpdateResult::NoOp
     }
 
-    fn is_left_click_target(&self, point: &Point) -> bool {
-        is_in_rect(point, &self.render_position.dest())
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
+        is_in_rect(
+            point,
+            &match context {
+                &UpdateContext::ParentPosition(p) => {
+                    move_render_point(p, self.render_position.dest())
+                }
+                _ => self.render_position.dest().clone(),
+            },
+        )
     }
 }
 
