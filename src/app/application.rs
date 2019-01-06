@@ -9,7 +9,7 @@ use std::rc::Rc;
 use std::thread::sleep;
 use std::time::Duration;
 
-use sdl2::event::Event;
+use sdl2::event::*;
 use sdl2::hint;
 use sdl2::keyboard::{Keycode, Mod};
 use sdl2::mouse::*;
@@ -41,6 +41,7 @@ pub enum UpdateResult {
     MoveCaretUp,
     MoveCaretDown,
     Scroll { x: i32, y: i32 },
+    WindowResized { width: i32, height: i32 },
 }
 
 pub enum Task {
@@ -143,6 +144,9 @@ impl Application {
                 UpdateResult::Scroll { x, y } => {
                     app_state.file_editor_mut().scroll_to(x, y);
                 }
+                UpdateResult::WindowResized { width, height } => {
+                    // TODO update config
+                },
             }
             for task in self.tasks.iter() {
                 match task {
@@ -221,6 +225,9 @@ impl Application {
                             // ignore
                         }
                     };
+                }
+                Event::Window { win_event: WindowEvent::Resized(w, h), .. } => {
+                    UpdateResult::WindowResized { width: w, height: h }
                 }
                 _ => (),
             }
