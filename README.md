@@ -19,6 +19,7 @@ Text editor in rust
 * [ ] Config edit menu
 * [ ] Project tree
 * [ ] Cover `rider` with tests
+* [ ] Handle resize window
 
 ### v1.1
 
