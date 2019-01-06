@@ -12,7 +12,7 @@ use std::time::Duration;
 use sdl2::event::Event;
 use sdl2::hint;
 use sdl2::keyboard::{Keycode, Mod};
-use sdl2::mouse::MouseButton;
+use sdl2::mouse::*;
 use sdl2::pixels::{Color, PixelFormatEnum};
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Canvas;
@@ -40,6 +40,7 @@ pub enum UpdateResult {
     MoveCaretRight,
     MoveCaretUp,
     MoveCaretDown,
+    Scroll { x: i32, y: i32 },
 }
 
 pub enum Task {
@@ -139,6 +140,9 @@ impl Application {
                 UpdateResult::MoveCaretDown => {
                     app_state.file_editor_mut().move_caret(MoveDirection::Down);
                 }
+                UpdateResult::Scroll { x, y } => {
+                    app_state.file_editor_mut().scroll_to(x, y);
+                }
             }
             for task in self.tasks.iter() {
                 match task {
@@ -201,8 +205,22 @@ impl Application {
                     };
                 }
                 Event::TextInput { text, .. } => {
-                    println!("text input: {}", text);
                     return UpdateResult::Input(text);
+                }
+                Event::MouseWheel {
+                    direction, x, y, ..
+                } => {
+                    match direction {
+                        MouseWheelDirection::Normal => {
+                            return UpdateResult::Scroll { x, y };
+                        }
+                        MouseWheelDirection::Flipped => {
+                            return UpdateResult::Scroll { x, y: -y };
+                        }
+                        _ => {
+                            // ignore
+                        }
+                    };
                 }
                 _ => (),
             }

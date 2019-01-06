@@ -71,8 +71,8 @@ impl AppState {
 
 impl Render for AppState {
     fn render(&self, canvas: &mut WC, renderer: &mut Renderer, _parent: Parent) -> UpdateResult {
-        self.menu_bar.render(canvas, renderer, None);
-        self.file_editor.render(canvas, renderer, None)
+        self.file_editor.render(canvas, renderer, None);
+        self.menu_bar.render(canvas, renderer, None)
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {

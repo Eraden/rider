@@ -183,9 +183,7 @@ impl Deref for Caret {
 impl Render for Caret {
     fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, parent: Parent) -> UR {
         let dest = match parent {
-            Some(parent) => {
-                move_render_point(parent.render_start_point(), self.dest())
-            }
+            Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
             None => self.dest().clone(),
         };
         let start = Point::new(dest.x(), dest.y());

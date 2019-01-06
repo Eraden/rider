@@ -7,6 +7,7 @@ use sdl2::rect::{Point, Rect};
 use std::rc::Rc;
 
 pub struct MenuBar {
+    border_color: Color,
     background_color: Color,
     dest: Rect,
     config: Rc<Config>,
@@ -16,7 +17,8 @@ pub struct MenuBar {
 impl MenuBar {
     pub fn new(config: Rc<Config>) -> Self {
         Self {
-            background_color: Color::RGB(10, 10, 10),
+            border_color: Color::RGB(10, 10, 10),
+            background_color: config.theme().background().into(),
             dest: Rect::new(0, 0, 0, 0),
             config,
             pending: true,
@@ -41,11 +43,20 @@ impl Render for MenuBar {
     ) -> UpdateResult {
         canvas.set_draw_color(self.background_color.clone());
         canvas
+            .fill_rect(match parent {
+                None => self.dest.clone(),
+                Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
+            })
+            .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
+
+        canvas.set_draw_color(self.border_color.clone());
+        canvas
             .draw_rect(match parent {
                 None => self.dest.clone(),
                 Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
             })
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
+
         UpdateResult::NoOp
     }
 

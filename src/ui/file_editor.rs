@@ -9,6 +9,7 @@ use crate::ui::*;
 
 pub struct FileEditor {
     dest: Rect,
+    scroll: Point,
     caret: Caret,
     file: Option<EditorFile>,
     config: Rc<Config>,
@@ -18,6 +19,7 @@ impl FileEditor {
     pub fn new(dest: Rect, config: Rc<Config>) -> Self {
         Self {
             dest,
+            scroll: Point::new(0, 0),
             caret: Caret::new(config.clone()),
             file: None,
             config,
@@ -93,6 +95,14 @@ impl FileEditor {
         self.open_file(file);
     }
 
+    pub fn scroll_to(&mut self, x: i32, y: i32) {
+        self.scroll = self.scroll
+            + Point::new(
+                self.config.scroll_speed() * x,
+                self.config.scroll_speed() * y,
+            );
+    }
+
     fn is_text_character_clicked(&self, point: &Point) -> bool {
         let context = UpdateContext::ParentPosition(self.render_start_point());
         self.file()
@@ -109,7 +119,7 @@ impl FileEditor {
             Some(f) => f,
             _ => return 0,
         };
-        let mut y = point.y() - file.render_position().y();
+        let mut y = point.y() - self.render_start_point().y();
         if y < 0 {
             y = 0;
         }
@@ -171,6 +181,7 @@ impl Update for FileEditor {
 impl ClickHandler for FileEditor {
     fn on_left_click(&mut self, point: &Point, _context: &UpdateContext) -> UR {
         let context = UpdateContext::ParentPosition(self.render_start_point());
+
         if self.is_text_character_clicked(point) {
             let file = if let Some(file) = self.file_mut() {
                 file
@@ -197,7 +208,7 @@ impl ClickHandler for FileEditor {
 
 impl RenderBox for FileEditor {
     fn render_start_point(&self) -> Point {
-        self.dest.top_left()
+        self.dest.top_left() + self.scroll
     }
 }
 

@@ -2,7 +2,7 @@ use sdl2::rect::{Point, Rect};
 use std::rc::Rc;
 use std::sync::*;
 
-use crate::app::{UpdateResult, WindowCanvas};
+use crate::app::{UpdateResult as UR, WindowCanvas as WC};
 use crate::config::Config;
 use crate::renderer::Renderer;
 use crate::ui::file::editor_file_section::EditorFileSection;
@@ -111,16 +111,11 @@ impl EditorFile {
 }
 
 impl Render for EditorFile {
-    fn render(
-        &self,
-        canvas: &mut WindowCanvas,
-        renderer: &mut Renderer,
-        _parent: Parent,
-    ) -> UpdateResult {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) -> UR {
         for section in self.sections.iter() {
-            section.render(canvas, renderer, Some(self));
+            section.render(canvas, renderer, parent);
         }
-        UpdateResult::NoOp
+        UR::NoOp
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
@@ -135,8 +130,8 @@ impl Render for EditorFile {
 }
 
 impl Update for EditorFile {
-    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
-        let mut result = UpdateResult::NoOp;
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
+        let mut result = UR::NoOp;
         for section in self.sections.iter_mut() {
             result = section.update(ticks, context);
         }
@@ -145,7 +140,7 @@ impl Update for EditorFile {
 }
 
 impl ClickHandler for EditorFile {
-    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UpdateResult {
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UR {
         let mut index = -1;
         for (i, section) in self.sections.iter().enumerate() {
             if section.is_left_click_target(point, context) {
@@ -160,7 +155,7 @@ impl ClickHandler for EditorFile {
                 .unwrap()
                 .on_left_click(point, &context);
         }
-        UpdateResult::NoOp
+        UR::NoOp
     }
 
     fn is_left_click_target(&self, point: &Point, _context: &UpdateContext) -> bool {

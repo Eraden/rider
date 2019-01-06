@@ -26,10 +26,7 @@ pub fn move_caret_right(file_editor: &mut FileEditor) {
             };
             let mut dest = prev.dest().clone();
             dest.set_x(dest.x() + dest.width() as i32);
-            (
-                dest,
-                pos.moved(1, 0, 0),
-            )
+            (dest, pos.moved(1, 0, 0))
         }
         (false, true, false) => {
             let prev: TextCharacter = if c.position() != 0 {
@@ -41,29 +38,17 @@ pub fn move_caret_right(file_editor: &mut FileEditor) {
             if !prev.is_new_line() {
                 dest.set_x(dest.x() + dest.width() as i32);
             }
-            (
-                dest,
-                pos.moved(1, 0, 0),
-            )
+            (dest, pos.moved(1, 0, 0))
         }
         (true, false, false) => {
             // move after character, stay on current line
-            (
-                c.dest().clone(),
-                pos.moved(1, 0, 0),
-            )
+            (c.dest().clone(), pos.moved(1, 0, 0))
         }
         (true, false, true) => {
             // move to new line
-            (
-                c.dest().clone(),
-                pos.moved(1, 0, 0),
-            )
+            (c.dest().clone(), pos.moved(1, 0, 0))
         }
-        _ => (
-            c.dest().clone(),
-            pos.moved(1, 0, 0),
-        ),
+        _ => (c.dest().clone(), pos.moved(1, 0, 0)),
     };
     file_editor
         .caret_mut()

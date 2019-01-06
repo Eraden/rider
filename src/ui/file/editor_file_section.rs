@@ -2,7 +2,7 @@ use sdl2::rect::{Point, Rect};
 use std::cell::Cell;
 use std::rc::Rc;
 
-use crate::app::{UpdateResult, WindowCanvas};
+use crate::app::{UpdateResult as UR, WindowCanvas as WC};
 use crate::config::Config;
 use crate::lexer::Language;
 use crate::renderer::Renderer;
@@ -97,16 +97,11 @@ impl EditorFileSection {
 }
 
 impl Render for EditorFileSection {
-    fn render(
-        &self,
-        canvas: &mut WindowCanvas,
-        renderer: &mut Renderer,
-        parent: Parent,
-    ) -> UpdateResult {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) -> UR {
         for token in self.tokens.iter() {
             token.render(canvas, renderer, parent);
         }
-        UpdateResult::NoOp
+        UR::NoOp
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
@@ -117,8 +112,8 @@ impl Render for EditorFileSection {
 }
 
 impl Update for EditorFileSection {
-    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
-        let mut result = UpdateResult::NoOp;
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
+        let mut result = UR::NoOp;
         for token in self.tokens.iter_mut() {
             result = token.update(ticks, context)
         }
@@ -127,13 +122,13 @@ impl Update for EditorFileSection {
 }
 
 impl ClickHandler for EditorFileSection {
-    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UpdateResult {
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UR {
         for token in self.tokens.iter_mut() {
             if token.is_left_click_target(point, context) {
                 return token.on_left_click(point, context);
             }
         }
-        UpdateResult::NoOp
+        UR::NoOp
     }
 
     fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {

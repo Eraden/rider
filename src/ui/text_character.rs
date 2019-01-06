@@ -126,9 +126,9 @@ impl Render for TextCharacter {
         if let Ok(texture) = renderer.texture_manager().load_text(&mut details, &font) {
             renderer.render_texture(canvas, &texture, &self.source, &dest);
         }
-//        let c = Color::RGB(255, 0, 0);
-//        canvas.set_draw_color(c);
-//        canvas.draw_rect(dest.clone()).unwrap();
+        //        let c = Color::RGB(255, 0, 0);
+        //        canvas.set_draw_color(c);
+        //        canvas.draw_rect(dest.clone()).unwrap();
         UR::NoOp
     }
 
