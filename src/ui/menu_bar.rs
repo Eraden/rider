@@ -5,20 +5,24 @@ use crate::ui::*;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use std::rc::Rc;
+use std::sync::*;
 
 pub struct MenuBar {
     border_color: Color,
     background_color: Color,
     dest: Rect,
-    config: Rc<Config>,
+    config: Arc<RwLock<Config>>,
     pending: bool,
 }
 
 impl MenuBar {
-    pub fn new(config: Rc<Config>) -> Self {
+    pub fn new(config: Arc<RwLock<Config>>) -> Self {
+        let background_color = {
+            config.read().unwrap().theme().background().into()
+        };
         Self {
             border_color: Color::RGB(10, 10, 10),
-            background_color: config.theme().background().into(),
+            background_color,
             dest: Rect::new(0, 0, 0, 0),
             config,
             pending: true,
@@ -64,8 +68,8 @@ impl Render for MenuBar {
         if !self.pending {
             return;
         }
-        let width = self.config.width();
-        let height = self.config.menu_height() as u32;
+        let width = self.config.read().unwrap().width();
+        let height = self.config.read().unwrap().menu_height() as u32;
         self.dest = Rect::new(0, 0, width, height);
         self.pending = false;
     }
@@ -73,6 +77,8 @@ impl Render for MenuBar {
 
 impl Update for MenuBar {
     fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UpdateResult {
+        let config = self.config.read().unwrap();
+        self.dest.set_width(config.width());
         UpdateResult::NoOp
     }
 }

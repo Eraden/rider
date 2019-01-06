@@ -91,8 +91,16 @@ impl Config {
         self.width
     }
 
+    pub fn set_width(&mut self, w: u32) {
+        self.width = w;
+    }
+
     pub fn height(&self) -> u32 {
         self.height
+    }
+
+    pub fn set_height(&mut self, h: u32) {
+        self.height = h;
     }
 
     pub fn editor_config(&self) -> &EditorConfig {

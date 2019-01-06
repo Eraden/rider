@@ -1,6 +1,7 @@
 use sdl2::rect::{Point, Rect};
 use std::cell::Cell;
 use std::rc::Rc;
+use std::sync::*;
 
 use crate::app::{UpdateResult as UR, WindowCanvas as WC};
 use crate::config::Config;
@@ -14,18 +15,21 @@ use crate::ui::*;
 pub struct EditorFileSection {
     tokens: Vec<EditorFileToken>,
     language: Language,
-    config: Rc<Config>,
+    config: Arc<RwLock<Config>>,
 }
 
 impl EditorFileSection {
-    pub fn new(buffer: String, ext: String, config: Rc<Config>) -> Self {
+    pub fn new(buffer: String, ext: String, config: Arc<RwLock<Config>>) -> Self {
         use crate::lexer;
 
         let language = config
+            .read()
+            .unwrap()
             .extensions_mapping()
             .get(ext.as_str())
-            .unwrap_or(&Language::PlainText);
-        let lexer_tokens = lexer::parse(buffer.clone(), language);
+            .unwrap_or(&Language::PlainText)
+            .clone();
+        let lexer_tokens = lexer::parse(buffer.clone(), &language);
 
         let mut tokens: Vec<EditorFileToken> = vec![];
         let mut iterator = lexer_tokens.iter().peekable();

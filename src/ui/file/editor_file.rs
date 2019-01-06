@@ -15,26 +15,30 @@ pub struct EditorFile {
     sections: Vec<EditorFileSection>,
     render_position: Rect,
     buffer: String,
-    config: Rc<Config>,
+    config: Arc<RwLock<Config>>,
     line_height: u32,
 }
 
 impl EditorFile {
-    pub fn new(path: String, buffer: String, config: Rc<Config>) -> Self {
+    pub fn new(path: String, buffer: String, config: Arc<RwLock<Config>>) -> Self {
         use std::path::Path;
         let ext = Path::new(&path)
             .extension()
             .and_then(|p| p.to_str())
             .map_or("txt", |s| s)
             .to_string();
-        let sections = vec![EditorFileSection::new(buffer.clone(), ext, config.clone())];
-        let x = config.editor_left_margin();
-        let y = config.editor_top_margin();
+        let sections = vec![EditorFileSection::new(buffer.clone(), ext, Arc::clone(&config))];
+        let render_position = {
+            let c = config.read().unwrap();
+            let x = c.editor_left_margin();
+            let y = c.editor_top_margin();
+            Rect::new(x, y, 0, 0)
+        };
 
         Self {
             path,
             sections,
-            render_position: Rect::new(x, y, 0, 0),
+            render_position,
             buffer,
             config,
             line_height: 0,

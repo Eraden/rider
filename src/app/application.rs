@@ -6,6 +6,7 @@ use crate::ui::caret::{CaretPosition, MoveDirection};
 use crate::ui::*;
 
 use std::rc::Rc;
+use std::sync::*;
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -41,7 +42,7 @@ pub enum UpdateResult {
     MoveCaretUp,
     MoveCaretDown,
     Scroll { x: i32, y: i32 },
-    WindowResized { width: i32, height: i32 },
+    WindowResize { width: i32, height: i32 },
 }
 
 pub enum Task {
@@ -49,7 +50,7 @@ pub enum Task {
 }
 
 pub struct Application {
-    config: Rc<Config>,
+    config: Arc<RwLock<Config>>,
     clear_color: Color,
     sdl_context: Sdl,
     canvas: WindowCanvas,
@@ -59,7 +60,7 @@ pub struct Application {
 
 impl Application {
     pub fn new() -> Self {
-        let config = Rc::new(Config::new());
+        let config = Arc::new(RwLock::new(Config::new()));
         let sdl_context = sdl2::init().unwrap();
 
         hint::set("SDL_GL_MULTISAMPLEBUFFERS", "1");
@@ -70,26 +71,30 @@ impl Application {
 
         let video_subsystem = sdl_context.video().unwrap();
 
-        let mut window: Window = video_subsystem
-            .window("Rider", config.width(), config.height())
-            .position_centered()
-            .resizable()
-            .opengl()
-            .build()
-            .unwrap();
+        let mut window: Window = {
+            let c = config.read().unwrap();
+            video_subsystem
+                .window("Rider", c.width(), c.height())
+                .position_centered()
+                .resizable()
+                .opengl()
+                .build()
+                .unwrap()
+        };
         let icon_bytes = include_bytes!("../../assets/gear-64x64.bmp").clone();
         let mut rw = RWops::from_bytes(&icon_bytes).unwrap();
         let mut icon = Surface::load_bmp_rw(&mut rw).unwrap();
         window.set_icon(&mut icon);
 
         let canvas = window.into_canvas().accelerated().build().unwrap();
+        let clear_color: Color = { config.read().unwrap().theme().background().into() };
 
         Self {
             sdl_context,
             video_subsystem,
             canvas,
             tasks: vec![],
-            clear_color: config.theme().background().into(),
+            clear_color,
             config,
         }
     }
@@ -104,8 +109,8 @@ impl Application {
         let font_context = sdl2::ttf::init().unwrap();
         let texture_creator = self.canvas.texture_creator();
         let sleep_time = Duration::new(0, 1_000_000_000u32 / 60);
-        let mut app_state = AppState::new(self.config.clone());
-        let mut renderer = Renderer::new(self.config.clone(), &font_context, &texture_creator);
+        let mut app_state = AppState::new(Arc::clone(&self.config));
+        let mut renderer = Renderer::new(Arc::clone(&self.config), &font_context, &texture_creator);
         app_state.prepare_ui(&mut renderer);
 
         'running: loop {
@@ -144,9 +149,15 @@ impl Application {
                 UpdateResult::Scroll { x, y } => {
                     app_state.file_editor_mut().scroll_to(x, y);
                 }
-                UpdateResult::WindowResized { width, height } => {
-                    // TODO update config
-                },
+                UpdateResult::WindowResize { width, height } => {
+                    let mut c = app_state.config().write().unwrap();
+                    if width > 0 {
+                        c.set_width(width as u32);
+                    }
+                    if height > 0 {
+                        c.set_height(height as u32);
+                    }
+                }
             }
             for task in self.tasks.iter() {
                 match task {
@@ -226,8 +237,14 @@ impl Application {
                         }
                     };
                 }
-                Event::Window { win_event: WindowEvent::Resized(w, h), .. } => {
-                    UpdateResult::WindowResized { width: w, height: h }
+                Event::Window {
+                    win_event: WindowEvent::Resized(w, h),
+                    ..
+                } => {
+                    return UpdateResult::WindowResize {
+                        width: w,
+                        height: h,
+                    };
                 }
                 _ => (),
             }
@@ -235,7 +252,7 @@ impl Application {
         UpdateResult::NoOp
     }
 
-    pub fn config(&self) -> &Rc<Config> {
+    pub fn config(&self) -> &Arc<RwLock<Config>> {
         &self.config
     }
 }
