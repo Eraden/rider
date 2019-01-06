@@ -22,7 +22,7 @@ jobs:
           name: Check formatting
           command: |
             rustfmt --version
-            cargo fmt -- --write-mode=diff
+            cargo fmt -- --error-on-unformatted --unstable-features --check
       - run:
           name: Nightly Build
           command: |
