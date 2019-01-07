@@ -33,18 +33,21 @@ pub mod themes;
 pub mod ui;
 
 fn init_logger() {
+    use simplelog::SharedLogger;
+
     let mut log_file_path = log_dir();
     log_file_path.push("rider.log");
 
-    CombinedLogger::init(vec![
-//        TermLogger::new(LevelFilter::Warn, Config::default()).unwrap(),
-        WriteLogger::new(
-            LevelFilter::Info,
-            Config::default(),
-            File::create(log_file_path).unwrap(),
-        ),
-    ])
-    .unwrap();
+    let mut outputs: Vec<Box<SharedLogger>> = vec![WriteLogger::new(
+        LevelFilter::Info,
+        Config::default(),
+        File::create(log_file_path).unwrap(),
+    )];
+    if let Some(term) = TermLogger::new(LevelFilter::Warn, Config::default()) {
+        outputs.push(term);
+    }
+
+    CombinedLogger::init(outputs).unwrap();
 }
 
 fn main() {
