@@ -81,6 +81,8 @@ pub trait ClickHandler {
 
 pub trait RenderBox {
     fn render_start_point(&self) -> Point;
+
+    fn dest(&self) -> &Rect;
 }
 
 #[cfg(test)]

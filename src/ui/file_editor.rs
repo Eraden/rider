@@ -226,6 +226,10 @@ impl RenderBox for FileEditor {
     fn render_start_point(&self) -> Point {
         self.dest.top_left() + self.scroll
     }
+
+    fn dest(&self) -> &Rect {
+        &self.dest
+    }
 }
 
 impl ConfigHolder for FileEditor {

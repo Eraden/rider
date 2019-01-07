@@ -50,10 +50,6 @@ impl TextCharacter {
         self.last_in_line
     }
 
-    pub fn dest(&self) -> &Rect {
-        &self.dest
-    }
-
     pub fn source(&self) -> &Rect {
         &self.source
     }
@@ -208,6 +204,10 @@ impl ClickHandler for TextCharacter {
 impl RenderBox for TextCharacter {
     fn render_start_point(&self) -> Point {
         self.dest.top_left()
+    }
+
+    fn dest(&self) -> &Rect {
+        &self.dest
     }
 }
 

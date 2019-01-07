@@ -31,10 +31,6 @@ impl MenuBar {
     pub fn background_color(&self) -> &Color {
         &self.background_color
     }
-
-    pub fn dest(&self) -> &Rect {
-        &self.dest
-    }
 }
 
 impl Render for MenuBar {
@@ -89,6 +85,10 @@ impl ClickHandler for MenuBar {
 impl RenderBox for MenuBar {
     fn render_start_point(&self) -> Point {
         self.dest.top_left()
+    }
+
+    fn dest(&self) -> &Rect {
+        &self.dest
     }
 }
 
