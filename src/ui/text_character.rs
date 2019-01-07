@@ -153,11 +153,8 @@ impl Render for TextCharacter {
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
-        let font_details = {
-            let config = renderer.config().read().unwrap();
-            let ec = config.editor_config();
-            FontDetails::new(ec.font_path().as_str(), ec.character_size().clone())
-        };
+        let font_details = build_font_details(renderer);
+
         let font = renderer
             .font_manager()
             .load(&font_details)
@@ -383,7 +380,7 @@ mod test_own_methods {
 }
 
 #[cfg(test)]
-mod test_update_trait {
+mod test_click_handler {
     use crate::app::*;
     use crate::renderer::*;
     use crate::tests::*;

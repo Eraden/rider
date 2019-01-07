@@ -33,25 +33,15 @@ pub fn is_in_rect(point: &Point, rect: &Rect) -> bool {
     rect.contains_point(point.clone())
 }
 
-fn build_font_details<T>(config_holder: &T) -> FontDetails
+#[inline]
+pub fn build_font_details<T>(config_holder: &T) -> FontDetails
 where
     T: ConfigHolder,
 {
+    let c = config_holder.config().read().unwrap();
     FontDetails::new(
-        config_holder
-            .config()
-            .read()
-            .unwrap()
-            .editor_config()
-            .font_path()
-            .as_str(),
-        config_holder
-            .config()
-            .read()
-            .unwrap()
-            .editor_config()
-            .character_size()
-            .clone(),
+        c.editor_config().font_path().as_str(),
+        c.editor_config().character_size().clone(),
     )
 }
 
