@@ -194,4 +194,23 @@ mod tests {
         ];
         assert_eq!(result, expected);
     }
+
+    #[test]
+    fn must_parse_text_with_new_line() {
+        let code = "foo\nbar";
+        let lexer = lexer::Lexer::new(code);
+        let result: Vec<TokenType> = lexer.map(|pair| pair.0).collect();
+        let expected: Vec<TokenType> = vec![
+            TokenType::Identifier {
+                token: Token::new("foo".to_string(), 0, 0, 0, 3),
+            },
+            TokenType::Whitespace {
+                token: Token::new("\n".to_string(), 1, 0, 3, 4),
+            },
+            TokenType::Identifier {
+                token: Token::new("bar".to_string(), 1, 1, 4, 7),
+            },
+        ];
+        assert_eq!(result, expected);
+    }
 }

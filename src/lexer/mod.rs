@@ -88,6 +88,12 @@ impl Deref for TokenType {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Span {
+    pub lo: usize,
+    pub hi: usize,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     line: usize,
@@ -95,12 +101,6 @@ pub struct Token {
     start: usize,
     end: usize,
     text: String,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Span {
-    pub lo: usize,
-    pub hi: usize,
 }
 
 impl Token {
