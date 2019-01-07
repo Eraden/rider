@@ -39,7 +39,7 @@ jobs:
             Xvfb :5 -screen 0 800x600x24 +extension GLX +render -noreset &
             export DISPLAY=:5
             export XDG_RUNTIME_DIR=$(pwd)
-            rustup run nightly cargo tarpaulin --verbose --skip-clean --exclude-files $(ls assets/**/*.rs) --ciserver circle-ci --out Xml
+            rustup run nightly cargo tarpaulin --ciserver circle-ci --out Xml
       - run:
           name: Upload Coverage
           command: |
