@@ -256,35 +256,4 @@ mod tests {
         assert_eq!(file.path(), first_file.path());
         assert_eq!(file.buffer(), first_file.buffer());
     }
-
-    #[test]
-    fn add_text() {
-        let config = Arc::new(RwLock::new(Config::new()));
-        let sdl_context = sdl2::init().unwrap();
-        let video_subsystem = sdl_context.video().unwrap();
-        let window = video_subsystem
-            .window("Test", 1, 1)
-            .borderless()
-            .opengl()
-            .build()
-            .unwrap();
-        let canvas = window.into_canvas().accelerated().build().unwrap();
-        let font_context = sdl2::ttf::init().unwrap();
-        let texture_creator = canvas.texture_creator();
-        let mut renderer = Renderer::new(config.clone(), &font_context, &texture_creator);
-
-        let mut editor = FileEditor::new(Arc::clone(&config));
-        let mut file = EditorFile::new("./foo.txt".to_string(), "foo".to_string(), config.clone());
-        file.prepare_ui(&mut renderer);
-        assert_eq!(editor.open_file(file).is_none(), true);
-        assert_eq!(editor.caret().position().text_position(), 0);
-        assert_eq!(editor.file().is_some(), true);
-        assert_eq!(editor.file().unwrap().sections().len(), 1);
-        assert_eq!(editor.file().unwrap().get_character_at(0).is_some(), true);
-
-        editor.insert_text("z".to_string(), &mut renderer);
-        assert_eq!(editor.caret().position().text_position(), 1);
-        assert_eq!(editor.file().is_some(), true);
-        assert_eq!(editor.file().unwrap().buffer(), "zfoo".to_string());
-    }
 }

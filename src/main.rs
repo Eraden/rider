@@ -13,6 +13,8 @@ extern crate serde_json;
 #[macro_use]
 extern crate log;
 extern crate simplelog;
+#[macro_use]
+extern crate lazy_static;
 
 use crate::app::Application;
 use crate::config::directories::log_dir;
@@ -25,6 +27,8 @@ pub mod app;
 pub mod config;
 pub mod lexer;
 pub mod renderer;
+#[cfg(test)]
+pub mod tests;
 pub mod themes;
 pub mod ui;
 

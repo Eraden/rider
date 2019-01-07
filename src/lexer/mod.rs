@@ -154,7 +154,7 @@ pub fn parse(text: String, language: &Language) -> Vec<TokenType> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use crate::lexer::*;
 
     #[test]
