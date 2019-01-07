@@ -37,51 +37,6 @@ impl FileEditor {
         }
     }
 
-    pub fn caret(&self) -> &Caret {
-        &self.caret
-    }
-
-    pub fn caret_mut(&mut self) -> &mut Caret {
-        &mut self.caret
-    }
-
-    pub fn has_file(&self) -> bool {
-        self.file.is_some()
-    }
-
-    pub fn drop_file(&mut self) -> Option<EditorFile> {
-        if self.has_file() {
-            let mut file = None;
-            mem::swap(&mut self.file, &mut file);
-            file
-        } else {
-            None
-        }
-    }
-
-    pub fn open_file(&mut self, file: EditorFile) -> Option<EditorFile> {
-        let mut file = Some(file);
-        mem::swap(&mut self.file, &mut file);
-        file
-    }
-
-    pub fn file(&self) -> Option<&EditorFile> {
-        self.file.as_ref()
-    }
-
-    pub fn file_mut(&mut self) -> Option<&mut EditorFile> {
-        self.file.as_mut()
-    }
-
-    pub fn move_caret(&mut self, dir: MoveDirection) {
-        match dir {
-            MoveDirection::Left => {}
-            MoveDirection::Right => caret_manager::move_caret_right(self),
-            MoveDirection::Up => {}
-            MoveDirection::Down => {}
-        }
-    }
-
     pub fn delete_front(&mut self, renderer: &mut Renderer) {
         file_content_manager::delete_front(self, renderer);
     }
@@ -96,10 +51,6 @@ impl FileEditor {
 
     pub fn insert_new_line(&mut self, renderer: &mut Renderer) {
         file_content_manager::insert_new_line(self, renderer);
-    }
-
-    pub fn replace_current_file(&mut self, file: EditorFile) {
-        self.open_file(file);
     }
 
     pub fn scroll_to(&mut self, x: i32, y: i32) {
@@ -132,6 +83,59 @@ impl FileEditor {
             y = 0;
         }
         y / (file.line_height() as i32)
+    }
+}
+
+impl FileAccess for FileEditor {
+    fn has_file(&self) -> bool {
+        self.file.is_some()
+    }
+
+    fn file(&self) -> Option<&EditorFile> {
+        self.file.as_ref()
+    }
+
+    fn file_mut(&mut self) -> Option<&mut EditorFile> {
+        self.file.as_mut()
+    }
+
+    fn open_file(&mut self, file: EditorFile) -> Option<EditorFile> {
+        let mut file = Some(file);
+        mem::swap(&mut self.file, &mut file);
+        file
+    }
+
+    fn drop_file(&mut self) -> Option<EditorFile> {
+        if self.has_file() {
+            let mut file = None;
+            mem::swap(&mut self.file, &mut file);
+            file
+        } else {
+            None
+        }
+    }
+
+    fn replace_current_file(&mut self, file: EditorFile) {
+        self.open_file(file);
+    }
+}
+
+impl CaretAccess for FileEditor {
+    fn caret(&self) -> &Caret {
+        &self.caret
+    }
+
+    fn caret_mut(&mut self) -> &mut Caret {
+        &mut self.caret
+    }
+
+    fn move_caret(&mut self, dir: MoveDirection) {
+        match dir {
+            MoveDirection::Left => {}
+            MoveDirection::Right => caret_manager::move_caret_right(self),
+            MoveDirection::Up => {}
+            MoveDirection::Down => {}
+        }
     }
 
     fn set_caret_to_end_of_line(&mut self, line: i32) {
@@ -262,5 +266,81 @@ mod tests {
         let file = result.as_ref().unwrap();
         assert_eq!(file.path(), first_file.path());
         assert_eq!(file.buffer(), first_file.buffer());
+    }
+}
+
+#[cfg(test)]
+mod test_config_holder {
+    use crate::app::*;
+    use crate::tests::support;
+    use crate::ui::*;
+    use sdl2::rect::*;
+    use sdl2::*;
+    use std::borrow::*;
+    use std::rc::*;
+    use std::sync::*;
+
+    #[test]
+    fn assert_config() {
+        let config = support::build_config();
+        let widget = FileEditor::new(Arc::clone(&config));
+        let result = widget.config();
+        {
+            let mut w = config.write().unwrap();
+            w.set_height(1240);
+            w.set_width(1024);
+        }
+        let local = config.read().unwrap();
+        let widget_config = result.read().unwrap();
+        assert_eq!(widget_config.width(), local.width());
+        assert_eq!(widget_config.height(), local.height());
+    }
+}
+
+#[cfg(test)]
+mod test_render_box {
+    use crate::app::*;
+    use crate::tests::support;
+    use crate::ui::*;
+    use sdl2::rect::*;
+    use sdl2::*;
+    use std::borrow::*;
+    use std::rc::*;
+    use std::sync::*;
+
+    #[test]
+    fn assert_dest() {
+        let config = support::build_config();
+        let (x, y, mw, mh) = {
+            let c = config.read().unwrap();
+            (
+                c.editor_left_margin(),
+                c.editor_top_margin(),
+                c.width(),
+                c.height(),
+            )
+        };
+        let widget = FileEditor::new(config);
+        let result = widget.dest().clone();
+        let expected = Rect::new(x, y, mw - x as u32, mh - y as u32);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_render_start_point() {
+        let config = support::build_config();
+        let (x, y, ss) = {
+            let c = config.read().unwrap();
+            (
+                c.editor_left_margin(),
+                c.editor_top_margin(),
+                c.scroll_speed(),
+            )
+        };
+        let mut widget = FileEditor::new(config);
+        widget.scroll_to(30, 40);
+        let result = widget.render_start_point().clone();
+        let expected = Point::new(x + (ss * 30), y + (ss * 40));
+        assert_eq!(result, expected);
     }
 }
