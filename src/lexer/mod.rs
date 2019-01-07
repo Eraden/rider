@@ -3,13 +3,13 @@ use std::ops::Deref;
 pub mod plain;
 pub mod rust_lang;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Language {
     PlainText,
     Rust,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     Whitespace { token: Token },
     Keyword { token: Token },
@@ -88,7 +88,7 @@ impl Deref for TokenType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     line: usize,
     character: usize,
@@ -97,7 +97,7 @@ pub struct Token {
     text: String,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Span {
     pub lo: usize,
     pub hi: usize,
