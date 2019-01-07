@@ -7,97 +7,7 @@ use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Texture;
 use std::ops::Deref;
-use std::rc::Rc;
 use std::sync::*;
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum CaretState {
-    Bright,
-    Blur,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum MoveDirection {
-    Left,
-    Right,
-    Up,
-    Down,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct CaretPosition {
-    text_position: usize,
-    line_number: usize,
-    line_position: usize,
-}
-
-impl CaretPosition {
-    pub fn new(text_position: usize, line_number: usize, line_position: usize) -> Self {
-        Self {
-            text_position,
-            line_number,
-            line_position,
-        }
-    }
-
-    pub fn text_position(&self) -> usize {
-        self.text_position.clone()
-    }
-
-    pub fn line_number(&self) -> usize {
-        self.line_number.clone()
-    }
-
-    pub fn line_position(&self) -> usize {
-        self.line_position.clone()
-    }
-
-    pub fn reset(&mut self) {
-        self.text_position = 0;
-        self.line_number = 0;
-        self.line_position = 0;
-    }
-
-    pub fn set_text_position(&mut self, n: usize) {
-        self.text_position = n;
-    }
-
-    pub fn set_line_number(&mut self, n: usize) {
-        self.line_number = n;
-    }
-
-    pub fn set_line_position(&mut self, n: usize) {
-        self.line_position = n;
-    }
-
-    pub fn moved(&self, text_position: i32, line_number: i32, line_position: i32) -> Self {
-        Self {
-            text_position: (self.text_position as i32 + text_position) as usize,
-            line_number: (self.line_number as i32 + line_number) as usize,
-            line_position: (self.line_position as i32 + line_position) as usize,
-        }
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct CaretColor {
-    bright: Color,
-    blur: Color,
-}
-
-impl CaretColor {
-    pub fn new(bright: Color, blur: Color) -> Self {
-        Self { bright, blur }
-    }
-
-    pub fn bright(&self) -> &Color {
-        &self.bright
-    }
-
-    pub fn blur(&self) -> &Color {
-        &self.blur
-    }
-}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Caret {
@@ -118,13 +28,9 @@ impl Caret {
             state: CaretState::Bright,
             blink_delay: 0,
             dest: Rect::new(0, 0, 6, 0),
-            colors: CaretColor { bright, blur },
+            colors: CaretColor::new(bright, blur),
             pending: true,
-            position: CaretPosition {
-                text_position: 0,
-                line_number: 0,
-                line_position: 0,
-            },
+            position: CaretPosition::new(0, 0, 0),
         }
     }
 
@@ -149,6 +55,10 @@ impl Caret {
 
     pub fn position(&self) -> &CaretPosition {
         &self.position
+    }
+
+    pub fn state(&self) -> &CaretState {
+        &self.state
     }
 }
 
@@ -265,6 +175,27 @@ mod test_own_methods {
         );
         let expected = (0, 0, 0, Rect::new(0, 0, 6, 1));
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_toggle_state() {
+        let config = support::build_config();
+        let mut widget = Caret::new(Arc::clone(&config));
+
+        let old = widget.state().clone();
+        widget.toggle_state();
+        let new = widget.state().clone();
+        assert_ne!(old, new);
+
+        let old = widget.state().clone();
+        widget.toggle_state();
+        let new = widget.state().clone();
+        assert_ne!(old, new);
+
+        let old = widget.state().clone();
+        widget.toggle_state();
+        let new = widget.state().clone();
+        assert_ne!(old, new);
     }
 }
 
