@@ -101,11 +101,10 @@ impl EditorFileSection {
 }
 
 impl Render for EditorFileSection {
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) -> UR {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) {
         for token in self.tokens.iter() {
             token.render(canvas, renderer, parent);
         }
-        UR::NoOp
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {

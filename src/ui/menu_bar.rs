@@ -37,7 +37,7 @@ impl MenuBar {
 }
 
 impl Render for MenuBar {
-    fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, parent: Parent) -> UR {
+    fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, parent: Parent) {
         canvas.set_clip_rect(self.dest.clone());
         canvas.set_draw_color(self.background_color.clone());
         canvas
@@ -54,8 +54,6 @@ impl Render for MenuBar {
                 Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
             })
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
-
-        UR::NoOp
     }
 
     fn prepare_ui(&mut self, _renderer: &mut Renderer) {

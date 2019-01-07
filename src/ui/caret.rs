@@ -183,7 +183,7 @@ impl Deref for Caret {
 }
 
 impl Render for Caret {
-    fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, parent: Parent) -> UR {
+    fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, parent: Parent) {
         let dest = match parent {
             Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
             None => self.dest().clone(),
@@ -199,7 +199,6 @@ impl Render for Caret {
         canvas
             .draw_line(start, end)
             .unwrap_or_else(|_| panic!("Failed to draw a caret"));
-        UR::NoOp
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {

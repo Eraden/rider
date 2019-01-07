@@ -6,6 +6,7 @@ use std::sync::*;
 
 use crate::app::*;
 use crate::app::{UpdateResult as UR, WindowCanvas as WS};
+use crate::config::*;
 use crate::ui::*;
 
 pub struct FileEditor {
@@ -13,11 +14,11 @@ pub struct FileEditor {
     scroll: Point,
     caret: Caret,
     file: Option<EditorFile>,
-    config: Arc<RwLock<Config>>,
+    config: ConfigAccess,
 }
 
 impl FileEditor {
-    pub fn new(config: Arc<RwLock<Config>>) -> Self {
+    pub fn new(config: ConfigAccess) -> Self {
         let dest = {
             let c = config.read().unwrap();
             Rect::new(
@@ -34,10 +35,6 @@ impl FileEditor {
             file: None,
             config,
         }
-    }
-
-    pub fn config(&self) -> &Arc<RwLock<Config>> {
-        &self.config
     }
 
     pub fn caret(&self) -> &Caret {
@@ -166,13 +163,13 @@ impl FileEditor {
 }
 
 impl Render for FileEditor {
-    fn render(&self, canvas: &mut WS, renderer: &mut Renderer, _parent: Parent) -> UR {
+    fn render(&self, canvas: &mut WS, renderer: &mut Renderer, _parent: Parent) {
         canvas.set_clip_rect(self.dest.clone());
         match self.file() {
             Some(file) => file.render(canvas, renderer, Some(self)),
-            _ => UR::NoOp,
+            _ => (),
         };
-        self.caret.render(canvas, renderer, Some(self))
+        self.caret.render(canvas, renderer, Some(self));
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
@@ -228,6 +225,12 @@ impl ClickHandler for FileEditor {
 impl RenderBox for FileEditor {
     fn render_start_point(&self) -> Point {
         self.dest.top_left() + self.scroll
+    }
+}
+
+impl ConfigHolder for FileEditor {
+    fn config(&self) -> &ConfigAccess {
+        &self.config
     }
 }
 

@@ -15,7 +15,7 @@ pub mod lexer {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 
-        r"(->|[+-/*%=<>])" => (TokenType::Operator {
+        r"(->|[+-/*%=<>#])" => (TokenType::Operator {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 
@@ -23,11 +23,11 @@ pub mod lexer {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 
-        r"(let|fn|type|struct|pub|impl|for|self|Self|mod|use|enum)" => (TokenType::Keyword {
+        r"(let|fn|type|struct|pub|impl|for|self|Self|mod|use|enum|(iu)(8|16|32)|usize|bool)" => (TokenType::Keyword {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 
-        r"[^\d \t\r\n:+-/*,';<>=%()\[\]{}][^ \t\r\n:+-/*,';<>=%()\[\]{}]*" => (TokenType::Identifier {
+        r"[^0-9 \t\r\n:+-/*,';<>=%()\[\]{}][^ \t\r\n:+-/*,';<>=%()\[\]{}]*" => (TokenType::Identifier {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
     }
@@ -430,6 +430,45 @@ mod tests {
             },
             TokenType::Separator {
                 token: Token::new("}".to_string(), 2, 9, 58, 59),
+            },
+        ];
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn must_parse_derive() {
+        let buffer = "#[derive(Debug, Clone)]";
+        let result: Vec<TokenType> = lexer::Lexer::new(buffer).map(|p| p.0).collect();
+        let expected: Vec<TokenType> = vec![
+            TokenType::Operator {
+                token: Token::new("#".to_string(), 0, 0, 0, 1),
+            },
+            TokenType::Separator {
+                token: Token::new("[".to_string(), 0, 1, 1, 2),
+            },
+            TokenType::Identifier {
+                token: Token::new("derive".to_string(), 0, 2, 2, 8),
+            },
+            TokenType::Separator {
+                token: Token::new("(".to_string(), 0, 8, 8, 9),
+            },
+            TokenType::Identifier {
+                token: Token::new("Debug".to_string(), 0, 9, 9, 14),
+            },
+            TokenType::Operator {
+                token: Token::new(",".to_string(), 0, 14, 14, 15),
+            },
+            TokenType::Whitespace {
+                token: Token::new(" ".to_string(), 0, 15, 15, 16),
+            },
+            TokenType::Identifier {
+                token: Token::new("Clone".to_string(), 0, 16, 16, 21),
+            },
+            TokenType::Separator {
+                token: Token::new(")".to_string(), 0, 21, 21, 22),
+            },
+            TokenType::Separator {
+                token: Token::new("]".to_string(), 0, 22, 22, 23),
             },
         ];
         assert_eq!(result, expected);

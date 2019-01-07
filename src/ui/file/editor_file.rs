@@ -119,11 +119,10 @@ impl EditorFile {
 }
 
 impl Render for EditorFile {
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) -> UR {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) {
         for section in self.sections.iter() {
             section.render(canvas, renderer, parent);
         }
-        UR::NoOp
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {

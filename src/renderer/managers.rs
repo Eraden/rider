@@ -2,12 +2,17 @@ use sdl2::image::LoadTexture;
 use sdl2::pixels::Color;
 use sdl2::render::{Texture, TextureCreator};
 use sdl2::ttf::{Font, Sdl2TtfContext};
+use sdl2::video::WindowContext as WinCtxt;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 #[allow(unused_imports)]
 use std::env;
 use std::hash::Hash;
 use std::rc::Rc;
+
+//noinspection RsWrongLifetimeParametersNumber
+pub type RcTex<'l> = Rc<Texture<'l>>;
+pub type RcFont<'l> = Rc<Font<'l, 'static>>;
 
 pub trait ResourceLoader<'l, R> {
     type Args: ?Sized;
@@ -69,6 +74,12 @@ impl<'a> From<&'a FontDetails> for FontDetails {
 //noinspection RsWrongLifetimeParametersNumber
 pub type TextureManager<'l, T> = ResourceManager<'l, String, Texture<'l>, TextureCreator<T>>;
 pub type FontManager<'l> = ResourceManager<'l, FontDetails, Font<'l, 'static>, Sdl2TtfContext>;
+
+pub trait ManagersHolder<'l> {
+    fn font_manager(&mut self) -> &mut FontManager<'l>;
+
+    fn texture_manager(&mut self) -> &mut TextureManager<'l, WinCtxt>;
+}
 
 #[derive(Clone)]
 pub struct ResourceManager<'l, K, R, L>
@@ -132,9 +143,18 @@ impl<'l> ResourceLoader<'l, Font<'l, 'static>> for Sdl2TtfContext {
     }
 }
 
-impl<'l, T> TextureManager<'l, T> {
+pub trait TextTextureManager<'l> {
     //noinspection RsWrongLifetimeParametersNumber
-    pub fn load_text(
+    fn load_text(
+        &mut self,
+        details: &mut TextDetails,
+        font: &Rc<Font>,
+    ) -> Result<Rc<Texture<'l>>, String>;
+}
+
+impl<'l, T> TextTextureManager<'l> for TextureManager<'l, T> {
+    //noinspection RsWrongLifetimeParametersNumber
+    fn load_text(
         &mut self,
         details: &mut TextDetails,
         font: &Rc<Font>,

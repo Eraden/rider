@@ -1,5 +1,5 @@
 pub use crate::app::app_state::AppState;
-pub use crate::config::Config;
+pub use crate::config::{Config, ConfigAccess, ConfigHolder};
 pub use crate::renderer::Renderer;
 use crate::themes::*;
 use crate::ui::caret::{CaretPosition, MoveDirection};
@@ -251,8 +251,10 @@ impl Application {
         }
         UpdateResult::NoOp
     }
+}
 
-    pub fn config(&self) -> &Arc<RwLock<Config>> {
+impl ConfigHolder for Application {
+    fn config(&self) -> &ConfigAccess {
         &self.config
     }
 }

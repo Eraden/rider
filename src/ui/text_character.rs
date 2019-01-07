@@ -1,8 +1,8 @@
 use crate::app::{UpdateResult as UR, WindowCanvas as WC};
-use crate::config::Config;
+use crate::config::*;
 use crate::lexer::TokenType;
-use crate::renderer::managers::{FontDetails, TextDetails};
-use crate::renderer::Renderer;
+use crate::renderer::managers::*;
+use crate::renderer::*;
 use crate::ui::caret::CaretPosition;
 use crate::ui::*;
 
@@ -22,7 +22,7 @@ pub struct TextCharacter {
     source: Rect,
     dest: Rect,
     color: Color,
-    config: Arc<RwLock<Config>>,
+    config: ConfigAccess,
 }
 
 impl TextCharacter {
@@ -32,7 +32,7 @@ impl TextCharacter {
         line: usize,
         last_in_line: bool,
         color: Color,
-        config: Arc<RwLock<Config>>,
+        config: ConfigAccess,
     ) -> Self {
         Self {
             text_character,
@@ -109,9 +109,9 @@ impl Render for TextCharacter {
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) -> UR {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) {
         if self.is_new_line() {
-            return UR::NoOp;
+            return;
         }
 
         let font_details = {
@@ -135,12 +135,21 @@ impl Render for TextCharacter {
             Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
         };
         if let Ok(texture) = renderer.texture_manager().load_text(&mut details, &font) {
-            renderer.render_texture(canvas, &texture, &self.source, &dest);
+            canvas
+                .copy_ex(
+                    &texture,
+                    Some(self.source.clone()),
+                    Some(dest.clone()),
+                    0.0,
+                    None,
+                    false,
+                    false,
+                )
+                .unwrap();
         }
         //        let c = Color::RGB(255, 0, 0);
         //        canvas.set_draw_color(c);
         //        canvas.draw_rect(dest.clone()).unwrap();
-        UR::NoOp
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {

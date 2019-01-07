@@ -37,7 +37,7 @@ fn init_logger() {
     log_file_path.push("rider.log");
 
     CombinedLogger::init(vec![
-        TermLogger::new(LevelFilter::Warn, Config::default()).unwrap(),
+//        TermLogger::new(LevelFilter::Warn, Config::default()).unwrap(),
         WriteLogger::new(
             LevelFilter::Info,
             Config::default(),

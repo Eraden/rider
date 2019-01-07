@@ -1,8 +1,8 @@
 use sdl2::rect::{Point, Rect};
 
-use crate::app::{UpdateResult, WindowCanvas};
-use crate::config::Config;
-use crate::renderer::managers::FontDetails;
+use crate::app::{UpdateResult as UR, WindowCanvas as WC};
+use crate::config::*;
+use crate::renderer::managers::*;
 use crate::renderer::Renderer;
 
 pub mod caret;
@@ -33,7 +33,10 @@ pub fn is_in_rect(point: &Point, rect: &Rect) -> bool {
     rect.contains_point(point.clone())
 }
 
-pub fn get_text_character_rect(c: char, renderer: &mut Renderer) -> Option<Rect> {
+pub fn get_text_character_rect<'l, T>(c: char, renderer: &mut T) -> Option<Rect>
+where
+    T: ManagersHolder<'l> + ConfigHolder,
+{
     let font_details = FontDetails::new(
         renderer
             .config()
@@ -68,22 +71,17 @@ pub fn move_render_point(p: Point, d: &Rect) -> Rect {
 }
 
 pub trait Render {
-    fn render(
-        &self,
-        canvas: &mut WindowCanvas,
-        renderer: &mut Renderer,
-        parent: Parent,
-    ) -> UpdateResult;
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent);
 
     fn prepare_ui(&mut self, renderer: &mut Renderer);
 }
 
 pub trait Update {
-    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult;
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR;
 }
 
 pub trait ClickHandler {
-    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UpdateResult;
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UR;
 
     fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool;
 }
