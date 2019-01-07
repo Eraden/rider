@@ -33,36 +33,39 @@ pub fn is_in_rect(point: &Point, rect: &Rect) -> bool {
     rect.contains_point(point.clone())
 }
 
-pub fn get_text_character_rect<'l, T>(c: char, renderer: &mut T) -> Option<Rect>
+fn build_font_details<T>(config_holder: &T) -> FontDetails
 where
-    T: ManagersHolder<'l> + ConfigHolder,
+    T: ConfigHolder,
 {
-    let font_details = FontDetails::new(
-        renderer
+    FontDetails::new(
+        config_holder
             .config()
             .read()
             .unwrap()
             .editor_config()
             .font_path()
             .as_str(),
-        renderer
+        config_holder
             .config()
             .read()
             .unwrap()
             .editor_config()
             .character_size()
             .clone(),
-    );
-    let font = renderer
+    )
+}
+
+pub fn get_text_character_rect<'l, T>(c: char, renderer: &mut T) -> Option<Rect>
+where
+    T: ManagersHolder<'l> + ConfigHolder,
+{
+    let font_details = build_font_details(renderer);
+    renderer
         .font_manager()
         .load(&font_details)
-        .unwrap_or_else(|_| panic!("Font not found {:?}", font_details));
-
-    if let Ok((width, height)) = font.size_of_char(c) {
-        Some(Rect::new(0, 0, width, height))
-    } else {
-        None
-    }
+        .ok()
+        .and_then(|font| font.size_of_char(c).ok())
+        .and_then(|(width, height)| Some(Rect::new(0, 0, width, height)))
 }
 
 #[inline]
@@ -93,7 +96,18 @@ pub trait RenderBox {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tests::support;
     use sdl2::rect::*;
+
+    struct ConfigWrapper {
+        pub inner: ConfigAccess,
+    }
+
+    impl ConfigHolder for ConfigWrapper {
+        fn config(&self) -> &ConfigAccess {
+            &self.inner
+        }
+    }
 
     #[test]
     fn must_return_true_if_inside_rect() {
@@ -114,5 +128,17 @@ mod tests {
         let rect = Rect::new(10, 20, 30, 40);
         let point = Point::new(11, 11);
         assert_eq!(move_render_point(point, &rect), Rect::new(21, 31, 30, 40));
+    }
+
+    #[test]
+    fn must_build_font_details() {
+        let config = support::build_config();
+        let wrapper = ConfigWrapper {
+            inner: config.clone(),
+        };
+        let details = build_font_details(&wrapper);
+        let c = config.read().unwrap();
+        assert_eq!(details.path, c.editor_config().font_path().to_string());
+        assert_eq!(details.size, c.editor_config().character_size());
     }
 }
