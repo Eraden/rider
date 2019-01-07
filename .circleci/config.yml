@@ -1,0 +1,54 @@
+version: 2.1
+
+jobs:
+  build:
+    working_directory: ~/rider
+    docker:
+      - image: abronan/rust-circleci:latest
+
+    environment:
+      CODECOV_TOKEN: "e58da505-19f2-481c-8068-e845cb36fbe4"
+      TZ: "/usr/share/zoneinfo/Europe/Paris"
+
+    steps:
+      - checkout
+      - restore_cache:
+          key: project-cache
+      - run:
+          name: Install dependencies
+          command: |
+            apt-get update
+            apt-get install -y -qq xvfb mesa-utils mesa-vdpau-drivers
+            apt-get install -y libssl-dev pkg-config cmake zlib1g-dev
+            apt-get install -q -y libsdl2-dev libsdl2-2.0-0 libsdl2-gfx-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libsdl2-ttf-dev
+      - run:
+          name: Check formatting
+          command: |
+            rustfmt --version
+            cargo fmt -- --error-on-unformatted --unstable-features --check
+      - run:
+          name: Nightly Build
+          command: |
+            rustup run nightly rustc --version --verbose
+            rustup run nightly cargo --version --verbose
+            rustup run nightly cargo build
+      - run:
+          name: Test and code coverage
+          command: |
+            RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
+            Xvfb :5 -screen 0 800x600x24 +extension GLX +render -noreset &
+            export DISPLAY=:5
+            export XDG_RUNTIME_DIR=$(pwd)
+            rustup run nightly cargo tarpaulin --ciserver circle-ci --out Xml
+      - run:
+          name: Upload Coverage
+          command: |
+            wget -O - -q "https://codecov.io/bash" > .codecov
+            chmod +x .codecov
+            ./.codecov -t $CODECOV_TOKEN
+            echo "Uploaded code coverage"
+      - save_cache:
+          key: project-cache
+          paths:
+            - "~/.cargo"
+            - "./target"

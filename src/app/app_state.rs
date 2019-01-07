@@ -1,10 +1,9 @@
 use crate::app::caret_manager;
 use crate::app::file_content_manager;
 use crate::app::{UpdateResult, WindowCanvas as WC};
-use crate::config::Config;
+use crate::config::*;
 use crate::renderer::Renderer;
-use crate::ui::caret::Caret;
-use crate::ui::caret::{CaretPosition, MoveDirection};
+use crate::ui::caret::*;
 use crate::ui::file::editor_file::EditorFile;
 use crate::ui::file::*;
 use crate::ui::menu_bar::MenuBar;
@@ -48,10 +47,6 @@ impl AppState {
         };
     }
 
-    pub fn config(&self) -> &Arc<RwLock<Config>> {
-        &self.config
-    }
-
     pub fn file_editor(&self) -> &FileEditor {
         &self.file_editor
     }
@@ -62,9 +57,9 @@ impl AppState {
 }
 
 impl Render for AppState {
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, _parent: Parent) -> UpdateResult {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, _parent: Parent) {
         self.file_editor.render(canvas, renderer, None);
-        self.menu_bar.render(canvas, renderer, None)
+        self.menu_bar.render(canvas, renderer, None);
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
@@ -106,5 +101,11 @@ impl AppState {
 
     pub fn is_left_click_target(&self, _point: &Point) -> bool {
         true
+    }
+}
+
+impl ConfigHolder for AppState {
+    fn config(&self) -> &ConfigAccess {
+        &self.config
     }
 }

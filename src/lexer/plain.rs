@@ -77,3 +77,140 @@ pub mod lexer {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::lexer::plain::*;
+    use crate::lexer::*;
+
+    #[test]
+    fn must_parse_simple_text() {
+        let code = "foo";
+        let lexer = lexer::Lexer::new(code);
+        let result: Vec<TokenType> = lexer.map(|pair| pair.0).collect();
+        let expected: Vec<TokenType> = vec![TokenType::Identifier {
+            token: Token::new("foo".to_string(), 0, 0, 0, 3),
+        }];
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn must_parse_long_text() {
+        let code = "foobarhelloworldexamplecomtesttest";
+        let lexer = lexer::Lexer::new(code);
+        let result: Vec<TokenType> = lexer.map(|pair| pair.0).collect();
+        let expected: Vec<TokenType> = vec![TokenType::Identifier {
+            token: Token::new(
+                "foobarhelloworldexamplecomtesttest".to_string(),
+                0,
+                0,
+                0,
+                34,
+            ),
+        }];
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn must_parse_text_with_space() {
+        let code = "foo bar";
+        let lexer = lexer::Lexer::new(code);
+        let result: Vec<TokenType> = lexer.map(|pair| pair.0).collect();
+        let expected: Vec<TokenType> = vec![
+            TokenType::Identifier {
+                token: Token::new("foo".to_string(), 0, 0, 0, 3),
+            },
+            TokenType::Whitespace {
+                token: Token::new(" ".to_string(), 0, 3, 3, 4),
+            },
+            TokenType::Identifier {
+                token: Token::new("bar".to_string(), 0, 4, 4, 7),
+            },
+        ];
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn must_parse_text_with_one_multi_character_space() {
+        let code = "foo      bar";
+        let lexer = lexer::Lexer::new(code);
+        let result: Vec<TokenType> = lexer.map(|pair| pair.0).collect();
+        let expected: Vec<TokenType> = vec![
+            TokenType::Identifier {
+                token: Token::new("foo".to_string(), 0, 0, 0, 3),
+            },
+            TokenType::Whitespace {
+                token: Token::new(" ".to_string(), 0, 3, 3, 4),
+            },
+            TokenType::Whitespace {
+                token: Token::new(" ".to_string(), 0, 4, 4, 5),
+            },
+            TokenType::Whitespace {
+                token: Token::new(" ".to_string(), 0, 5, 5, 6),
+            },
+            TokenType::Whitespace {
+                token: Token::new(" ".to_string(), 0, 6, 6, 7),
+            },
+            TokenType::Whitespace {
+                token: Token::new(" ".to_string(), 0, 7, 7, 8),
+            },
+            TokenType::Whitespace {
+                token: Token::new(" ".to_string(), 0, 8, 8, 9),
+            },
+            TokenType::Identifier {
+                token: Token::new("bar".to_string(), 0, 9, 9, 12),
+            },
+        ];
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn must_parse_text_with_multiple_spaces() {
+        let code = "foo bar hello world";
+        let lexer = lexer::Lexer::new(code);
+        let result: Vec<TokenType> = lexer.map(|pair| pair.0).collect();
+        let expected: Vec<TokenType> = vec![
+            TokenType::Identifier {
+                token: Token::new("foo".to_string(), 0, 0, 0, 3),
+            },
+            TokenType::Whitespace {
+                token: Token::new(" ".to_string(), 0, 3, 3, 4),
+            },
+            TokenType::Identifier {
+                token: Token::new("bar".to_string(), 0, 4, 4, 7),
+            },
+            TokenType::Whitespace {
+                token: Token::new(" ".to_string(), 0, 7, 7, 8),
+            },
+            TokenType::Identifier {
+                token: Token::new("hello".to_string(), 0, 8, 8, 13),
+            },
+            TokenType::Whitespace {
+                token: Token::new(" ".to_string(), 0, 13, 13, 14),
+            },
+            TokenType::Identifier {
+                token: Token::new("world".to_string(), 0, 14, 14, 19),
+            },
+        ];
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn must_parse_text_with_new_line() {
+        let code = "foo\nbar";
+        let lexer = lexer::Lexer::new(code);
+        let result: Vec<TokenType> = lexer.map(|pair| pair.0).collect();
+        let expected: Vec<TokenType> = vec![
+            TokenType::Identifier {
+                token: Token::new("foo".to_string(), 0, 0, 0, 3),
+            },
+            TokenType::Whitespace {
+                token: Token::new("\n".to_string(), 1, 0, 3, 4),
+            },
+            TokenType::Identifier {
+                token: Token::new("bar".to_string(), 1, 1, 4, 7),
+            },
+        ];
+        assert_eq!(result, expected);
+    }
+}

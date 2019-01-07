@@ -13,7 +13,7 @@ use crate::ui::*;
 pub struct EditorFile {
     path: String,
     sections: Vec<EditorFileSection>,
-    render_position: Rect,
+    dest: Rect,
     buffer: String,
     config: Arc<RwLock<Config>>,
     line_height: u32,
@@ -42,7 +42,7 @@ impl EditorFile {
         Self {
             path,
             sections,
-            render_position,
+            dest: render_position,
             buffer,
             config,
             line_height: 0,
@@ -66,7 +66,7 @@ impl EditorFile {
     }
 
     pub fn render_position(&self) -> &Rect {
-        &self.render_position
+        &self.dest
     }
 
     pub fn get_character_at(&self, index: usize) -> Option<TextCharacter> {
@@ -119,11 +119,10 @@ impl EditorFile {
 }
 
 impl Render for EditorFile {
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) -> UR {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) {
         for section in self.sections.iter() {
             section.render(canvas, renderer, parent);
         }
-        UR::NoOp
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
@@ -179,6 +178,10 @@ impl ClickHandler for EditorFile {
 
 impl RenderBox for EditorFile {
     fn render_start_point(&self) -> Point {
-        self.render_position.top_left()
+        self.dest.top_left()
+    }
+
+    fn dest(&self) -> &Rect {
+        &self.dest
     }
 }

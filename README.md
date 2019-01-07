@@ -18,8 +18,9 @@ Text editor in rust
 * [ ] Lock scroll when no available content
 * [ ] Config edit menu
 * [ ] Project tree
-* [ ] Cover `rider` with tests
+* [ ] Cover `rider` with tests at least 50%
 * [x] Handle resize window
+* [ ] Selection
 
 ### v1.1
 
@@ -29,6 +30,8 @@ Text editor in rust
 * [ ] Git support
 * [ ] Context menu
 * [ ] Keep indent
+* [ ] Multi-selection
+* [ ] Cover `rider` with tests at least 75%
 
 ### v1.2
 * [ ] Multi-caret

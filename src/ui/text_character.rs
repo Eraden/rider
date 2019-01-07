@@ -1,8 +1,8 @@
 use crate::app::{UpdateResult as UR, WindowCanvas as WC};
-use crate::config::Config;
+use crate::config::*;
 use crate::lexer::TokenType;
-use crate::renderer::managers::{FontDetails, TextDetails};
-use crate::renderer::Renderer;
+use crate::renderer::managers::*;
+use crate::renderer::*;
 use crate::ui::caret::CaretPosition;
 use crate::ui::*;
 
@@ -22,7 +22,7 @@ pub struct TextCharacter {
     source: Rect,
     dest: Rect,
     color: Color,
-    config: Arc<RwLock<Config>>,
+    config: ConfigAccess,
 }
 
 impl TextCharacter {
@@ -32,7 +32,7 @@ impl TextCharacter {
         line: usize,
         last_in_line: bool,
         color: Color,
-        config: Arc<RwLock<Config>>,
+        config: ConfigAccess,
     ) -> Self {
         Self {
             text_character,
@@ -50,12 +50,16 @@ impl TextCharacter {
         self.last_in_line
     }
 
-    pub fn dest(&self) -> &Rect {
-        &self.dest
-    }
-
     pub fn source(&self) -> &Rect {
         &self.source
+    }
+
+    pub fn set_dest(&mut self, rect: &Rect) {
+        self.dest = rect.clone();
+    }
+
+    pub fn set_source(&mut self, rect: &Rect) {
+        self.source = rect.clone();
     }
 
     pub fn color(&self) -> &Color {
@@ -101,9 +105,9 @@ impl Render for TextCharacter {
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) -> UR {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) {
         if self.is_new_line() {
-            return UR::NoOp;
+            return;
         }
 
         let font_details = {
@@ -127,20 +131,26 @@ impl Render for TextCharacter {
             Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
         };
         if let Ok(texture) = renderer.texture_manager().load_text(&mut details, &font) {
-            renderer.render_texture(canvas, &texture, &self.source, &dest);
+            canvas
+                .copy_ex(
+                    &texture,
+                    Some(self.source.clone()),
+                    Some(dest.clone()),
+                    0.0,
+                    None,
+                    false,
+                    false,
+                )
+                .unwrap();
         }
         //        let c = Color::RGB(255, 0, 0);
         //        canvas.set_draw_color(c);
         //        canvas.draw_rect(dest.clone()).unwrap();
-        UR::NoOp
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
-        let font_details = {
-            let config = renderer.config().read().unwrap();
-            let ec = config.editor_config();
-            FontDetails::new(ec.font_path().as_str(), ec.character_size().clone())
-        };
+        let font_details = build_font_details(renderer);
+
         let font = renderer
             .font_manager()
             .load(&font_details)
@@ -151,8 +161,8 @@ impl Render for TextCharacter {
             c => c,
         };
         if let Some(rect) = get_text_character_rect(c, renderer) {
-            self.source = rect.clone();
-            self.dest = rect.clone();
+            self.set_source(&rect);
+            self.set_dest(&rect);
         }
         let mut details = TextDetails {
             text: self.text_character.to_string(),
@@ -194,5 +204,312 @@ impl ClickHandler for TextCharacter {
 impl RenderBox for TextCharacter {
     fn render_start_point(&self) -> Point {
         self.dest.top_left()
+    }
+
+    fn dest(&self) -> &Rect {
+        &self.dest
+    }
+}
+
+#[cfg(test)]
+mod test_getters {
+    use crate::renderer::*;
+    use crate::tests::*;
+    use crate::ui::*;
+    use sdl2::pixels::*;
+    use sdl2::rect::*;
+    use std::sync::*;
+
+    #[test]
+    fn must_return_valid_is_last_in_line() {
+        let config = support::build_config();
+        let widget = TextCharacter::new(
+            '\n',
+            0,
+            0,
+            true,
+            Color::RGB(1, 12, 123),
+            Arc::clone(&config),
+        );
+        assert_eq!(widget.is_last_in_line(), true);
+    }
+
+    #[test]
+    fn must_return_true_for_is_new_line_if_new_line() {
+        let config = support::build_config();
+        let widget = TextCharacter::new(
+            '\n',
+            0,
+            0,
+            true,
+            Color::RGB(1, 12, 123),
+            Arc::clone(&config),
+        );
+        assert_eq!(widget.is_new_line(), true);
+    }
+
+    #[test]
+    fn must_return_false_for_is_new_line_if_new_line() {
+        let config = support::build_config();
+        let widget =
+            TextCharacter::new('W', 0, 0, true, Color::RGB(1, 12, 123), Arc::clone(&config));
+        assert_eq!(widget.is_new_line(), false);
+    }
+
+    #[test]
+    fn must_return_valid_position() {
+        let config = support::build_config();
+        let widget = TextCharacter::new(
+            '\n',
+            1,
+            123,
+            true,
+            Color::RGB(1, 12, 123),
+            Arc::clone(&config),
+        );
+        assert_eq!(widget.position(), 1);
+    }
+
+    #[test]
+    fn must_return_valid_line() {
+        let config = support::build_config();
+        let widget = TextCharacter::new(
+            '\n',
+            1,
+            123,
+            true,
+            Color::RGB(1, 12, 123),
+            Arc::clone(&config),
+        );
+        assert_eq!(widget.line(), 123);
+    }
+
+    #[test]
+    fn must_return_valid_text_character() {
+        let config = support::build_config();
+        let widget = TextCharacter::new(
+            '\n',
+            87,
+            123,
+            true,
+            Color::RGB(1, 12, 123),
+            Arc::clone(&config),
+        );
+        assert_eq!(widget.text_character(), '\n');
+    }
+
+    #[test]
+    fn must_return_valid_source() {
+        let config = support::build_config();
+        let widget = TextCharacter::new(
+            '\n',
+            0,
+            0,
+            true,
+            Color::RGB(1, 12, 123),
+            Arc::clone(&config),
+        );
+        assert_eq!(widget.source(), &Rect::new(0, 0, 0, 0));
+    }
+
+    #[test]
+    fn must_return_valid_dest() {
+        let config = support::build_config();
+        let widget = TextCharacter::new(
+            '\n',
+            0,
+            0,
+            true,
+            Color::RGB(1, 12, 123),
+            Arc::clone(&config),
+        );
+        assert_eq!(widget.dest(), &Rect::new(0, 0, 0, 0));
+    }
+
+    #[test]
+    fn must_return_valid_color() {
+        let config = support::build_config();
+        let widget = TextCharacter::new(
+            '\n',
+            0,
+            0,
+            true,
+            Color::RGB(1, 12, 123),
+            Arc::clone(&config),
+        );
+        assert_eq!(widget.color(), &Color::RGB(1, 12, 123));
+    }
+}
+
+#[cfg(test)]
+mod test_own_methods {
+    use crate::renderer::*;
+    use crate::tests::*;
+    use crate::ui::*;
+    use sdl2::pixels::*;
+    use sdl2::rect::*;
+    use std::sync::*;
+
+    #[test]
+    fn must_update_position_of_new_line() {
+        let config = support::build_config();
+        let mut widget =
+            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        widget.set_dest(&Rect::new(10, 20, 30, 40));
+        widget.set_source(&Rect::new(50, 60, 70, 80));
+        let mut current = Rect::new(10, 23, 0, 0);
+        widget.update_position(&mut current);
+        assert_eq!(current, Rect::new(0, 103, 1, 1));
+        assert_eq!(widget.dest(), &Rect::new(0, 103, 30, 40));
+        assert_eq!(widget.source(), &Rect::new(50, 60, 70, 80));
+    }
+
+    #[test]
+    fn must_update_position_of_non_new_line() {
+        let config = support::build_config();
+        let mut widget =
+            TextCharacter::new('W', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        widget.set_dest(&Rect::new(10, 20, 30, 40));
+        widget.set_source(&Rect::new(50, 60, 70, 80));
+        let mut current = Rect::new(10, 23, 0, 0);
+        widget.update_position(&mut current);
+        assert_eq!(current, Rect::new(80, 23, 1, 1));
+        assert_eq!(widget.dest(), &Rect::new(10, 23, 70, 80));
+        assert_eq!(widget.source(), &Rect::new(50, 60, 70, 80));
+    }
+}
+
+#[cfg(test)]
+mod test_click_handler {
+    use crate::app::*;
+    use crate::renderer::*;
+    use crate::tests::*;
+    use crate::ui::*;
+    use sdl2::pixels::*;
+    use sdl2::rect::*;
+    use std::sync::*;
+
+    #[test]
+    fn refute_when_not_click_target() {
+        let config = support::build_config();
+        let mut widget =
+            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        widget.set_dest(&Rect::new(10, 20, 30, 40));
+        widget.set_source(&Rect::new(50, 60, 70, 80));
+        let point = Point::new(0, 0);
+        let context = UpdateContext::Nothing;
+        let result = widget.is_left_click_target(&point, &context);
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn assert_when_click_target() {
+        let config = support::build_config();
+        let mut widget =
+            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        widget.set_dest(&Rect::new(10, 20, 30, 40));
+        widget.set_source(&Rect::new(50, 60, 70, 80));
+        let point = Point::new(20, 30);
+        let context = UpdateContext::Nothing;
+        let result = widget.is_left_click_target(&point, &context);
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn refute_when_not_click_target_because_parent() {
+        let config = support::build_config();
+        let mut widget =
+            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        widget.set_dest(&Rect::new(10, 20, 30, 40));
+        widget.set_source(&Rect::new(50, 60, 70, 80));
+        let point = Point::new(20, 30);
+        let context = UpdateContext::ParentPosition(Point::new(100, 100));
+        let result = widget.is_left_click_target(&point, &context);
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn assert_when_click_target_because_parent() {
+        let config = support::build_config();
+        let mut widget =
+            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        widget.set_dest(&Rect::new(10, 20, 30, 40));
+        widget.set_source(&Rect::new(50, 60, 70, 80));
+        let point = Point::new(120, 130);
+        let context = UpdateContext::ParentPosition(Point::new(100, 100));
+        let result = widget.is_left_click_target(&point, &context);
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn assert_on_click_return_move_caret() {
+        let config = support::build_config();
+        let position = 1233;
+        let line = 2893;
+        let mut widget = TextCharacter::new(
+            '\n',
+            position.clone(),
+            line.clone(),
+            true,
+            Color::RGB(0, 0, 0),
+            Arc::clone(&config),
+        );
+        let dest = Rect::new(10, 20, 30, 40);
+        widget.set_dest(&dest);
+        widget.set_source(&Rect::new(50, 60, 70, 80));
+
+        let point = Point::new(12, 34);
+        let context = UpdateContext::ParentPosition(Point::new(678, 293));
+        let result = widget.on_left_click(&point, &context);
+        let expected = UpdateResult::MoveCaret(dest, CaretPosition::new(position, line, 0));
+        assert_eq!(result, expected);
+    }
+}
+
+#[cfg(test)]
+mod test_render_box {
+    use crate::renderer::*;
+    use crate::tests::*;
+    use crate::ui::*;
+    use sdl2::pixels::*;
+    use sdl2::rect::*;
+    use std::sync::*;
+
+    #[test]
+    fn must_return_top_left_point() {
+        let config = support::build_config();
+        let mut widget =
+            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        widget.set_dest(&Rect::new(10, 20, 30, 40));
+        widget.set_source(&Rect::new(50, 60, 70, 80));
+        let result = widget.render_start_point();
+        let expected = Point::new(10, 20);
+        assert_eq!(result, expected);
+    }
+}
+
+#[cfg(test)]
+mod test_update {
+    use crate::app::*;
+    use crate::renderer::*;
+    use crate::tests::*;
+    use crate::ui::*;
+    use sdl2::pixels::*;
+    use sdl2::rect::*;
+    use std::sync::*;
+
+    #[test]
+    fn assert_do_nothing() {
+        let config = support::build_config();
+        let mut widget =
+            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        widget.set_dest(&Rect::new(10, 20, 30, 40));
+        widget.set_source(&Rect::new(50, 60, 70, 80));
+        let result = widget.update(
+            3234,
+            &UpdateContext::ParentPosition(Point::new(234, 234234)),
+        );
+        let expected = UpdateResult::NoOp;
+        assert_eq!(result, expected);
     }
 }

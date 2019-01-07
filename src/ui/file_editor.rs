@@ -6,6 +6,7 @@ use std::sync::*;
 
 use crate::app::*;
 use crate::app::{UpdateResult as UR, WindowCanvas as WS};
+use crate::config::*;
 use crate::ui::*;
 
 pub struct FileEditor {
@@ -13,11 +14,11 @@ pub struct FileEditor {
     scroll: Point,
     caret: Caret,
     file: Option<EditorFile>,
-    config: Arc<RwLock<Config>>,
+    config: ConfigAccess,
 }
 
 impl FileEditor {
-    pub fn new(config: Arc<RwLock<Config>>) -> Self {
+    pub fn new(config: ConfigAccess) -> Self {
         let dest = {
             let c = config.read().unwrap();
             Rect::new(
@@ -34,10 +35,6 @@ impl FileEditor {
             file: None,
             config,
         }
-    }
-
-    pub fn config(&self) -> &Arc<RwLock<Config>> {
-        &self.config
     }
 
     pub fn caret(&self) -> &Caret {
@@ -166,13 +163,13 @@ impl FileEditor {
 }
 
 impl Render for FileEditor {
-    fn render(&self, canvas: &mut WS, renderer: &mut Renderer, _parent: Parent) -> UR {
+    fn render(&self, canvas: &mut WS, renderer: &mut Renderer, _parent: Parent) {
         canvas.set_clip_rect(self.dest.clone());
         match self.file() {
             Some(file) => file.render(canvas, renderer, Some(self)),
-            _ => UR::NoOp,
+            _ => (),
         };
-        self.caret.render(canvas, renderer, Some(self))
+        self.caret.render(canvas, renderer, Some(self));
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
@@ -229,6 +226,16 @@ impl RenderBox for FileEditor {
     fn render_start_point(&self) -> Point {
         self.dest.top_left() + self.scroll
     }
+
+    fn dest(&self) -> &Rect {
+        &self.dest
+    }
+}
+
+impl ConfigHolder for FileEditor {
+    fn config(&self) -> &ConfigAccess {
+        &self.config
+    }
 }
 
 #[cfg(test)]
@@ -255,36 +262,5 @@ mod tests {
         let file = result.as_ref().unwrap();
         assert_eq!(file.path(), first_file.path());
         assert_eq!(file.buffer(), first_file.buffer());
-    }
-
-    #[test]
-    fn add_text() {
-        let config = Arc::new(RwLock::new(Config::new()));
-        let sdl_context = sdl2::init().unwrap();
-        let video_subsystem = sdl_context.video().unwrap();
-        let window = video_subsystem
-            .window("Test", 1, 1)
-            .borderless()
-            .opengl()
-            .build()
-            .unwrap();
-        let canvas = window.into_canvas().accelerated().build().unwrap();
-        let font_context = sdl2::ttf::init().unwrap();
-        let texture_creator = canvas.texture_creator();
-        let mut renderer = Renderer::new(config.clone(), &font_context, &texture_creator);
-
-        let mut editor = FileEditor::new(Arc::clone(&config));
-        let mut file = EditorFile::new("./foo.txt".to_string(), "foo".to_string(), config.clone());
-        file.prepare_ui(&mut renderer);
-        assert_eq!(editor.open_file(file).is_none(), true);
-        assert_eq!(editor.caret().position().text_position(), 0);
-        assert_eq!(editor.file().is_some(), true);
-        assert_eq!(editor.file().unwrap().sections().len(), 1);
-        assert_eq!(editor.file().unwrap().get_character_at(0).is_some(), true);
-
-        editor.insert_text("z".to_string(), &mut renderer);
-        assert_eq!(editor.caret().position().text_position(), 1);
-        assert_eq!(editor.file().is_some(), true);
-        assert_eq!(editor.file().unwrap().buffer(), "zfoo".to_string());
     }
 }

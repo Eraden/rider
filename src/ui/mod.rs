@@ -1,8 +1,8 @@
 use sdl2::rect::{Point, Rect};
 
-use crate::app::{UpdateResult, WindowCanvas};
-use crate::config::Config;
-use crate::renderer::managers::FontDetails;
+use crate::app::{UpdateResult as UR, WindowCanvas as WC};
+use crate::config::*;
+use crate::renderer::managers::*;
 use crate::renderer::Renderer;
 
 pub mod caret;
@@ -30,41 +30,32 @@ pub enum UpdateContext<'l> {
 
 #[inline]
 pub fn is_in_rect(point: &Point, rect: &Rect) -> bool {
-    let start = rect.top_left();
-    let end = Point::new(
-        rect.x() + (rect.width() as i32),
-        rect.y() + (rect.height() as i32),
-    );
-    start.x() <= point.x() && start.y() <= point.y() && end.x() >= point.x() && end.y() >= point.y()
+    rect.contains_point(point.clone())
 }
 
-pub fn get_text_character_rect(c: char, renderer: &mut Renderer) -> Option<Rect> {
-    let font_details = FontDetails::new(
-        renderer
-            .config()
-            .read()
-            .unwrap()
-            .editor_config()
-            .font_path()
-            .as_str(),
-        renderer
-            .config()
-            .read()
-            .unwrap()
-            .editor_config()
-            .character_size()
-            .clone(),
-    );
-    let font = renderer
+#[inline]
+pub fn build_font_details<T>(config_holder: &T) -> FontDetails
+where
+    T: ConfigHolder,
+{
+    let c = config_holder.config().read().unwrap();
+    FontDetails::new(
+        c.editor_config().font_path().as_str(),
+        c.editor_config().character_size().clone(),
+    )
+}
+
+pub fn get_text_character_rect<'l, T>(c: char, renderer: &mut T) -> Option<Rect>
+where
+    T: ManagersHolder<'l> + ConfigHolder,
+{
+    let font_details = build_font_details(renderer);
+    renderer
         .font_manager()
         .load(&font_details)
-        .unwrap_or_else(|_| panic!("Font not found {:?}", font_details));
-
-    if let Ok((width, height)) = font.size_of_char(c) {
-        Some(Rect::new(0, 0, width, height))
-    } else {
-        None
-    }
+        .ok()
+        .and_then(|font| font.size_of_char(c).ok())
+        .and_then(|(width, height)| Some(Rect::new(0, 0, width, height)))
 }
 
 #[inline]
@@ -73,26 +64,73 @@ pub fn move_render_point(p: Point, d: &Rect) -> Rect {
 }
 
 pub trait Render {
-    fn render(
-        &self,
-        canvas: &mut WindowCanvas,
-        renderer: &mut Renderer,
-        parent: Parent,
-    ) -> UpdateResult;
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent);
 
     fn prepare_ui(&mut self, renderer: &mut Renderer);
 }
 
 pub trait Update {
-    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult;
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR;
 }
 
 pub trait ClickHandler {
-    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UpdateResult;
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UR;
 
     fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool;
 }
 
 pub trait RenderBox {
     fn render_start_point(&self) -> Point;
+
+    fn dest(&self) -> &Rect;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tests::support;
+    use sdl2::rect::*;
+
+    struct ConfigWrapper {
+        pub inner: ConfigAccess,
+    }
+
+    impl ConfigHolder for ConfigWrapper {
+        fn config(&self) -> &ConfigAccess {
+            &self.inner
+        }
+    }
+
+    #[test]
+    fn must_return_true_if_inside_rect() {
+        let rect = Rect::new(10, 10, 30, 30);
+        let point = Point::new(20, 20);
+        assert_eq!(is_in_rect(&point, &rect), true);
+    }
+
+    #[test]
+    fn must_return_not_if_not_inside_rect() {
+        let rect = Rect::new(10, 10, 30, 30);
+        let point = Point::new(41, 41);
+        assert_eq!(is_in_rect(&point, &rect), false);
+    }
+
+    #[test]
+    fn must_return_moved_rect() {
+        let rect = Rect::new(10, 20, 30, 40);
+        let point = Point::new(11, 11);
+        assert_eq!(move_render_point(point, &rect), Rect::new(21, 31, 30, 40));
+    }
+
+    #[test]
+    fn must_build_font_details() {
+        let config = support::build_config();
+        let wrapper = ConfigWrapper {
+            inner: config.clone(),
+        };
+        let details = build_font_details(&wrapper);
+        let c = config.read().unwrap();
+        assert_eq!(details.path, c.editor_config().font_path().to_string());
+        assert_eq!(details.size, c.editor_config().character_size());
+    }
 }

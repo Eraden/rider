@@ -1,8 +1,8 @@
 use crate::app::{UpdateResult as UR, WindowCanvas as WC};
-use crate::config::Config;
+use crate::config::*;
 use crate::lexer::TokenType;
 use crate::renderer::managers::{FontDetails, TextDetails};
-use crate::renderer::Renderer;
+use crate::renderer::*;
 use crate::ui::*;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
@@ -19,7 +19,6 @@ impl TokenType {
             &TokenType::Whitespace { .. } => ch.whitespace().color().into(),
             &TokenType::Keyword { .. } => ch.keyword().color().into(),
             &TokenType::String { .. } => ch.string().color().into(),
-            &TokenType::Number { .. } => ch.number().color().into(),
             &TokenType::Identifier { .. } => ch.identifier().color().into(),
             &TokenType::Literal { .. } => ch.literal().color().into(),
             &TokenType::Comment { .. } => ch.comment().color().into(),
@@ -113,14 +112,13 @@ impl Render for EditorFileToken {
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) -> UR {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) {
         if self.token_type.is_new_line() {
-            return UR::NoOp;
+            return;
         }
         for text_character in self.characters.iter() {
             text_character.render(canvas, renderer, parent);
         }
-        UR::NoOp
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
