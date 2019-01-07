@@ -3,7 +3,7 @@ use std::ops::Deref;
 pub mod plain;
 pub mod rust_lang;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
 pub enum Language {
     PlainText,
     Rust,
@@ -14,7 +14,6 @@ pub enum TokenType {
     Whitespace { token: Token },
     Keyword { token: Token },
     String { token: Token },
-    Number { token: Token },
     Identifier { token: Token },
     Literal { token: Token },
     Comment { token: Token },
@@ -32,9 +31,6 @@ impl TokenType {
                 token: token.move_to(line, character, start, end),
             },
             TokenType::String { token } => TokenType::String {
-                token: token.move_to(line, character, start, end),
-            },
-            TokenType::Number { token } => TokenType::Number {
                 token: token.move_to(line, character, start, end),
             },
             TokenType::Identifier { token } => TokenType::Identifier {
@@ -78,7 +74,6 @@ impl Deref for TokenType {
             TokenType::Whitespace { token } => token,
             TokenType::Keyword { token } => token,
             TokenType::String { token } => token,
-            TokenType::Number { token } => token,
             TokenType::Identifier { token } => token,
             TokenType::Literal { token } => token,
             TokenType::Comment { token } => token,
@@ -155,5 +150,75 @@ pub fn parse(text: String, language: &Language) -> Vec<TokenType> {
             .inspect(|tok| warn!("tok: {:?}", tok))
             .map(|t| t.0)
             .collect(),
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::lexer::*;
+
+    #[test]
+    fn must_parse_plain() {
+        let buffer = "foo bar";
+        let language = &Language::PlainText;
+        let result = parse(buffer.to_string(), language);
+        assert_eq!(result.len(), 3);
+    }
+
+    #[test]
+    fn must_parse_rust() {
+        let buffer = "foo bar";
+        let language = &Language::Rust;
+        let result = parse(buffer.to_string(), language);
+        assert_eq!(result.len(), 3);
+    }
+
+    #[test]
+    fn must_return_valid_value_for_text() {
+        let token = Token::new("a".to_string(), 1, 2, 3, 4);
+        let result = token.text();
+        let text: String = "a".to_string();
+        let expected = &text;
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn must_return_valid_value_for_line() {
+        let token = Token::new("a".to_string(), 1, 2, 3, 4);
+        let result = token.line();
+        let expected = 1;
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn must_return_valid_value_for_character() {
+        let token = Token::new("a".to_string(), 1, 2, 3, 4);
+        let result = token.character();
+        let expected = 2;
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn must_return_valid_value_for_start() {
+        let token = Token::new("a".to_string(), 1, 2, 3, 4);
+        let result = token.start();
+        let expected = 3;
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn must_return_valid_value_for_end() {
+        let token = Token::new("a".to_string(), 1, 2, 3, 4);
+        let result = token.end();
+        let expected = 4;
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn must_return_valid_value_for_move_to() {
+        let token = Token::new("a".to_string(), 1, 2, 3, 4);
+        let result = token.move_to(5, 6, 7, 8);
+        let expected = Token::new("a".to_string(), 5, 6, 7, 8);
+        assert_eq!(result, expected);
     }
 }

@@ -19,7 +19,6 @@ impl TokenType {
             &TokenType::Whitespace { .. } => ch.whitespace().color().into(),
             &TokenType::Keyword { .. } => ch.keyword().color().into(),
             &TokenType::String { .. } => ch.string().color().into(),
-            &TokenType::Number { .. } => ch.number().color().into(),
             &TokenType::Identifier { .. } => ch.identifier().color().into(),
             &TokenType::Literal { .. } => ch.literal().color().into(),
             &TokenType::Comment { .. } => ch.comment().color().into(),

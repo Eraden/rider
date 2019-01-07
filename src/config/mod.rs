@@ -127,3 +127,32 @@ impl Config {
         &self.extensions_mapping
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::config::*;
+    use crate::lexer::*;
+
+    #[test]
+    fn must_return_language_mapping() {
+        let config = Config::new();
+
+        let mapping = config.extensions_mapping();
+        {
+            let mut keys: Vec<String> = mapping.keys().map(|s| s.to_string()).collect();
+            let mut expected: Vec<String> =
+                vec![".".to_string(), "txt".to_string(), "rs".to_string()];
+            keys.sort();
+            expected.sort();
+            assert_eq!(keys, expected);
+        }
+        {
+            let mut keys: Vec<Language> = mapping.values().map(|s| s.clone()).collect();
+            let mut expected: Vec<Language> =
+                vec![Language::PlainText, Language::PlainText, Language::Rust];
+            keys.sort();
+            expected.sort();
+            assert_eq!(keys, expected);
+        }
+    }
+}
