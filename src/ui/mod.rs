@@ -30,12 +30,7 @@ pub enum UpdateContext<'l> {
 
 #[inline]
 pub fn is_in_rect(point: &Point, rect: &Rect) -> bool {
-    let start = rect.top_left();
-    let end = Point::new(
-        rect.x() + (rect.width() as i32),
-        rect.y() + (rect.height() as i32),
-    );
-    start.x() <= point.x() && start.y() <= point.y() && end.x() >= point.x() && end.y() >= point.y()
+    rect.contains_point(point.clone())
 }
 
 pub fn get_text_character_rect(c: char, renderer: &mut Renderer) -> Option<Rect> {
@@ -95,4 +90,31 @@ pub trait ClickHandler {
 
 pub trait RenderBox {
     fn render_start_point(&self) -> Point;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sdl2::rect::*;
+
+    #[test]
+    fn must_return_true_if_inside_rect() {
+        let rect = Rect::new(10, 10, 30, 30);
+        let point = Point::new(20, 20);
+        assert_eq!(is_in_rect(&point, &rect), true);
+    }
+
+    #[test]
+    fn must_return_not_if_not_inside_rect() {
+        let rect = Rect::new(10, 10, 30, 30);
+        let point = Point::new(41, 41);
+        assert_eq!(is_in_rect(&point, &rect), false);
+    }
+
+    #[test]
+    fn must_return_moved_rect() {
+        let rect = Rect::new(10, 20, 30, 40);
+        let point = Point::new(11, 11);
+        assert_eq!(move_render_point(point, &rect), Rect::new(21, 31, 30, 40));
+    }
 }
