@@ -1,8 +1,8 @@
-pub mod vertical_scroll_bar;
 pub mod horizontal_scroll_bar;
+pub mod vertical_scroll_bar;
 
-use crate::ui::scroll_bar::vertical_scroll_bar::*;
 use crate::ui::scroll_bar::horizontal_scroll_bar::*;
+use crate::ui::scroll_bar::vertical_scroll_bar::*;
 
 pub trait Scrollable {
     fn scroll_to(&mut self, n: i32);

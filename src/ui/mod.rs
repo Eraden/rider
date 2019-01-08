@@ -10,16 +10,16 @@ pub mod file;
 pub mod file_editor;
 pub mod menu_bar;
 pub mod project_tree;
-pub mod text_character;
 pub mod scroll_bar;
+pub mod text_character;
 
 pub use crate::ui::caret::*;
 pub use crate::ui::file::*;
 pub use crate::ui::file_editor::*;
 pub use crate::ui::menu_bar::*;
 pub use crate::ui::project_tree::*;
-pub use crate::ui::text_character::*;
 pub use crate::ui::scroll_bar::*;
+pub use crate::ui::text_character::*;
 
 #[derive(Debug)]
 pub enum UpdateContext<'l> {

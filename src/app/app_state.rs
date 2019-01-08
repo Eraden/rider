@@ -58,8 +58,10 @@ impl AppState {
 
 impl Render for AppState {
     fn render(&self, canvas: &mut WC, renderer: &mut Renderer, _context: &RenderContext) {
-        self.file_editor.render(canvas, renderer, &RenderContext::Nothing);
-        self.menu_bar.render(canvas, renderer, &RenderContext::Nothing);
+        self.file_editor
+            .render(canvas, renderer, &RenderContext::Nothing);
+        self.menu_bar
+            .render(canvas, renderer, &RenderContext::Nothing);
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {

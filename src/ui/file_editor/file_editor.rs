@@ -6,10 +6,10 @@ use std::sync::*;
 
 use crate::app::*;
 use crate::app::{UpdateResult as UR, WindowCanvas as WS};
-use crate::ui::*;
-use crate::ui::scroll_bar::Scrollable;
-use crate::ui::scroll_bar::vertical_scroll_bar::*;
 use crate::ui::scroll_bar::horizontal_scroll_bar::*;
+use crate::ui::scroll_bar::vertical_scroll_bar::*;
+use crate::ui::scroll_bar::Scrollable;
+use crate::ui::*;
 
 pub struct FileEditor {
     dest: Rect,
@@ -96,7 +96,10 @@ impl ScrollableView for FileEditor {
         let mut ny = self.scroll.y() + (read_config.scroll().speed() * y);
         let scroll_rect = move_render_point(self.render_start_point(), &self.full_rect);
         let min_x = scroll_rect.x() + scroll_rect.width() as i32;
-        let min_y = scroll_rect.y() + scroll_rect.height() as i32 + self.dest.width() as i32 + line_height as i32;
+        let min_y = scroll_rect.y()
+            + scroll_rect.height() as i32
+            + self.dest.width() as i32
+            + line_height as i32;
 
         match x {
             _ if nx > 0 => {
@@ -213,12 +216,28 @@ impl Render for FileEditor {
     fn render(&self, canvas: &mut WS, renderer: &mut Renderer, _context: &RenderContext) {
         canvas.set_clip_rect(self.dest.clone());
         match self.file() {
-            Some(file) => file.render(canvas, renderer, &RenderContext::RelativePosition(self.render_start_point())),
+            Some(file) => file.render(
+                canvas,
+                renderer,
+                &RenderContext::RelativePosition(self.render_start_point()),
+            ),
             _ => (),
         };
-        self.caret.render(canvas, renderer, &RenderContext::RelativePosition(self.render_start_point()));
-        self.vertical_scroll_bar.render(canvas, renderer, &RenderContext::RelativePosition(self.dest.top_left()));
-        self.horizontal_scroll_bar.render(canvas, renderer, &RenderContext::RelativePosition(self.dest.top_left()));
+        self.caret.render(
+            canvas,
+            renderer,
+            &RenderContext::RelativePosition(self.render_start_point()),
+        );
+        self.vertical_scroll_bar.render(
+            canvas,
+            renderer,
+            &RenderContext::RelativePosition(self.dest.top_left()),
+        );
+        self.horizontal_scroll_bar.render(
+            canvas,
+            renderer,
+            &RenderContext::RelativePosition(self.dest.top_left()),
+        );
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
@@ -228,14 +247,7 @@ impl Render for FileEditor {
 
 impl Update for FileEditor {
     fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
-        let (
-            width,
-            height,
-            editor_left_margin,
-            editor_top_margin,
-            scroll_width,
-            scroll_margin,
-        ) = {
+        let (width, height, editor_left_margin, editor_top_margin, scroll_width, scroll_margin) = {
             let config: RwLockReadGuard<Config> = self.config.read().unwrap();
             (
                 config.width(),
@@ -249,14 +261,18 @@ impl Update for FileEditor {
         self.dest.set_width(width - editor_left_margin);
         self.dest.set_height(height - editor_top_margin);
 
-        self.vertical_scroll_bar.set_full_size(self.full_rect.height());
+        self.vertical_scroll_bar
+            .set_full_size(self.full_rect.height());
         self.vertical_scroll_bar.set_viewport(self.dest.height());
-        self.vertical_scroll_bar.set_location(self.dest.width() as i32 - (scroll_width as i32 + scroll_margin));
+        self.vertical_scroll_bar
+            .set_location(self.dest.width() as i32 - (scroll_width as i32 + scroll_margin));
         self.vertical_scroll_bar.update(ticks, context);
 
-        self.horizontal_scroll_bar.set_full_size(self.full_rect.width());
+        self.horizontal_scroll_bar
+            .set_full_size(self.full_rect.width());
         self.horizontal_scroll_bar.set_viewport(self.dest.width());
-        self.horizontal_scroll_bar.set_location(self.dest.height() as i32 - (scroll_width as i32 + scroll_margin));
+        self.horizontal_scroll_bar
+            .set_location(self.dest.height() as i32 - (scroll_width as i32 + scroll_margin));
         self.horizontal_scroll_bar.update(ticks, context);
 
         self.caret.update(ticks, context);

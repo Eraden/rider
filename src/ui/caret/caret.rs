@@ -72,8 +72,8 @@ impl Deref for Caret {
 
 impl Render for Caret {
     fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, context: &RenderContext) {
-        use std::option::*;
         use std::borrow::*;
+        use std::option::*;
 
         let dest = match context.borrow() {
             RenderContext::RelativePosition(p) => move_render_point(p.clone(), self.dest()),
