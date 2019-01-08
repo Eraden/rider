@@ -31,7 +31,12 @@ jobs:
           command: |
             rustup run nightly rustc --version --verbose
             rustup run nightly cargo --version --verbose
-            rustup run nightly cargo build
+            rustup run nightly cargo build --all
+      - run:
+          name: Run rider-generator
+          command: |
+            export XDG_RUNTIME_DIR=$(pwd)
+            rustup run nightly cargo run -p rider-generator
       - run:
           name: Test and code coverage
           command: |
@@ -39,7 +44,7 @@ jobs:
             Xvfb :5 -screen 0 800x600x24 +extension GLX +render -noreset &
             export DISPLAY=:5
             export XDG_RUNTIME_DIR=$(pwd)
-            rustup run nightly cargo tarpaulin --ciserver circle-ci --out Xml
+            rustup run nightly cargo tarpaulin --all --ciserver circle-ci --out Xml
       - run:
           name: Upload Coverage
           command: |

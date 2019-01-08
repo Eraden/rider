@@ -1,0 +1,10 @@
+[package]
+name = "rider-lexers"
+version = "0.1.0"
+authors = ["Adrian Wozniak <adrian.wozniak@ita-prog.pl>"]
+edition = "2018"
+
+[dependencies]
+plex = "*"
+log = "*"
+simplelog = "*"
