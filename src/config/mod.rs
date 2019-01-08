@@ -4,10 +4,12 @@ pub mod config;
 pub(crate) mod creator;
 pub mod directories;
 pub mod editor_config;
+pub mod scroll_config;
 
 pub use crate::config::config::*;
 pub use crate::config::directories::*;
 pub use crate::config::editor_config::*;
+pub use crate::config::scroll_config::*;
 
 pub type ConfigAccess = Arc<RwLock<Config>>;
 

@@ -34,21 +34,23 @@ impl MenuBar {
 }
 
 impl Render for MenuBar {
-    fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, parent: Parent) {
+    fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, context: &RenderContext) {
+        use std::borrow::*;
+
         canvas.set_clip_rect(self.dest.clone());
         canvas.set_draw_color(self.background_color.clone());
         canvas
-            .fill_rect(match parent {
-                None => self.dest.clone(),
-                Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
+            .fill_rect(match context.borrow() {
+                RenderContext::RelativePosition(p) => move_render_point(p.clone(), self.dest()),
+                _ => self.dest.clone(),
             })
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
 
         canvas.set_draw_color(self.border_color.clone());
         canvas
-            .draw_rect(match parent {
-                None => self.dest.clone(),
-                Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
+            .draw_rect(match context.borrow() {
+                RenderContext::RelativePosition(p) => move_render_point(p.clone(), self.dest()),
+                _ => self.dest.clone(),
             })
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
     }

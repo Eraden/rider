@@ -147,7 +147,7 @@ impl Application {
                     app_state.file_editor_mut().move_caret(MoveDirection::Down);
                 }
                 UpdateResult::Scroll { x, y } => {
-                    app_state.file_editor_mut().scroll_to(x, y);
+                    app_state.file_editor_mut().scroll_to(-x, -y);
                 }
                 UpdateResult::WindowResize { width, height } => {
                     let mut c = app_state.config().write().unwrap();
@@ -172,7 +172,7 @@ impl Application {
             self.clear();
 
             app_state.update(timer.ticks() as i32, &UpdateContext::Nothing);
-            app_state.render(&mut self.canvas, &mut renderer, None);
+            app_state.render(&mut self.canvas, &mut renderer, &RenderContext::Nothing);
 
             self.present();
             sleep(sleep_time);

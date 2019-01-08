@@ -50,13 +50,35 @@ impl EditorFileToken {
         self.last_in_line
     }
 
+    pub fn is_new_line(&self) -> bool {
+        self.token_type.is_new_line()
+    }
+
     pub fn update_position(&mut self, current: &mut Rect) {
         for text_character in self.characters.iter_mut() {
             text_character.update_position(current);
         }
     }
+}
 
-    pub fn get_character_at(&self, index: usize) -> Option<TextCharacter> {
+impl TextWidget for EditorFileToken {
+    fn full_rect(&self) -> Rect {
+        let mut rect = Rect::new(0, 0, 0, 0);
+        match self.characters.first() {
+            Some(c) => {
+                rect.set_x(c.dest().x());
+                rect.set_y(c.dest().y());
+                rect.set_width(c.dest().width());
+                rect.set_height(c.dest().height());
+            }
+            _ => return rect,
+        };
+        rect
+    }
+}
+
+impl TextCollection for EditorFileToken {
+    fn get_character_at(&self, index: usize) -> Option<TextCharacter> {
         for character in self.characters.iter() {
             if character.position() == index {
                 return Some(character.clone());
@@ -65,7 +87,7 @@ impl EditorFileToken {
         None
     }
 
-    pub fn get_line(&self, line: &usize) -> Option<Vec<&TextCharacter>> {
+    fn get_line(&self, line: &usize) -> Option<Vec<&TextCharacter>> {
         let mut vec: Vec<&TextCharacter> = vec![];
         for c in self.characters.iter() {
             match (
@@ -93,7 +115,7 @@ impl EditorFileToken {
         }
     }
 
-    pub fn get_last_at_line(&self, line: usize) -> Option<TextCharacter> {
+    fn get_last_at_line(&self, line: usize) -> Option<TextCharacter> {
         let mut current: Option<&TextCharacter> = None;
         for text_character in self.characters.iter() {
             if !text_character.is_last_in_line() {
@@ -112,12 +134,12 @@ impl Render for EditorFileToken {
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext) {
         if self.token_type.is_new_line() {
             return;
         }
         for text_character in self.characters.iter() {
-            text_character.render(canvas, renderer, parent);
+            text_character.render(canvas, renderer, context);
         }
     }
 

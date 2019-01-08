@@ -71,10 +71,13 @@ impl Deref for Caret {
 }
 
 impl Render for Caret {
-    fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, parent: Parent) {
-        let dest = match parent {
-            Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
-            None => self.dest().clone(),
+    fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, context: &RenderContext) {
+        use std::borrow::*;
+        use std::option::*;
+
+        let dest = match context.borrow() {
+            RenderContext::RelativePosition(p) => move_render_point(p.clone(), self.dest()),
+            _ => self.dest().clone(),
         };
         let start = Point::new(dest.x(), dest.y());
         let end = Point::new(dest.x(), dest.y() + dest.height() as i32);
