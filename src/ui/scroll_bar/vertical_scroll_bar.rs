@@ -47,8 +47,7 @@ impl Update for VerticalScrollBar {
         let ratio = self.full_height() as f64 / self.viewport() as f64;
         self.rect
             .set_height((self.viewport() as f64 / ratio) as u32);
-        let y = (self.viewport() - self.rect.height()) as f64
-            * self.scrolled_part();
+        let y = (self.viewport() - self.rect.height()) as f64 * self.scrolled_part();
         self.rect.set_y(y as i32);
 
         UR::NoOp

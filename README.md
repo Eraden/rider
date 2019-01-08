@@ -26,10 +26,10 @@ rustup run nightly cargo build
 * [ ] `Save file` with shortcut
 * [ ] `Save file as...` with shortcut
 * [x] Theme based menu UI
-* [ ] Lock scroll when no available content
+* [x] Lock scroll when no available content
 * [ ] Config edit menu
 * [ ] Project tree
-* [ ] Cover `rider` with tests at least 50%
+* [x] Cover `rider` with tests at least 50%
 * [x] Handle resize window
 * [ ] Selection
 
