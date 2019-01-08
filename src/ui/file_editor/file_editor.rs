@@ -14,7 +14,6 @@ use crate::ui::*;
 pub struct FileEditor {
     dest: Rect,
     full_rect: Rect,
-    scroll: Point,
     caret: Caret,
     file: Option<EditorFile>,
     config: ConfigAccess,
@@ -36,7 +35,6 @@ impl FileEditor {
         Self {
             dest,
             full_rect: Rect::new(0, 0, 0, 0),
-            scroll: Point::new(0, 0),
             caret: Caret::new(Arc::clone(&config)),
             vertical_scroll_bar: VerticalScrollBar::new(Arc::clone(&config)),
             horizontal_scroll_bar: HorizontalScrollBar::new(Arc::clone(&config)),
@@ -87,45 +85,32 @@ impl FileEditor {
 
 impl ScrollableView for FileEditor {
     fn scroll_to(&mut self, x: i32, y: i32) {
-        let line_height = match self.file() {
-            None => 1,
-            Some(f) => f.line_height(),
-        };
         let read_config = self.config.read().unwrap();
-        let mut nx = self.scroll.x() + (read_config.scroll().speed() * x);
-        let mut ny = self.scroll.y() + (read_config.scroll().speed() * y);
-        let scroll_rect = move_render_point(self.render_start_point(), &self.full_rect);
-        let min_x = scroll_rect.x() + scroll_rect.width() as i32;
-        let min_y = scroll_rect.y()
-            + scroll_rect.height() as i32
-            + self.dest.width() as i32
-            + line_height as i32;
 
-        match x {
-            _ if nx > 0 => {
-                nx = 0;
+        let value_x = read_config.scroll().speed() * x;
+        let value_y = read_config.scroll().speed() * y;
+        let old_x = self.horizontal_scroll_bar.scroll_value();
+        let old_y = self.vertical_scroll_bar.scroll_value();
+
+        if value_x + old_x >= 0 {
+            self.horizontal_scroll_bar.scroll_to(value_x + old_x);
+            if self.horizontal_scroll_bar.scrolled_part() > 1.0 {
+                self.horizontal_scroll_bar.scroll_to(old_x);
             }
-            _ if nx < -min_x => {
-                nx = -min_x;
-            }
-            _ => (),
         }
-        match y {
-            _ if ny > 0 => {
-                ny = 0;
+        if value_y + old_y >= 0 {
+            self.vertical_scroll_bar.scroll_to(value_y + old_y);
+            if self.vertical_scroll_bar.scrolled_part() > 1.0 {
+                self.vertical_scroll_bar.scroll_to(old_y);
             }
-            _ if ny < -min_y => {
-                ny = -min_y;
-            }
-            _ => (),
         }
-        self.vertical_scroll_bar.scroll_to(ny);
-        self.horizontal_scroll_bar.scroll_to(nx);
-        self.scroll = Point::new(nx, ny);
     }
 
-    fn scroll(&self) -> &Point {
-        &self.scroll
+    fn scroll(&self) -> Point {
+        Point::new(
+            -self.horizontal_scroll_bar.scroll_value(),
+            -self.vertical_scroll_bar.scroll_value(),
+        )
     }
 }
 
@@ -313,7 +298,7 @@ impl ClickHandler for FileEditor {
 
 impl RenderBox for FileEditor {
     fn render_start_point(&self) -> Point {
-        self.dest.top_left() + self.scroll
+        self.dest.top_left() + self.scroll()
     }
 
     fn dest(&self) -> &Rect {
@@ -430,9 +415,9 @@ mod test_render_box {
         };
         let mut widget = FileEditor::new(config);
         widget.set_full_rect(Rect::new(0, 0, 9999, 9999));
-        widget.scroll_to(-30, -40);
+        widget.scroll_to(30, 40);
         let result = widget.render_start_point().clone();
-        let expected = Point::new(x + (ss * -30), y + (ss * -40));
+        let expected = Point::new(x + (ss * 30), y + (ss * 40));
         assert_eq!(result, expected);
     }
 }

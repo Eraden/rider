@@ -147,7 +147,7 @@ impl Application {
                     app_state.file_editor_mut().move_caret(MoveDirection::Down);
                 }
                 UpdateResult::Scroll { x, y } => {
-                    app_state.file_editor_mut().scroll_to(x, y);
+                    app_state.file_editor_mut().scroll_to(-x, -y);
                 }
                 UpdateResult::WindowResize { width, height } => {
                     let mut c = app_state.config().write().unwrap();

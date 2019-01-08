@@ -32,5 +32,5 @@ pub trait CaretAccess {
 pub trait ScrollableView {
     fn scroll_to(&mut self, x: i32, y: i32);
 
-    fn scroll(&self) -> &Point;
+    fn scroll(&self) -> Point;
 }

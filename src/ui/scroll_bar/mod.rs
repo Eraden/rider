@@ -14,4 +14,6 @@ pub trait Scrollable {
     fn set_full_size(&mut self, n: u32);
 
     fn set_location(&mut self, n: i32);
+
+    fn scrolled_part(&self) -> f64;
 }

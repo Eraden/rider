@@ -48,7 +48,7 @@ impl Update for VerticalScrollBar {
         self.rect
             .set_height((self.viewport() as f64 / ratio) as u32);
         let y = (self.viewport() - self.rect.height()) as f64
-            * (self.scroll_value().abs() as f64 / (self.full_height() - self.viewport()) as f64);
+            * self.scrolled_part();
         self.rect.set_y(y as i32);
 
         UR::NoOp
@@ -92,6 +92,10 @@ impl Scrollable for VerticalScrollBar {
 
     fn set_location(&mut self, n: i32) {
         self.rect.set_x(n);
+    }
+
+    fn scrolled_part(&self) -> f64 {
+        self.scroll_value().abs() as f64 / (self.full_height() - self.viewport()) as f64
     }
 }
 

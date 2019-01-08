@@ -92,6 +92,13 @@ impl Scrollable for HorizontalScrollBar {
     fn set_location(&mut self, n: i32) {
         self.rect.set_y(n);
     }
+
+    fn scrolled_part(&self) -> f64 {
+        if self.full_width() < self.viewport() {
+            return 1.0;
+        }
+        self.scroll_value().abs() as f64 / (self.full_width() - self.viewport()) as f64
+    }
 }
 
 #[cfg(test)]
