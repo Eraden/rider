@@ -1,3 +1,4 @@
+use sdl2::rect::*;
 use crate::ui::*;
 
 pub mod file_editor;
@@ -26,4 +27,10 @@ pub trait CaretAccess {
     fn move_caret(&mut self, dir: MoveDirection);
 
     fn set_caret_to_end_of_line(&mut self, line: i32);
+}
+
+pub trait ScrollableView {
+    fn scroll_to(&mut self, x: i32, y: i32);
+
+    fn scroll(&self) -> &Point;
 }

@@ -59,8 +59,29 @@ impl EditorFileSection {
             c.update_position(current);
         }
     }
+}
 
-    pub fn get_character_at(&self, index: usize) -> Option<TextCharacter> {
+impl TextWidget for EditorFileSection {
+    fn full_rect(&self) -> Rect {
+        let mut rect = Rect::new(0, 0, 0, 0);
+        for (index, token) in self.tokens.iter().enumerate() {
+            let r = token.full_rect();
+            if index == 0 {
+                rect.set_x(r.x());
+                rect.set_y(r.y());
+                rect.set_width(r.width());
+                rect.set_height(r.height());
+            } else {
+                rect.set_width(rect.width() + r.width());
+                rect.set_height(rect.height() + r.height());
+            }
+        }
+        rect
+    }
+}
+
+impl TextCollection for EditorFileSection {
+    fn get_character_at(&self, index: usize) -> Option<TextCharacter> {
         for token in self.tokens.iter() {
             let character = token.get_character_at(index);
             if character.is_some() {
@@ -70,7 +91,7 @@ impl EditorFileSection {
         None
     }
 
-    pub fn get_line(&self, line: &usize) -> Option<Vec<&TextCharacter>> {
+    fn get_line(&self, line: &usize) -> Option<Vec<&TextCharacter>> {
         let mut vec: Vec<&TextCharacter> = vec![];
         for token in self.tokens.iter() {
             match token.get_line(line) {
@@ -85,7 +106,7 @@ impl EditorFileSection {
         }
     }
 
-    pub fn get_last_at_line(&self, line: usize) -> Option<TextCharacter> {
+    fn get_last_at_line(&self, line: usize) -> Option<TextCharacter> {
         let mut current: Option<TextCharacter> = None;
         for token in self.tokens.iter() {
             if !token.is_last_in_line() {

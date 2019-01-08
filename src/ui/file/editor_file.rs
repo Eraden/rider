@@ -32,17 +32,11 @@ impl EditorFile {
             ext,
             Arc::clone(&config),
         )];
-        let render_position = {
-            let c = config.read().unwrap();
-            let x = c.editor_left_margin();
-            let y = c.editor_top_margin();
-            Rect::new(x, y, 0, 0)
-        };
 
         Self {
             path,
             sections,
-            dest: render_position,
+            dest: Rect::new(0, 0, 0, 0),
             buffer,
             config,
             line_height: 0,
@@ -69,7 +63,20 @@ impl EditorFile {
         &self.dest
     }
 
-    pub fn get_character_at(&self, index: usize) -> Option<TextCharacter> {
+    pub fn get_section_at_mut(&mut self, index: usize) -> Option<&mut EditorFileSection> {
+        self.sections.get_mut(index)
+    }
+
+    fn refresh_characters_position(&mut self) {
+        let mut current: Rect = Rect::new(0, 0, 0, 0);
+        for section in self.sections.iter_mut() {
+            section.update_positions(&mut current);
+        }
+    }
+}
+
+impl TextCollection for EditorFile {
+    fn get_character_at(&self, index: usize) -> Option<TextCharacter> {
         for section in self.sections.iter() {
             let character = section.get_character_at(index);
             if character.is_some() {
@@ -79,7 +86,7 @@ impl EditorFile {
         None
     }
 
-    pub fn get_line(&self, line: &usize) -> Option<Vec<&TextCharacter>> {
+    fn get_line(&self, line: &usize) -> Option<Vec<&TextCharacter>> {
         let mut vec: Vec<&TextCharacter> = vec![];
         for section in self.sections.iter() {
             match section.get_line(line) {
@@ -95,7 +102,7 @@ impl EditorFile {
         }
     }
 
-    pub fn get_last_at_line(&self, line: usize) -> Option<TextCharacter> {
+    fn get_last_at_line(&self, line: usize) -> Option<TextCharacter> {
         let mut current = None;
         for section in self.sections.iter() {
             let c = section.get_last_at_line(line);
@@ -104,17 +111,6 @@ impl EditorFile {
             }
         }
         current
-    }
-
-    pub fn get_section_at_mut(&mut self, index: usize) -> Option<&mut EditorFileSection> {
-        self.sections.get_mut(index)
-    }
-
-    fn refresh_characters_position(&mut self) {
-        let mut current: Rect = Rect::new(0, 0, 0, 0);
-        for section in self.sections.iter_mut() {
-            section.update_positions(&mut current);
-        }
     }
 }
 
@@ -176,6 +172,25 @@ impl ClickHandler for EditorFile {
     }
 }
 
+impl TextWidget for EditorFile {
+    fn full_rect(&self) -> Rect {
+        let mut rect = Rect::new(0, 0, 0, 0);
+        for (index, token) in self.sections.iter().enumerate() {
+            let r = token.full_rect();
+            if index == 0 {
+                rect.set_x(r.x());
+                rect.set_y(r.y());
+                rect.set_width(r.width());
+                rect.set_height(r.height());
+            } else {
+                rect.set_width(rect.width() + r.width());
+                rect.set_height(rect.height() + r.height());
+            }
+        }
+        rect
+    }
+}
+
 impl RenderBox for EditorFile {
     fn render_start_point(&self) -> Point {
         self.dest.top_left()
@@ -183,5 +198,39 @@ impl RenderBox for EditorFile {
 
     fn dest(&self) -> &Rect {
         &self.dest
+    }
+}
+
+#[cfg(test)]
+mod test_render_box {
+    use crate::app::*;
+    use crate::tests::support;
+    use crate::ui::*;
+    use sdl2::rect::*;
+    use sdl2::*;
+    use std::borrow::*;
+    use std::rc::*;
+    use std::sync::*;
+
+    #[test]
+    fn assert_dest() {
+        let config = support::build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        let result = widget.dest().clone();
+        let expected = Rect::new(0, 0, 1, 1);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_render_start_point() {
+        let config = support::build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        let result = widget.render_start_point().clone();
+        let expected = Point::new(0, 0);
+        assert_eq!(result, expected);
     }
 }

@@ -1,16 +1,17 @@
 use sdl2::rect::*;
 use std::borrow::*;
 use std::mem;
-use std::rc::Rc;
 use std::sync::*;
 
 use crate::app::*;
 use crate::app::{UpdateResult as UR, WindowCanvas as WS};
 use crate::config::*;
 use crate::ui::*;
+use crate::ui::file::*;
 
 pub struct FileEditor {
     dest: Rect,
+    full_rect: Rect,
     scroll: Point,
     caret: Caret,
     file: Option<EditorFile>,
@@ -30,6 +31,7 @@ impl FileEditor {
         };
         Self {
             dest,
+            full_rect: Rect::new(0, 0, 0, 0),
             scroll: Point::new(0, 0),
             caret: Caret::new(Arc::clone(&config)),
             file: None,
@@ -51,15 +53,6 @@ impl FileEditor {
 
     pub fn insert_new_line(&mut self, renderer: &mut Renderer) {
         file_content_manager::insert_new_line(self, renderer);
-    }
-
-    pub fn scroll_to(&mut self, x: i32, y: i32) {
-        let read_config = self.config.read().unwrap();
-        self.scroll = self.scroll
-            + Point::new(
-                read_config.scroll_speed() * x,
-                read_config.scroll_speed() * y,
-            );
     }
 
     fn is_text_character_clicked(&self, point: &Point) -> bool {
@@ -86,6 +79,32 @@ impl FileEditor {
     }
 }
 
+impl ScrollableView for FileEditor {
+    fn scroll_to(&mut self, x: i32, y: i32) {
+        let read_config = self.config.read().unwrap();
+        let mut nx = self.scroll.x() + (read_config.scroll_speed() * x);
+        let mut ny = self.scroll.y() + (read_config.scroll_speed() * y);
+        let scroll_rect = move_render_point(self.render_start_point(), &self.full_rect);
+        let min_x = scroll_rect.x() + scroll_rect.width() as i32;
+        let min_y = scroll_rect.y() + scroll_rect.height() as i32;
+        match x {
+            _ if x > 0 => { nx = 0; }
+            _ if x < -min_x => { nx = -min_x; }
+            _ => (),
+        }
+        match y {
+            _ if y > 0 => { ny = 0; },
+            _ if y < -min_y => { ny = -min_y; }
+            _ => (),
+        }
+        self.scroll = Point::new(nx, ny);
+    }
+
+    fn scroll(&self) -> &Point {
+        &self.scroll
+    }
+}
+
 impl FileAccess for FileEditor {
     fn has_file(&self) -> bool {
         self.file.is_some()
@@ -102,6 +121,9 @@ impl FileAccess for FileEditor {
     fn open_file(&mut self, file: EditorFile) -> Option<EditorFile> {
         let mut file = Some(file);
         mem::swap(&mut self.file, &mut file);
+        if let Some(f) = self.file.as_ref() {
+            self.full_rect = f.full_rect();
+        }
         file
     }
 
@@ -338,9 +360,9 @@ mod test_render_box {
             )
         };
         let mut widget = FileEditor::new(config);
-        widget.scroll_to(30, 40);
+        widget.scroll_to(-30, -40);
         let result = widget.render_start_point().clone();
-        let expected = Point::new(x + (ss * 30), y + (ss * 40));
+        let expected = Point::new(x + (ss * -30), y + (ss * -40));
         assert_eq!(result, expected);
     }
 }
