@@ -1,5 +1,5 @@
-use sdl2::rect::*;
 use crate::ui::*;
+use sdl2::rect::*;
 
 pub mod file_editor;
 

@@ -105,7 +105,7 @@ impl Render for TextCharacter {
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext) {
         if self.is_new_line() {
             return;
         }
@@ -126,9 +126,9 @@ impl Render for TextCharacter {
             color: self.color.clone(),
             font: font_details.clone(),
         };
-        let dest = match parent {
-            None => self.dest.clone(),
-            Some(parent) => move_render_point(parent.render_start_point(), self.dest()),
+        let dest = match context {
+            RenderContext::RelativePosition(p) => move_render_point(p.clone(), self.dest()),
+            _ => self.dest.clone(),
         };
         if let Ok(texture) = renderer.texture_manager().load_text(&mut details, &font) {
             canvas

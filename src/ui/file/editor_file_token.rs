@@ -50,6 +50,10 @@ impl EditorFileToken {
         self.last_in_line
     }
 
+    pub fn is_new_line(&self) -> bool {
+        self.token_type.is_new_line()
+    }
+
     pub fn update_position(&mut self, current: &mut Rect) {
         for text_character in self.characters.iter_mut() {
             text_character.update_position(current);
@@ -64,14 +68,9 @@ impl TextWidget for EditorFileToken {
             Some(c) => {
                 rect.set_x(c.dest().x());
                 rect.set_y(c.dest().y());
-            },
-            _ => return rect,
-        };
-        match self.characters.last() {
-            Some(c) => {
                 rect.set_width(c.dest().width());
                 rect.set_height(c.dest().height());
-            },
+            }
             _ => return rect,
         };
         rect
@@ -135,12 +134,12 @@ impl Render for EditorFileToken {
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext) {
         if self.token_type.is_new_line() {
             return;
         }
         for text_character in self.characters.iter() {
-            text_character.render(canvas, renderer, parent);
+            text_character.render(canvas, renderer, context);
         }
     }
 

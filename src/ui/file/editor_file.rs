@@ -115,9 +115,9 @@ impl TextCollection for EditorFile {
 }
 
 impl Render for EditorFile {
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext) {
         for section in self.sections.iter() {
-            section.render(canvas, renderer, parent);
+            section.render(canvas, renderer, context);
         }
     }
 
@@ -174,20 +174,22 @@ impl ClickHandler for EditorFile {
 
 impl TextWidget for EditorFile {
     fn full_rect(&self) -> Rect {
-        let mut rect = Rect::new(0, 0, 0, 0);
-        for (index, token) in self.sections.iter().enumerate() {
-            let r = token.full_rect();
+        let mut max_line_width = 0;
+        let mut height = 0;
+        for (index, section) in self.sections.iter().enumerate() {
+            let r = section.full_rect();
+
             if index == 0 {
-                rect.set_x(r.x());
-                rect.set_y(r.y());
-                rect.set_width(r.width());
-                rect.set_height(r.height());
+                height = r.height();
+                max_line_width = r.width();
             } else {
-                rect.set_width(rect.width() + r.width());
-                rect.set_height(rect.height() + r.height());
+                height += r.height();
+                if max_line_width < r.width() {
+                    max_line_width = r.width();
+                }
             }
         }
-        rect
+        Rect::new(0, 0, max_line_width, height)
     }
 }
 

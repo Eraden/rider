@@ -1,3 +1,4 @@
+use sdl2::pixels::*;
 use sdl2::rect::*;
 use std::borrow::*;
 use std::mem;
@@ -5,9 +6,9 @@ use std::sync::*;
 
 use crate::app::*;
 use crate::app::{UpdateResult as UR, WindowCanvas as WS};
-use crate::config::*;
 use crate::ui::*;
-use crate::ui::file::*;
+use crate::ui::scroll_bar::Scrollable;
+use crate::ui::scroll_bar::vertical_scroll_bar::VerticalScrollBar;
 
 pub struct FileEditor {
     dest: Rect,
@@ -16,6 +17,7 @@ pub struct FileEditor {
     caret: Caret,
     file: Option<EditorFile>,
     config: ConfigAccess,
+    vertical_scroll_bar: VerticalScrollBar,
 }
 
 impl FileEditor {
@@ -34,6 +36,7 @@ impl FileEditor {
             full_rect: Rect::new(0, 0, 0, 0),
             scroll: Point::new(0, 0),
             caret: Caret::new(Arc::clone(&config)),
+            vertical_scroll_bar: VerticalScrollBar::new(Arc::clone(&config)),
             file: None,
             config,
         }
@@ -81,22 +84,37 @@ impl FileEditor {
 
 impl ScrollableView for FileEditor {
     fn scroll_to(&mut self, x: i32, y: i32) {
+        let line_height = match self.file() {
+            None => 1,
+            Some(f) => f.line_height(),
+        };
         let read_config = self.config.read().unwrap();
-        let mut nx = self.scroll.x() + (read_config.scroll_speed() * x);
-        let mut ny = self.scroll.y() + (read_config.scroll_speed() * y);
+        let mut nx = self.scroll.x() + (read_config.scroll().speed() * x);
+        let mut ny = self.scroll.y() + (read_config.scroll().speed() * y);
         let scroll_rect = move_render_point(self.render_start_point(), &self.full_rect);
         let min_x = scroll_rect.x() + scroll_rect.width() as i32;
-        let min_y = scroll_rect.y() + scroll_rect.height() as i32;
+        let min_y = scroll_rect.y() + scroll_rect.height() as i32 + self.dest.width() as i32 + line_height as i32;
+
         match x {
-            _ if x > 0 => { nx = 0; }
-            _ if x < -min_x => { nx = -min_x; }
+            _ if nx > 0 => {
+                nx = 0;
+            }
+            _ if nx < -min_x => {
+                nx = -min_x;
+            }
             _ => (),
         }
         match y {
-            _ if y > 0 => { ny = 0; },
-            _ if y < -min_y => { ny = -min_y; }
+            _ if ny > 0 => {
+                ny = 0;
+            }
+            _ if ny < -min_y => {
+//                println!("{} {}", ny, -min_y);
+                ny = -min_y;
+            }
             _ => (),
         }
+        self.vertical_scroll_bar.scroll_to(ny);
         self.scroll = Point::new(nx, ny);
     }
 
@@ -189,13 +207,14 @@ impl CaretAccess for FileEditor {
 }
 
 impl Render for FileEditor {
-    fn render(&self, canvas: &mut WS, renderer: &mut Renderer, _parent: Parent) {
+    fn render(&self, canvas: &mut WS, renderer: &mut Renderer, _context: &RenderContext) {
         canvas.set_clip_rect(self.dest.clone());
         match self.file() {
-            Some(file) => file.render(canvas, renderer, Some(self)),
+            Some(file) => file.render(canvas, renderer, &RenderContext::RelativePosition(self.render_start_point())),
             _ => (),
         };
-        self.caret.render(canvas, renderer, Some(self));
+        self.caret.render(canvas, renderer, &RenderContext::RelativePosition(self.render_start_point()));
+        self.vertical_scroll_bar.render(canvas, renderer, &RenderContext::RelativePosition(self.dest.top_left()));
     }
 
     fn prepare_ui(&mut self, renderer: &mut Renderer) {
@@ -205,13 +224,30 @@ impl Render for FileEditor {
 
 impl Update for FileEditor {
     fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
-        {
-            let config = self.config.read().unwrap();
-            self.dest
-                .set_width(config.width() - config.editor_left_margin() as u32);
-            self.dest
-                .set_height(config.height() - config.editor_top_margin() as u32);
-        }
+        let (
+            width,
+            height,
+            editor_left_margin,
+            editor_top_margin,
+            scroll_width,
+            scroll_margin,
+        ) = {
+            let config: RwLockReadGuard<Config> = self.config.read().unwrap();
+            (
+                config.width(),
+                config.height(),
+                config.editor_left_margin() as u32,
+                config.editor_top_margin() as u32,
+                config.scroll().width(),
+                config.scroll().margin_right(),
+            )
+        };
+        self.dest.set_width(width - editor_left_margin);
+        self.dest.set_height(height - editor_top_margin);
+        self.vertical_scroll_bar.set_full_size(self.full_rect.height());
+        self.vertical_scroll_bar.set_viewport(self.dest.height());
+        self.vertical_scroll_bar.set_location(self.dest.width() as i32 - (scroll_width as i32 + scroll_margin));
+        self.vertical_scroll_bar.update(ticks, context);
         self.caret.update(ticks, context);
         match self.file_mut() {
             Some(file) => file.update(ticks, context),
@@ -330,6 +366,12 @@ mod test_render_box {
     use std::rc::*;
     use std::sync::*;
 
+    impl FileEditor {
+        pub fn set_full_rect(&mut self, r: Rect) {
+            self.full_rect = r;
+        }
+    }
+
     #[test]
     fn assert_dest() {
         let config = support::build_config();
@@ -356,10 +398,11 @@ mod test_render_box {
             (
                 c.editor_left_margin(),
                 c.editor_top_margin(),
-                c.scroll_speed(),
+                c.scroll().speed(),
             )
         };
         let mut widget = FileEditor::new(config);
+        widget.set_full_rect(Rect::new(0, 0, 9999, 9999));
         widget.scroll_to(-30, -40);
         let result = widget.render_start_point().clone();
         let expected = Point::new(x + (ss * -30), y + (ss * -40));

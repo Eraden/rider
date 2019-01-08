@@ -63,20 +63,27 @@ impl EditorFileSection {
 
 impl TextWidget for EditorFileSection {
     fn full_rect(&self) -> Rect {
-        let mut rect = Rect::new(0, 0, 0, 0);
+        let mut current_line_width = 0;
+        let mut max_line_width = 0;
+        let mut height = 0;
         for (index, token) in self.tokens.iter().enumerate() {
             let r = token.full_rect();
+
             if index == 0 {
-                rect.set_x(r.x());
-                rect.set_y(r.y());
-                rect.set_width(r.width());
-                rect.set_height(r.height());
+                height = r.height();
+                current_line_width = r.width();
+                max_line_width = r.width();
+            } else if token.is_new_line() {
+                height += r.height();
+                if max_line_width < current_line_width {
+                    max_line_width = current_line_width;
+                }
+                current_line_width = 0;
             } else {
-                rect.set_width(rect.width() + r.width());
-                rect.set_height(rect.height() + r.height());
+                current_line_width += r.width();
             }
         }
-        rect
+        Rect::new(0, 0, max_line_width, height)
     }
 }
 
@@ -122,9 +129,9 @@ impl TextCollection for EditorFileSection {
 }
 
 impl Render for EditorFileSection {
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent) {
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext) {
         for token in self.tokens.iter() {
-            token.render(canvas, renderer, parent);
+            token.render(canvas, renderer, context);
         }
     }
 

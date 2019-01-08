@@ -1,5 +1,6 @@
 use crate::config::creator;
 use crate::config::EditorConfig;
+use crate::config::ScrollConfig;
 use crate::lexer::Language;
 use crate::themes::Theme;
 use dirs;
@@ -12,11 +13,11 @@ pub type LanguageMapping = HashMap<String, Language>;
 pub struct Config {
     width: u32,
     height: u32,
-    scroll_speed: i32,
     menu_height: u16,
     editor_config: EditorConfig,
     theme: Theme,
     extensions_mapping: LanguageMapping,
+    scroll: ScrollConfig,
 }
 
 impl Config {
@@ -31,16 +32,12 @@ impl Config {
         Self {
             width: 1024,
             height: 860,
-            scroll_speed: 10,
             menu_height: 60,
             theme: Theme::load(editor_config.current_theme().clone()),
             editor_config,
             extensions_mapping,
+            scroll: ScrollConfig::new(),
         }
-    }
-
-    pub fn scroll_speed(&self) -> i32 {
-        self.scroll_speed
     }
 
     pub fn width(&self) -> u32 {
@@ -82,6 +79,14 @@ impl Config {
     pub fn extensions_mapping(&self) -> &LanguageMapping {
         &self.extensions_mapping
     }
+
+    pub fn scroll(&self) -> &ScrollConfig {
+        &self.scroll
+    }
+
+    pub fn scroll_mut(&mut self) -> &mut ScrollConfig {
+        &mut self.scroll
+    }
 }
 
 #[cfg(test)]
@@ -111,4 +116,23 @@ mod tests {
             assert_eq!(keys, expected);
         }
     }
+
+    #[test]
+    fn assert_scroll() {
+        let config = Config::new();
+        let result = config.scroll();
+        let expected = ScrollConfig::new();
+        assert_eq!(result.clone(), expected);
+    }
+
+    #[test]
+    fn assert_scroll_mut() {
+        let mut config = Config::new();
+        let result = config.scroll_mut();
+        result.set_margin_right(1236);
+        let mut expected = ScrollConfig::new();
+        expected.set_margin_right(1236);
+        assert_eq!(result.clone(), expected);
+    }
+
 }

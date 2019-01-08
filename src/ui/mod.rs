@@ -11,6 +11,7 @@ pub mod file_editor;
 pub mod menu_bar;
 pub mod project_tree;
 pub mod text_character;
+pub mod scroll_bar;
 
 pub use crate::ui::caret::*;
 pub use crate::ui::file::*;
@@ -18,14 +19,19 @@ pub use crate::ui::file_editor::*;
 pub use crate::ui::menu_bar::*;
 pub use crate::ui::project_tree::*;
 pub use crate::ui::text_character::*;
+pub use crate::ui::scroll_bar::*;
 
-pub type Parent<'l> = Option<&'l RenderBox>;
-pub type ParentMut<'l> = Option<&'l mut RenderBox>;
-
+#[derive(Debug)]
 pub enum UpdateContext<'l> {
     Nothing,
     ParentPosition(Point),
     CurrentFile(&'l mut EditorFile),
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum RenderContext {
+    Nothing,
+    RelativePosition(Point),
 }
 
 #[inline]
@@ -64,7 +70,7 @@ pub fn move_render_point(p: Point, d: &Rect) -> Rect {
 }
 
 pub trait Render {
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: Parent);
+    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, parent: &RenderContext);
 
     fn prepare_ui(&mut self, renderer: &mut Renderer);
 }

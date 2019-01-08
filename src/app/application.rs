@@ -172,7 +172,7 @@ impl Application {
             self.clear();
 
             app_state.update(timer.ticks() as i32, &UpdateContext::Nothing);
-            app_state.render(&mut self.canvas, &mut renderer, None);
+            app_state.render(&mut self.canvas, &mut renderer, &RenderContext::Nothing);
 
             self.present();
             sleep(sleep_time);
