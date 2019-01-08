@@ -1,6 +1,5 @@
 [![codecov](https://codecov.io/gh/Eraden/rider/branch/master/graph/badge.svg)](https://codecov.io/gh/Eraden/rider)
 [![CircleCI](https://circleci.com/gh/Eraden/rider.svg?style=svg&circle-token=546aae50b559665bd1f77a6452eff25e26a9d966)](https://circleci.com/gh/Eraden/rider)
-[![Build status](https://ci.appveyor.com/api/projects/status/tdlqd7pumljnn19n?svg=true)](https://ci.appveyor.com/project/Eraden/rider)
 
 # rider
 Text editor in rust

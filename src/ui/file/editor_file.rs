@@ -152,7 +152,6 @@ impl ClickHandler for EditorFile {
             }
         }
         if index >= 0 {
-            let context = UpdateContext::ParentPosition(self.render_start_point());
             return self
                 .get_section_at_mut(index as usize)
                 .unwrap()
@@ -161,10 +160,9 @@ impl ClickHandler for EditorFile {
         UR::NoOp
     }
 
-    fn is_left_click_target(&self, point: &Point, _context: &UpdateContext) -> bool {
-        let context = UpdateContext::ParentPosition(self.render_start_point());
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
         for section in self.sections.iter() {
-            if section.is_left_click_target(point, &context) {
+            if section.is_left_click_target(point, context) {
                 return true;
             }
         }

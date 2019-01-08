@@ -10,7 +10,6 @@ pub struct VerticalScrollBar {
     viewport: u32,
     full_height: u32,
     rect: Rect,
-    config: ConfigAccess,
 }
 
 impl VerticalScrollBar {
@@ -21,13 +20,15 @@ impl VerticalScrollBar {
             viewport: 1,
             full_height: 1,
             rect: Rect::new(0, 0, width, 0),
-            config,
         }
     }
 }
 
 impl Update for VerticalScrollBar {
     fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UR {
+        if self.full_height < self.viewport {
+            return UR::NoOp;
+        }
         let ratio = self.full_height as f64 / self.viewport as f64;
         self.rect.set_height((self.viewport as f64 / ratio) as u32);
         let y = (self.viewport - self.rect.height()) as f64 * (self.scroll_value().abs() as f64 / (self.full_height - self.viewport) as f64);
@@ -39,6 +40,10 @@ impl Update for VerticalScrollBar {
 
 impl Render for VerticalScrollBar {
     fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, context: &RenderContext) {
+        if self.full_height < self.viewport {
+            return;
+        }
+
         canvas.set_draw_color(Color::RGBA(255, 255, 255, 0));
         canvas
             .fill_rect(match context {
