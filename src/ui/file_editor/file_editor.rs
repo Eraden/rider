@@ -382,6 +382,10 @@ mod test_render_box {
         pub fn set_full_rect(&mut self, r: Rect) {
             self.full_rect = r;
         }
+
+        pub fn set_dest(&mut self, r: Rect) {
+            self.dest = r;
+        }
     }
 
     #[test]
@@ -414,10 +418,12 @@ mod test_render_box {
             )
         };
         let mut widget = FileEditor::new(config);
-        widget.set_full_rect(Rect::new(0, 0, 9999, 9999));
+        widget.set_dest(Rect::new(x.clone(), y.clone(), 999, 999));
+        widget.set_full_rect(Rect::new(0, 0, 99999, 99999));
+        widget.update(1, &UpdateContext::Nothing);
         widget.scroll_to(30, 40);
         let result = widget.render_start_point().clone();
-        let expected = Point::new(x + (ss * 30), y + (ss * 40));
+        let expected = Point::new(x - (ss * 30), y - (ss * 40));
         assert_eq!(result, expected);
     }
 }
