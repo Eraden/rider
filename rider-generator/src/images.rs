@@ -1,26 +1,11 @@
 use rider_config::directories::*;
-use std::fs;
-use std::fs::File;
-use std::io::Write;
+use std::fs::{create_dir_all};
 use std::path::PathBuf;
+use crate::write_bytes_to::write_bytes_to;
 
 pub fn create() {
     default_theme();
     railscasts_theme();
-}
-
-fn write_bytes_to(dir: &PathBuf, file: &str, blob: &[u8]) {
-    let mut path = dir.clone();
-    path.push(file);
-    let r = File::create(path.to_str().unwrap());
-    #[cfg_attr(tarpaulin, skip)]
-    let mut f = r.unwrap_or_else(|e| panic!(e));
-    let r = f.write(blob);
-    #[cfg_attr(tarpaulin, skip)]
-    r.unwrap_or_else(|e| panic!(e));
-    let r = f.flush();
-    #[cfg_attr(tarpaulin, skip)]
-    r.unwrap_or_else(|e| panic!(e));
 }
 
 fn create_default_directory_icon(dir: &PathBuf) {
@@ -37,9 +22,9 @@ fn default_theme() {
     let mut dir = themes_dir();
     dir.push("default");
     dir.push("images");
-    let r = fs::create_dir_all(&dir);
+    let r = create_dir_all(&dir);
     #[cfg_attr(tarpaulin, skip)]
-    r.unwrap_or_else(|_| panic!("Cannot create themes config directory"));
+        r.unwrap_or_else(|_| panic!("Cannot create themes config directory"));
 
     create_default_directory_icon(&dir);
     create_default_file_icon(&dir);
@@ -59,9 +44,9 @@ fn railscasts_theme() {
     let mut dir = themes_dir();
     dir.push("railscasts");
     dir.push("images");
-    let r = fs::create_dir_all(&dir);
+    let r = create_dir_all(&dir);
     #[cfg_attr(tarpaulin, skip)]
-    r.unwrap_or_else(|_| panic!("Cannot create themes config directory"));
+        r.unwrap_or_else(|_| panic!("Cannot create themes config directory"));
 
     create_railscasts_directory_icon(&dir);
     create_railscasts_file_icon(&dir);
@@ -70,20 +55,83 @@ fn railscasts_theme() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::env::temp_dir;
-    use std::path::Path;
     use uuid::Uuid;
+    use std::fs::create_dir_all;
+    use std::env::set_var;
+    use std::path::{Path, PathBuf};
+
+    #[cfg(test)]
+    fn join(a: String, b: String) -> String {
+        vec![a, b].join("/")
+    }
 
     #[test]
-    fn must_create_file() {
-        let test_dir = temp_dir();
-        let file_name = Uuid::new_v4().to_string();
-        let blob: Vec<u8> = vec![1, 2, 3, 4];
-        write_bytes_to(&test_dir, file_name.as_str(), blob.as_slice());
+    fn assert_create() {
+        let uniq = Uuid::new_v4();
+        let test_path = join("/tmp".to_owned(), uniq.to_string());
+        create_dir_all(test_path.clone()).unwrap();
+        set_var("XDG_CONFIG_HOME", test_path.as_str());
+        let themes_dir = join(test_path.clone(), "rider/themes".to_owned());
+        assert_eq!(Path::new(join(themes_dir.clone(), "railscasts/images/directory-64x64.png".to_owned()).as_str()).exists(), false);
+        assert_eq!(Path::new(join(themes_dir.clone(), "railscasts/images/file-64x64.png".to_owned()).as_str()).exists(), false);
+        assert_eq!(Path::new(join(themes_dir.clone(), "default/images/directory-64x64.png".to_owned()).as_str()).exists(), false);
+        assert_eq!(Path::new(join(themes_dir.clone(), "default/images/file-64x64.png".to_owned()).as_str()).exists(), false);
+        create();
+        assert_eq!(Path::new(join(themes_dir.clone(), "railscasts/images/directory-64x64.png".to_owned()).as_str()).exists(), true);
+        assert_eq!(Path::new(join(themes_dir.clone(), "railscasts/images/file-64x64.png".to_owned()).as_str()).exists(), true);
+        assert_eq!(Path::new(join(themes_dir.clone(), "default/images/directory-64x64.png".to_owned()).as_str()).exists(), true);
+        assert_eq!(Path::new(join(themes_dir.clone(), "default/images/file-64x64.png".to_owned()).as_str()).exists(), true);
+    }
 
-        let mut test_file_path = test_dir.clone();
-        test_file_path.push(file_name);
-        let file_path = Path::new(&test_file_path);
-        assert_eq!(file_path.exists(), true);
+    #[test]
+    fn assert_create_default_directory_icon() {
+        let uniq = Uuid::new_v4();
+        let test_path = join("/tmp".to_owned(), uniq.to_string());
+        create_dir_all(test_path.clone()).unwrap();
+        set_var("XDG_CONFIG_HOME", test_path.as_str());
+        let file_path: String = join(test_path.clone(), "directory-64x64.png".to_owned());
+        let dir: PathBuf = test_path.into();
+        assert_eq!(Path::new(file_path.as_str()).exists(), false);
+        create_default_directory_icon(&dir);
+        assert_eq!(Path::new(file_path.as_str()).exists(), true);
+    }
+
+    #[test]
+    fn assert_create_default_file_icon() {
+        let uniq = Uuid::new_v4();
+        let test_path = join("/tmp".to_owned(), uniq.to_string());
+        create_dir_all(test_path.clone()).unwrap();
+        let file_path: String = join(test_path.clone(), "file-64x64.png".to_owned());
+        set_var("XDG_CONFIG_HOME", test_path.as_str());
+        let dir: PathBuf = test_path.into();
+        assert_eq!(Path::new(file_path.as_str()).exists(), false);
+        create_default_file_icon(&dir);
+        assert_eq!(Path::new(file_path.as_str()).exists(), true);
+    }
+
+    #[test]
+    fn assert_create_railscasts_directory_icon() {
+        let uniq = Uuid::new_v4();
+        let test_path = join("/tmp".to_owned(), uniq.to_string());
+        create_dir_all(test_path.clone()).unwrap();
+        let file_path: String = join(test_path.clone(), "directory-64x64.png".to_owned());
+        set_var("XDG_CONFIG_HOME", test_path.as_str());
+        let dir: PathBuf = test_path.into();
+        assert_eq!(Path::new(file_path.as_str()).exists(), false);
+        create_railscasts_directory_icon(&dir);
+        assert_eq!(Path::new(file_path.as_str()).exists(), true);
+    }
+
+    #[test]
+    fn assert_create_railscasts_file_icon() {
+        let uniq = Uuid::new_v4();
+        let test_path = join("/tmp".to_owned(), uniq.to_string());
+        create_dir_all(test_path.clone()).unwrap();
+        let file_path: String = join(test_path.clone(), "file-64x64.png".to_owned());
+        set_var("XDG_CONFIG_HOME", test_path.as_str());
+        let dir: PathBuf = test_path.into();
+        assert_eq!(Path::new(file_path.as_str()).exists(), false);
+        create_railscasts_file_icon(&dir);
+        assert_eq!(Path::new(file_path.as_str()).exists(), true);
     }
 }

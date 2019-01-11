@@ -73,6 +73,7 @@ pub fn move_render_point(p: Point, d: &Rect) -> Rect {
     Rect::new(d.x() + p.x(), d.y() + p.y(), d.width(), d.height())
 }
 
+#[cfg_attr(tarpaulin, skip)]
 pub trait Render {
     fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext);
 

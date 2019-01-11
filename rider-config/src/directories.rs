@@ -22,7 +22,6 @@ pub fn fonts_dir() -> PathBuf {
 
 pub fn config_dir() -> PathBuf {
     let home_dir = dirs::config_dir().unwrap();
-
     let mut config_dir = home_dir.clone();
     config_dir.push("rider");
     config_dir
@@ -30,7 +29,6 @@ pub fn config_dir() -> PathBuf {
 
 pub fn project_dir() -> PathBuf {
     let runtime = dirs::runtime_dir().unwrap();
-
     let mut project_dir = runtime.clone();
     project_dir.push(".rider");
     project_dir

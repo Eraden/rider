@@ -294,6 +294,7 @@ impl ConfigHolder for DirectoryView {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Render for DirectoryView {
     fn render(&self, canvas: &mut WindowCanvas, renderer: &mut Renderer, context: &RenderContext) {
         let dest = self.dest();

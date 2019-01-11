@@ -146,6 +146,7 @@ impl Update for OpenFile {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Render for OpenFile {
     fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RC) {
         let dest = match context {

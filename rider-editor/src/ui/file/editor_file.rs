@@ -113,6 +113,7 @@ impl TextCollection for EditorFile {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Render for EditorFile {
     fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext) {
         for section in self.sections.iter() {

@@ -144,6 +144,7 @@ impl ConfigHolder for FileEntry {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Render for FileEntry {
     fn render(&self, canvas: &mut WindowCanvas, renderer: &mut Renderer, context: &RenderContext) {
         let mut dest = match context {

@@ -22,6 +22,7 @@ pub mod renderer;
 pub mod tests;
 pub mod ui;
 
+#[cfg_attr(tarpaulin, skip)]
 fn init_logger() {
     use simplelog::SharedLogger;
 
@@ -45,6 +46,7 @@ fn init_logger() {
     CombinedLogger::init(outputs).unwrap();
 }
 
+#[cfg_attr(tarpaulin, skip)]
 fn main() {
     let mut app = Application::new();
     app.init();

@@ -194,6 +194,7 @@ impl CaretAccess for FileEditor {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Render for FileEditor {
     fn render(&self, canvas: &mut WS, renderer: &mut Renderer, _context: &RenderContext) {
         canvas.set_clip_rect(self.dest.clone());

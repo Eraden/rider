@@ -54,6 +54,7 @@ impl Update for HorizontalScrollBar {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Render for HorizontalScrollBar {
     fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, context: &RenderContext) {
         if self.full_width < self.viewport {

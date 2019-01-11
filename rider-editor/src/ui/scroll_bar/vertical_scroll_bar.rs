@@ -54,6 +54,7 @@ impl Update for VerticalScrollBar {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Render for VerticalScrollBar {
     fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, context: &RenderContext) {
         if self.full_height() < self.viewport() {

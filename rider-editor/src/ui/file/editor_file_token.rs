@@ -123,6 +123,7 @@ impl TextCollection for EditorFileToken {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Render for EditorFileToken {
     /**
      * Must first create targets so even if new line appear renderer will know

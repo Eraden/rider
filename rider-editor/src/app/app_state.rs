@@ -26,6 +26,7 @@ impl AppState {
         }
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     pub fn open_file(&mut self, file_path: String, renderer: &mut Renderer) {
         if let Ok(buffer) = read_to_string(&file_path) {
             let mut file = EditorFile::new(file_path.clone(), buffer, self.config.clone());
@@ -39,6 +40,7 @@ impl AppState {
         };
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     pub fn open_directory(&mut self, dir_path: String, renderer: &mut Renderer) {
         match self.open_file_modal.as_mut() {
             Some(modal) => modal.open_directory(dir_path, renderer),
@@ -65,8 +67,13 @@ impl AppState {
             self.file_editor_mut().scroll_by(x, y);
         }
     }
+
+    pub fn open_file_modal(&self) -> Option<&OpenFile> {
+        self.open_file_modal.as_ref()
+    }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Render for AppState {
     fn render(&self, canvas: &mut WC, renderer: &mut Renderer, _context: &RenderContext) {
         self.file_editor
@@ -136,5 +143,44 @@ impl AppState {
 impl ConfigHolder for AppState {
     fn config(&self) -> &ConfigAccess {
         &self.config
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tests::support;
+//    use crate::ui::modal::open_file;
+    use std::sync::Arc;
+
+    #[test]
+    fn must_return_none_for_default_file() {
+        let config = support::build_config();
+        let state = AppState::new(Arc::clone(&config));
+        let file = state.file_editor().file();
+        assert_eq!(file.is_none(), true);
+    }
+
+    #[test]
+    fn must_scroll_file_when_no_modal() {
+        let config = support::build_config();
+        let mut state = AppState::new(Arc::clone(&config));
+        let old_scroll = state.file_editor().scroll();
+        state.set_open_file_modal(None);
+        state.scroll_by(10, 10);
+        assert_ne!(state.file_editor().scroll(), old_scroll);
+    }
+
+    #[test]
+    fn must_scroll_modal_when_modal_was_set() {
+        let config = support::build_config();
+        let mut state = AppState::new(Arc::clone(&config));
+        let modal = OpenFile::new("/".to_owned(), 100, 100, Arc::clone(&config));
+        let file_scroll = state.file_editor().scroll();
+        let old_scroll = state.file_editor().scroll();
+        state.set_open_file_modal(Some(modal));
+        state.scroll_by(10, 10);
+        assert_eq!(state.file_editor().scroll(), file_scroll);
+        assert_ne!(state.open_file_modal().unwrap().scroll(), old_scroll);
     }
 }

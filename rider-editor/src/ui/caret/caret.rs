@@ -66,6 +66,7 @@ impl Deref for Caret {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Render for Caret {
     fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, context: &RenderContext) {
         use std::borrow::*;

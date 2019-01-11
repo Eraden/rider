@@ -3,7 +3,7 @@ use crate::renderer::managers::*;
 use crate::renderer::*;
 use crate::ui::caret::CaretPosition;
 use crate::ui::*;
-use rider_config::ConfigAccess;
+use rider_config::{ConfigAccess, ConfigHolder};
 
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
@@ -95,6 +95,7 @@ impl TextCharacter {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Render for TextCharacter {
     /**
      * Must first create targets so even if new line appear renderer will know

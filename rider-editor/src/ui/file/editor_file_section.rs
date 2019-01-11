@@ -125,6 +125,7 @@ impl TextCollection for EditorFileSection {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Render for EditorFileSection {
     fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext) {
         for token in self.tokens.iter() {
