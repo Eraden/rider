@@ -1,7 +1,7 @@
-use rider_config::directories::*;
-use std::fs::{create_dir_all};
-use std::path::PathBuf;
 use crate::write_bytes_to::write_bytes_to;
+use rider_config::directories::*;
+use std::fs::create_dir_all;
+use std::path::PathBuf;
 
 pub fn create() {
     default_theme();
@@ -24,7 +24,7 @@ fn default_theme() {
     dir.push("images");
     let r = create_dir_all(&dir);
     #[cfg_attr(tarpaulin, skip)]
-        r.unwrap_or_else(|_| panic!("Cannot create themes config directory"));
+    r.unwrap_or_else(|_| panic!("Cannot create themes config directory"));
 
     create_default_directory_icon(&dir);
     create_default_file_icon(&dir);
@@ -46,7 +46,7 @@ fn railscasts_theme() {
     dir.push("images");
     let r = create_dir_all(&dir);
     #[cfg_attr(tarpaulin, skip)]
-        r.unwrap_or_else(|_| panic!("Cannot create themes config directory"));
+    r.unwrap_or_else(|_| panic!("Cannot create themes config directory"));
 
     create_railscasts_directory_icon(&dir);
     create_railscasts_file_icon(&dir);
@@ -55,10 +55,10 @@ fn railscasts_theme() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uuid::Uuid;
-    use std::fs::create_dir_all;
     use std::env::set_var;
+    use std::fs::create_dir_all;
     use std::path::{Path, PathBuf};
+    use uuid::Uuid;
 
     #[cfg(test)]
     fn join(a: String, b: String) -> String {
@@ -72,15 +72,95 @@ mod tests {
         create_dir_all(test_path.clone()).unwrap();
         set_var("XDG_CONFIG_HOME", test_path.as_str());
         let themes_dir = join(test_path.clone(), "rider/themes".to_owned());
-        assert_eq!(Path::new(join(themes_dir.clone(), "railscasts/images/directory-64x64.png".to_owned()).as_str()).exists(), false);
-        assert_eq!(Path::new(join(themes_dir.clone(), "railscasts/images/file-64x64.png".to_owned()).as_str()).exists(), false);
-        assert_eq!(Path::new(join(themes_dir.clone(), "default/images/directory-64x64.png".to_owned()).as_str()).exists(), false);
-        assert_eq!(Path::new(join(themes_dir.clone(), "default/images/file-64x64.png".to_owned()).as_str()).exists(), false);
+        assert_eq!(
+            Path::new(
+                join(
+                    themes_dir.clone(),
+                    "railscasts/images/directory-64x64.png".to_owned()
+                )
+                .as_str()
+            )
+            .exists(),
+            false
+        );
+        assert_eq!(
+            Path::new(
+                join(
+                    themes_dir.clone(),
+                    "railscasts/images/file-64x64.png".to_owned()
+                )
+                .as_str()
+            )
+            .exists(),
+            false
+        );
+        assert_eq!(
+            Path::new(
+                join(
+                    themes_dir.clone(),
+                    "default/images/directory-64x64.png".to_owned()
+                )
+                .as_str()
+            )
+            .exists(),
+            false
+        );
+        assert_eq!(
+            Path::new(
+                join(
+                    themes_dir.clone(),
+                    "default/images/file-64x64.png".to_owned()
+                )
+                .as_str()
+            )
+            .exists(),
+            false
+        );
         create();
-        assert_eq!(Path::new(join(themes_dir.clone(), "railscasts/images/directory-64x64.png".to_owned()).as_str()).exists(), true);
-        assert_eq!(Path::new(join(themes_dir.clone(), "railscasts/images/file-64x64.png".to_owned()).as_str()).exists(), true);
-        assert_eq!(Path::new(join(themes_dir.clone(), "default/images/directory-64x64.png".to_owned()).as_str()).exists(), true);
-        assert_eq!(Path::new(join(themes_dir.clone(), "default/images/file-64x64.png".to_owned()).as_str()).exists(), true);
+        assert_eq!(
+            Path::new(
+                join(
+                    themes_dir.clone(),
+                    "railscasts/images/directory-64x64.png".to_owned()
+                )
+                .as_str()
+            )
+            .exists(),
+            true
+        );
+        assert_eq!(
+            Path::new(
+                join(
+                    themes_dir.clone(),
+                    "railscasts/images/file-64x64.png".to_owned()
+                )
+                .as_str()
+            )
+            .exists(),
+            true
+        );
+        assert_eq!(
+            Path::new(
+                join(
+                    themes_dir.clone(),
+                    "default/images/directory-64x64.png".to_owned()
+                )
+                .as_str()
+            )
+            .exists(),
+            true
+        );
+        assert_eq!(
+            Path::new(
+                join(
+                    themes_dir.clone(),
+                    "default/images/file-64x64.png".to_owned()
+                )
+                .as_str()
+            )
+            .exists(),
+            true
+        );
     }
 
     #[test]

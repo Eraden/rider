@@ -150,7 +150,7 @@ impl ConfigHolder for AppState {
 mod tests {
     use super::*;
     use crate::tests::support;
-//    use crate::ui::modal::open_file;
+    //    use crate::ui::modal::open_file;
     use std::sync::Arc;
 
     #[test]

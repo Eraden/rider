@@ -29,10 +29,10 @@ fn default_styles() -> Vec<Theme> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use uuid::Uuid;
-    use std::fs::create_dir_all;
     use std::env::set_var;
-    use std::path::{Path};
+    use std::fs::create_dir_all;
+    use std::path::Path;
+    use uuid::Uuid;
 
     #[test]
     fn assert_default_styles() {
@@ -52,10 +52,24 @@ mod tests {
         set_var("XDG_CONFIG_HOME", test_path.as_str());
         set_var("XDG_RUNTIME_DIR", test_path.as_str());
         let rider_dir = join(test_path.clone(), "rider".to_owned());
-        assert_eq!(Path::new(join(rider_dir.clone(), "themes/default.json".to_owned()).as_str()).exists(), false);
-        assert_eq!(Path::new(join(rider_dir.clone(), "themes/railscasts.json".to_owned()).as_str()).exists(), false);
+        assert_eq!(
+            Path::new(join(rider_dir.clone(), "themes/default.json".to_owned()).as_str()).exists(),
+            false
+        );
+        assert_eq!(
+            Path::new(join(rider_dir.clone(), "themes/railscasts.json".to_owned()).as_str())
+                .exists(),
+            false
+        );
         create();
-        assert_eq!(Path::new(join(rider_dir.clone(), "themes/default.json".to_owned()).as_str()).exists(), true);
-        assert_eq!(Path::new(join(rider_dir.clone(), "themes/railscasts.json".to_owned()).as_str()).exists(), true);
+        assert_eq!(
+            Path::new(join(rider_dir.clone(), "themes/default.json".to_owned()).as_str()).exists(),
+            true
+        );
+        assert_eq!(
+            Path::new(join(rider_dir.clone(), "themes/railscasts.json".to_owned()).as_str())
+                .exists(),
+            true
+        );
     }
 }

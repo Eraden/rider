@@ -7,13 +7,13 @@ pub fn write_bytes_to(dir: &PathBuf, file: &str, blob: &[u8]) {
     path.push(file);
     let r = File::create(path.to_str().unwrap());
     #[cfg_attr(tarpaulin, skip)]
-        let mut f = r.unwrap_or_else(|e| panic!(e));
+    let mut f = r.unwrap_or_else(|e| panic!(e));
     let r = f.write(blob);
     #[cfg_attr(tarpaulin, skip)]
-        r.unwrap_or_else(|e| panic!(e));
+    r.unwrap_or_else(|e| panic!(e));
     let r = f.flush();
     #[cfg_attr(tarpaulin, skip)]
-        r.unwrap_or_else(|e| panic!(e));
+    r.unwrap_or_else(|e| panic!(e));
 }
 
 #[cfg(test)]
