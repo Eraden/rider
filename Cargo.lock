@@ -414,7 +414,9 @@ dependencies = [
 name = "rider"
 version = "0.1.0"
 dependencies = [
+ "rider-config 0.1.0",
  "sdl2 0.31.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "uuid 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

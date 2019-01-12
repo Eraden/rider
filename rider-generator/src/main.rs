@@ -18,6 +18,7 @@ fn main() {
     config::create();
     themes::create();
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -25,6 +26,11 @@ mod tests {
     use std::fs::create_dir_all;
     use std::path::Path;
     use uuid::Uuid;
+
+    #[cfg(test)]
+    fn exists(dir: &String, sub: &str) -> bool {
+        Path::new(join(dir.clone(), sub.to_owned()).as_str()).exists()
+    }
 
     #[cfg(test)]
     fn join(a: String, b: String) -> String {
@@ -39,52 +45,17 @@ mod tests {
         set_var("XDG_CONFIG_HOME", test_path.as_str());
         set_var("XDG_RUNTIME_DIR", test_path.as_str());
         let rider_dir = join(test_path.clone(), "rider".to_owned());
-        assert_eq!(
-            Path::new(join(rider_dir.clone(), "themes".to_owned()).as_str()).exists(),
-            false
-        );
-        assert_eq!(
-            Path::new(join(rider_dir.clone(), "log".to_owned()).as_str()).exists(),
-            false
-        );
-        assert_eq!(
-            Path::new(join(test_path.clone(), ".rider".to_owned()).as_str()).exists(),
-            false
-        );
-        assert_eq!(
-            Path::new(join(rider_dir.clone(), "themes/default.json".to_owned()).as_str()).exists(),
-            false
-        );
-        assert_eq!(
-            Path::new(join(rider_dir.clone(), "themes/railscasts.json".to_owned()).as_str())
-                .exists(),
-            false
-        );
+        assert_eq!(exists(&rider_dir, "themes"), false);
+        assert_eq!(exists(&rider_dir, "log"), false);
+        assert_eq!(exists(&test_path, ".rider"), false);
+        assert_eq!(exists(&rider_dir, "themes/default.json"), false);
+        assert_eq!(exists(&rider_dir, "themes/railscasts.json"), false);
         main();
-        assert_eq!(
-            Path::new(join(rider_dir.clone(), "fonts".to_owned()).as_str()).exists(),
-            true
-        );
-        assert_eq!(
-            Path::new(join(rider_dir.clone(), "log".to_owned()).as_str()).exists(),
-            true
-        );
-        assert_eq!(
-            Path::new(join(rider_dir.clone(), "themes".to_owned()).as_str()).exists(),
-            true
-        );
-        assert_eq!(
-            Path::new(join(test_path.clone(), ".rider".to_owned()).as_str()).exists(),
-            true
-        );
-        assert_eq!(
-            Path::new(join(rider_dir.clone(), "themes/default.json".to_owned()).as_str()).exists(),
-            true
-        );
-        assert_eq!(
-            Path::new(join(rider_dir.clone(), "themes/railscasts.json".to_owned()).as_str())
-                .exists(),
-            true
-        );
+        assert_eq!(exists(&rider_dir, "fonts"), true);
+        assert_eq!(exists(&rider_dir, "log"), true);
+        assert_eq!(exists(&rider_dir, "themes"), true);
+        assert_eq!(exists(&test_path, ".rider"), true);
+        assert_eq!(exists(&rider_dir, "themes/default.json"), true);
+        assert_eq!(exists(&rider_dir, "themes/railscasts.json"), true);
     }
 }

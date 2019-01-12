@@ -61,3 +61,31 @@ pub fn move_caret_left(_file_editor: &mut FileEditor) {
     //    };
     //    let _line = file_editor.caret().line_number();
 }
+
+#[cfg(test)]
+mod test_move_right {
+    use super::*;
+    use crate::tests::support;
+
+    #[test]
+    fn must_do_nothing() {
+        let config = support::build_config();
+        let mut editor = FileEditor::new(config);
+
+        assert_eq!(move_caret_left(&mut editor), ());
+    }
+}
+
+#[cfg(test)]
+mod test_move_left {
+    use super::*;
+    use crate::tests::support;
+
+    #[test]
+    fn must_do_nothing() {
+        let config = support::build_config();
+        let mut editor = FileEditor::new(config);
+
+        assert_eq!(move_caret_left(&mut editor), ());
+    }
+}
