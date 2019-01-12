@@ -54,10 +54,10 @@ pub fn move_caret_right(file_editor: &mut FileEditor) {
         .move_caret(p, Point::new(d.x(), d.y()));
 }
 
-pub fn move_caret_left(file_editor: &mut FileEditor) {
-    let _file: &EditorFile = match file_editor.file() {
-        None => return,
-        Some(f) => f,
-    };
-    let _line = file_editor.caret().line_number();
+pub fn move_caret_left(_file_editor: &mut FileEditor) {
+    //    let _file: &EditorFile = match file_editor.file() {
+    //        None => return,
+    //        Some(f) => f,
+    //    };
+    //    let _line = file_editor.caret().line_number();
 }

@@ -46,6 +46,7 @@ pub enum UpdateResult {
     OpenFileModal,
 }
 
+#[cfg_attr(tarpaulin, skip)]
 pub struct Application {
     config: Arc<RwLock<Config>>,
     clear_color: Color,
@@ -55,6 +56,7 @@ pub struct Application {
     tasks: Vec<UpdateResult>,
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl Application {
     pub fn new() -> Self {
         let mut binaries =
@@ -310,6 +312,7 @@ impl Application {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl ConfigHolder for Application {
     fn config(&self) -> &ConfigAccess {
         &self.config

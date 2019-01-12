@@ -37,4 +37,13 @@ mod test {
         let expected = Color::RGBA(12, 34, 56, 78);
         assert_eq!(color, expected);
     }
+
+    #[test]
+    fn must_assign_to_proper_fields() {
+        let color = SerdeColor::new(12, 34, 56, 78);
+        assert_eq!(color.r, 12);
+        assert_eq!(color.g, 34);
+        assert_eq!(color.b, 56);
+        assert_eq!(color.a, 78);
+    }
 }

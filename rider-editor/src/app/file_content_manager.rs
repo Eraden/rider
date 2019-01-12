@@ -4,12 +4,13 @@ use crate::ui::*;
 use sdl2::rect::{Point, Rect};
 use std::sync::*;
 
-fn current_file_path(file_editor: &mut FileEditor) -> String {
+pub fn current_file_path(file_editor: &mut FileEditor) -> String {
     file_editor
         .file()
         .map_or_else(|| String::new(), |f| f.path())
 }
 
+#[cfg_attr(tarpaulin, skip)]
 pub fn delete_front(file_editor: &mut FileEditor, renderer: &mut Renderer) {
     let mut buffer: String = if let Some(file) = file_editor.file() {
         file
@@ -51,6 +52,7 @@ pub fn delete_front(file_editor: &mut FileEditor, renderer: &mut Renderer) {
     file_editor.replace_current_file(new_file);
 }
 
+#[cfg_attr(tarpaulin, skip)]
 pub fn delete_back(file_editor: &mut FileEditor, renderer: &mut Renderer) {
     let file: &EditorFile = if let Some(file) = file_editor.file() {
         file
@@ -68,6 +70,7 @@ pub fn delete_back(file_editor: &mut FileEditor, renderer: &mut Renderer) {
     file_editor.replace_current_file(new_file);
 }
 
+#[cfg_attr(tarpaulin, skip)]
 pub fn insert_text(file_editor: &mut FileEditor, text: String, renderer: &mut Renderer) {
     let mut buffer: String = file_editor.file().map_or(String::new(), |f| f.buffer());
     if buffer.is_empty() {
@@ -101,6 +104,7 @@ pub fn insert_text(file_editor: &mut FileEditor, text: String, renderer: &mut Re
     file_editor.replace_current_file(new_file);
 }
 
+#[cfg_attr(tarpaulin, skip)]
 pub fn insert_new_line(file_editor: &mut FileEditor, renderer: &mut Renderer) {
     let mut buffer: String = if let Some(file) = file_editor.file() {
         file
@@ -134,4 +138,32 @@ pub fn insert_new_line(file_editor: &mut FileEditor, renderer: &mut Renderer) {
     );
     new_file.prepare_ui(renderer);
     file_editor.replace_current_file(new_file);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tests::support;
+
+    #[test]
+    fn must_return_empty_string_when_no_file() {
+        let config = support::build_config();
+        let mut editor = FileEditor::new(config);
+        let result = current_file_path(&mut editor);
+        assert_eq!(result, String::new());
+    }
+
+    #[test]
+    fn must_return_path_string_when_file_was_set() {
+        let config = support::build_config();
+        let mut editor = FileEditor::new(Arc::clone(&config));
+        let file = EditorFile::new(
+            "/foo/bar".to_owned(),
+            "hello world".to_owned(),
+            Arc::clone(&config),
+        );
+        editor.open_file(file);
+        let result = current_file_path(&mut editor);
+        assert_eq!(result, "/foo/bar".to_owned());
+    }
 }

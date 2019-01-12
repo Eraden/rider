@@ -109,6 +109,7 @@ impl Update for AppState {
 }
 
 impl AppState {
+    #[cfg_attr(tarpaulin, skip)]
     pub fn on_left_click(&mut self, point: &Point, video_subsystem: &mut VS) -> UpdateResult {
         match self.open_file_modal.as_mut() {
             Some(modal) => return modal.on_left_click(point, &UpdateContext::Nothing),

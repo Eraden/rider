@@ -78,3 +78,64 @@ impl Theme {
         &self.images
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn assert_name() {
+        let target = Theme::default();
+        let result = target.name().clone();
+        let expected = "default".to_owned();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_background() {
+        let target = Theme::default();
+        let result = target.background().clone();
+        let expected = SerdeColor::new(255, 255, 255, 0);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_border_color() {
+        let target = Theme::default();
+        let result = target.border_color().clone();
+        let expected = SerdeColor::new(0, 0, 0, 0);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_caret() {
+        let target = Theme::default();
+        let result = target.caret().clone();
+        let expected = CaretColor::default();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_diff() {
+        let target = Theme::default();
+        let result = target.diff().clone();
+        let expected = DiffColor::default();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_code_highlighting() {
+        let target = Theme::default();
+        let result = target.code_highlighting().clone();
+        let expected = CodeHighlightingColor::default();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_images() {
+        let target = Theme::default();
+        let result = target.images().clone();
+        let expected = ThemeImages::default();
+        assert_eq!(result, expected);
+    }
+}

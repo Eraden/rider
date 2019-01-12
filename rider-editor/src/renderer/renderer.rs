@@ -7,6 +7,7 @@ use sdl2::ttf::Sdl2TtfContext;
 use sdl2::video::WindowContext as WinCtxt;
 use std::collections::HashMap;
 
+#[cfg_attr(tarpaulin, skip)]
 pub struct Renderer<'l> {
     config: ConfigAccess,
     font_manager: FontManager<'l>,
@@ -14,6 +15,7 @@ pub struct Renderer<'l> {
     character_sizes: HashMap<TextCharacterDetails, Rect>,
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl<'l> Renderer<'l> {
     pub fn new(
         config: ConfigAccess,
@@ -60,6 +62,7 @@ impl<'l> Renderer<'l> {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl<'l> ManagersHolder<'l> for Renderer<'l> {
     fn font_manager(&mut self) -> &mut FontManager<'l> {
         &mut self.font_manager
@@ -70,6 +73,7 @@ impl<'l> ManagersHolder<'l> for Renderer<'l> {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl<'l> ConfigHolder for Renderer<'l> {
     fn config(&self) -> &ConfigAccess {
         &self.config

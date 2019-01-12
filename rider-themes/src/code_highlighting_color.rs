@@ -121,3 +121,153 @@ impl CodeHighlightingColor {
         &self.whitespace
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn assert_comment() {
+        let target = CodeHighlightingColor::default();
+        let result = target.comment().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_constant() {
+        let target = CodeHighlightingColor::default();
+        let result = target.constant().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_error() {
+        let target = CodeHighlightingColor::default();
+        let result = target.error().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_warning() {
+        let target = CodeHighlightingColor::default();
+        let result = target.warning().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_identifier() {
+        let target = CodeHighlightingColor::default();
+        let result = target.identifier().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_keyword() {
+        let target = CodeHighlightingColor::default();
+        let result = target.keyword().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_literal() {
+        let target = CodeHighlightingColor::default();
+        let result = target.literal().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_number() {
+        let target = CodeHighlightingColor::default();
+        let result = target.number().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_operator() {
+        let target = CodeHighlightingColor::default();
+        let result = target.operator().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_separator() {
+        let target = CodeHighlightingColor::default();
+        let result = target.separator().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_statement() {
+        let target = CodeHighlightingColor::default();
+        let result = target.statement().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_string() {
+        let target = CodeHighlightingColor::default();
+        let result = target.string().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_title() {
+        let target = CodeHighlightingColor::default();
+        let result = target.title().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_type_() {
+        let target = CodeHighlightingColor::default();
+        let result = target.type_().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_todo() {
+        let target = CodeHighlightingColor::default();
+        let result = target.todo().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_pre_proc() {
+        let target = CodeHighlightingColor::default();
+        let result = target.pre_proc().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_special() {
+        let target = CodeHighlightingColor::default();
+        let result = target.special().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_whitespace() {
+        let target = CodeHighlightingColor::default();
+        let result = target.whitespace().clone();
+        let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
+        assert_eq!(result, expected);
+    }
+
+}

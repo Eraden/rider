@@ -10,10 +10,13 @@ use std::env;
 use std::hash::Hash;
 use std::rc::Rc;
 
+#[cfg_attr(tarpaulin, skip)]
 //noinspection RsWrongLifetimeParametersNumber
 pub type RcTex<'l> = Rc<Texture<'l>>;
+#[cfg_attr(tarpaulin, skip)]
 pub type RcFont<'l> = Rc<Font<'l, 'static>>;
 
+#[cfg_attr(tarpaulin, skip)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TextCharacterDetails {
     pub c: char,
@@ -21,18 +24,21 @@ pub struct TextCharacterDetails {
     pub font_size: u16,
 }
 
+#[cfg_attr(tarpaulin, skip)]
 pub trait ResourceLoader<'l, R> {
     type Args: ?Sized;
 
     fn load(&'l self, data: &Self::Args) -> Result<R, String>;
 }
 
+#[cfg_attr(tarpaulin, skip)]
 #[derive(Debug, Hash, Eq, PartialEq, Clone)]
 pub struct FontDetails {
     pub path: String,
     pub size: u16,
 }
 
+#[cfg_attr(tarpaulin, skip)]
 #[derive(Debug, Hash, Eq, PartialEq, Clone)]
 pub struct TextDetails {
     pub text: String,
@@ -40,6 +46,7 @@ pub struct TextDetails {
     pub font: FontDetails,
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl TextDetails {
     pub fn get_cache_key(&self) -> String {
         format!(
@@ -50,6 +57,7 @@ impl TextDetails {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl<'a> From<&'a TextDetails> for TextDetails {
     fn from(details: &'a Self) -> Self {
         Self {
@@ -60,6 +68,7 @@ impl<'a> From<&'a TextDetails> for TextDetails {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl FontDetails {
     pub fn new(path: &str, size: u16) -> FontDetails {
         Self {
@@ -69,6 +78,7 @@ impl FontDetails {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl<'a> From<&'a FontDetails> for FontDetails {
     fn from(details: &'a FontDetails) -> Self {
         Self {
@@ -78,16 +88,20 @@ impl<'a> From<&'a FontDetails> for FontDetails {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 //noinspection RsWrongLifetimeParametersNumber
 pub type TextureManager<'l, T> = ResourceManager<'l, String, Texture<'l>, TextureCreator<T>>;
+#[cfg_attr(tarpaulin, skip)]
 pub type FontManager<'l> = ResourceManager<'l, FontDetails, Font<'l, 'static>, Sdl2TtfContext>;
 
+#[cfg_attr(tarpaulin, skip)]
 pub trait ManagersHolder<'l> {
     fn font_manager(&mut self) -> &mut FontManager<'l>;
 
     fn texture_manager(&mut self) -> &mut TextureManager<'l, WinCtxt>;
 }
 
+#[cfg_attr(tarpaulin, skip)]
 #[derive(Clone)]
 pub struct ResourceManager<'l, K, R, L>
 where
@@ -98,6 +112,7 @@ where
     cache: HashMap<K, Rc<R>>,
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl<'l, K, R, L> ResourceManager<'l, K, R, L>
 where
     K: Hash + Eq,
@@ -131,6 +146,7 @@ where
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 //noinspection RsWrongLifetimeParametersNumber
 impl<'l, T> ResourceLoader<'l, Texture<'l>> for TextureCreator<T> {
     type Args = str;
@@ -141,6 +157,7 @@ impl<'l, T> ResourceLoader<'l, Texture<'l>> for TextureCreator<T> {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl<'l> ResourceLoader<'l, Font<'l, 'static>> for Sdl2TtfContext {
     type Args = FontDetails;
 
@@ -150,6 +167,7 @@ impl<'l> ResourceLoader<'l, Font<'l, 'static>> for Sdl2TtfContext {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 pub trait TextTextureManager<'l> {
     //noinspection RsWrongLifetimeParametersNumber
     fn load_text(
@@ -159,6 +177,7 @@ pub trait TextTextureManager<'l> {
     ) -> Result<Rc<Texture<'l>>, String>;
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl<'l, T> TextTextureManager<'l> for TextureManager<'l, T> {
     //noinspection RsWrongLifetimeParametersNumber
     fn load_text(
