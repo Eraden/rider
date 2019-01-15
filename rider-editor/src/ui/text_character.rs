@@ -64,10 +64,10 @@ impl TextCharacter {
     pub fn update_position(&mut self, current: &mut Rect) {
         if self.is_new_line() {
             let y = self.source.height() as i32;
-            current.set_x(0);
-            current.set_y(current.y() + y);
             self.dest.set_x(current.x());
             self.dest.set_y(current.y());
+            current.set_x(0);
+            current.set_y(current.y() + y);
         } else {
             self.dest.set_x(current.x());
             self.dest.set_y(current.y());

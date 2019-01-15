@@ -56,21 +56,22 @@ pub mod lexer {
                 let tok: (TokenType, &str) =
                     if let Some(((token_type, text), new_remaining)) = next_token(self.remaining) {
                         self.remaining = new_remaining;
-                        if token_type.is_new_line() {
-                            self.line += 1;
-                            self.character = text.len();
-                        } else {
-                            self.character += text.len();
-                        }
                         (token_type, text)
                     } else {
                         return None;
                     };
                 match tok {
                     (tok, text) => {
+                        let line = self.line;
+                        if tok.is_new_line() {
+                            self.line += 1;
+                            self.character = text.len();
+                        } else {
+                            self.character += text.len();
+                        }
                         let span = self.span_in(text);
                         let token = tok.move_to(
-                            self.line.clone(),
+                            line,
                             self.character - text.len(),
                             span.lo.clone(),
                             span.hi.clone(),
