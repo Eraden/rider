@@ -59,8 +59,8 @@ pub struct Application {
 #[cfg_attr(tarpaulin, skip)]
 impl Application {
     pub fn new() -> Self {
-        let generator_path =
-            rider_config::directories::get_binary_path("rider-generator").unwrap_or_else(|e| panic!(e));
+        let generator_path = rider_config::directories::get_binary_path("rider-generator")
+            .unwrap_or_else(|e| panic!(e));
         Command::new(generator_path).status().unwrap();
 
         let config = Arc::new(RwLock::new(Config::new()));
@@ -230,8 +230,8 @@ impl Application {
             .keyboard_state()
             .is_scancode_pressed(Scancode::LShift)
             || event_pump
-            .keyboard_state()
-            .is_scancode_pressed(Scancode::RShift);
+                .keyboard_state()
+                .is_scancode_pressed(Scancode::RShift);
 
         for event in event_pump.poll_iter() {
             match event {

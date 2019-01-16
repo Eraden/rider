@@ -1,5 +1,5 @@
 use crate::ui::*;
-use sdl2::rect::{Point, Rect};
+use sdl2::rect::Point;
 
 pub fn move_caret_right(file_editor: &mut FileEditor) {
     let file: &EditorFile = match file_editor.file() {
@@ -10,7 +10,6 @@ pub fn move_caret_right(file_editor: &mut FileEditor) {
         Some(text_character) => text_character,
         None => return, // EOF
     };
-    let caret_rect = file_editor.caret().dest().clone();
     let pos = file_editor.caret().position();
     let d = c.dest().clone();
     let p = pos.moved(1, 0, 0);
@@ -19,12 +18,24 @@ pub fn move_caret_right(file_editor: &mut FileEditor) {
         .move_caret(p, Point::new(d.x(), d.y()));
 }
 
-pub fn move_caret_left(_file_editor: &mut FileEditor) {
-    //    let _file: &EditorFile = match file_editor.file() {
-    //        None => return,
-    //        Some(f) => f,
-    //    };
-    //    let _line = file_editor.caret().line_number();
+pub fn move_caret_left(file_editor: &mut FileEditor) {
+    let file: &EditorFile = match file_editor.file() {
+        None => return,
+        Some(f) => f,
+    };
+    if file_editor.caret().text_position() == 0 {
+        return;
+    }
+    let c: TextCharacter = match file.get_character_at(file_editor.caret().text_position() - 1) {
+        Some(text_character) => text_character,
+        None => return, // EOF
+    };
+    let pos = file_editor.caret().position();
+    let d = c.dest().clone();
+    let p = pos.moved(-1, 0, 0);
+    file_editor
+        .caret_mut()
+        .move_caret(p, Point::new(d.x(), d.y()));
 }
 
 #[cfg(test)]

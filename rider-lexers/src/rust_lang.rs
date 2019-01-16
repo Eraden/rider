@@ -9,7 +9,7 @@ pub mod lexer {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 
-        "(r\"[^\"]*\"|\"[^\"]*\")" => (TokenType::String {
+        "(r\"|\")" => (TokenType::String {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 

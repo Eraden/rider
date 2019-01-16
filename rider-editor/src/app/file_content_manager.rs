@@ -84,15 +84,19 @@ pub fn insert_text(file_editor: &mut FileEditor, text: String, renderer: &mut Re
         Some(c) => c,
         _ => return,
     };
-    let mut pos = Point::new(current.dest().x(), current.dest().y());
+    let mut pos = if current.is_new_line() {
+        current.dest().top_left()
+            + Point::new(0, renderer.load_character_size('\n').height() as i32)
+    } else {
+        current.dest().top_left()
+    };
     let mut position: CaretPosition = file_editor.caret().position().clone();
     for character in text.chars() {
         buffer.insert(position.text_position(), character);
-        if let Some(rect) = get_text_character_rect(character, renderer) {
-            pos = pos + Point::new(rect.width() as i32, 0);
-            position = position.moved(1, 0, 0);
-            file_editor.caret_mut().move_caret(position, pos.clone());
-        }
+        let rect = renderer.load_character_size(character);
+        pos = pos + Point::new(rect.width() as i32, 0);
+        position = position.moved(1, 0, 0);
+        file_editor.caret_mut().move_caret(position, pos.clone());
     }
 
     let mut new_file = EditorFile::new(
@@ -119,17 +123,14 @@ pub fn insert_new_line(file_editor: &mut FileEditor, renderer: &mut Renderer) {
         Some(c) => c,
         _ => return,
     };
+
     let mut pos = Point::new(current.dest().x(), current.dest().y());
     let mut position: CaretPosition = file_editor.caret().position().clone();
     buffer.insert(position.text_position(), '\n');
-    if let Some(rect) = get_text_character_rect('\n', renderer) {
-        pos = Point::new(
-            file_editor.config().read().unwrap().editor_left_margin(),
-            pos.y() + rect.height() as i32,
-        );
-        position = position.moved(0, 1, 0);
-        file_editor.caret_mut().move_caret(position, pos.clone());
-    }
+    let rect = renderer.load_character_size('\n');
+    pos = Point::new(0, pos.y() + rect.height() as i32);
+    position = position.moved(0, 1, 0);
+    file_editor.caret_mut().move_caret(position, pos.clone());
 
     let mut new_file = EditorFile::new(
         current_file_path(file_editor),

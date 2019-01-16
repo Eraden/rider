@@ -161,7 +161,7 @@ impl CaretAccess for FileEditor {
 
     fn move_caret(&mut self, dir: MoveDirection) {
         match dir {
-            MoveDirection::Left => {}
+            MoveDirection::Left => caret_manager::move_caret_left(self),
             MoveDirection::Right => caret_manager::move_caret_right(self),
             MoveDirection::Up => {}
             MoveDirection::Down => {}
