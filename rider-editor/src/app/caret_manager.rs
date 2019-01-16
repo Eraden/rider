@@ -72,7 +72,7 @@ mod test_move_right {
         let config = support::build_config();
         let mut editor = FileEditor::new(config);
 
-        assert_eq!(move_caret_left(&mut editor), ());
+        assert_eq!(move_caret_right(&mut editor), ());
     }
 }
 

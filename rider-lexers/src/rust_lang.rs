@@ -9,6 +9,10 @@ pub mod lexer {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 
+        "(r\"[^\"]*\"|\"[^\"]*\")" => (TokenType::String {
+            token: Token::new(text.to_string(), 0, 0, 0, 0)
+        }, text),
+
         r"([0-9]+|[0-9]+\.[0-9]+|'[^']')" => (TokenType::Literal {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
@@ -26,6 +30,10 @@ pub mod lexer {
         }, text),
 
         r"[^0-9 \t\r\n:+-/*,';<>=%()\[\]{}][^ \t\r\n:+-/*,';<>=%()\[\]{}]*" => (TokenType::Identifier {
+            token: Token::new(text.to_string(), 0, 0, 0, 0)
+        }, text),
+
+        r"'[^0-9 \t\r\n:+-/*,';<>=%()\[\]{}][^ \t\r\n:+-/*,';<>=%()\[\]{}]*" => (TokenType::Identifier {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
     }

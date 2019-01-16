@@ -22,7 +22,7 @@ default-members = [
 
 [dependencies]
 rider-config = { version = "*", path = "./rider-config" }
-uuid = "*"
+uuid = { version = "0.7", features = ["v4"] }
 
 [dependencies.sdl2]
 version = "0.31.0"

@@ -195,9 +195,9 @@ impl<'l, T> TextTextureManager<'l> for TextureManager<'l, T> {
                 let texture = self.loader.create_texture_from_surface(&surface).unwrap();
                 let resource = Rc::new(texture);
                 self.cache.insert(key, resource.clone());
-                for c in details.text.chars() {
-                    info!("texture for '{:?}' created", c);
-                }
+                //                for c in details.text.chars() {
+                //                    info!("texture for '{:?}' created", c);
+                //                }
                 Ok(resource)
             },
             Ok,

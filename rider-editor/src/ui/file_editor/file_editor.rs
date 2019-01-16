@@ -130,6 +130,8 @@ impl FileAccess for FileEditor {
         if let Some(f) = self.file.as_ref() {
             self.full_rect = f.full_rect();
         }
+        self.vertical_scroll_bar.set_location(0);
+        self.horizontal_scroll_bar.set_location(0);
         file
     }
 

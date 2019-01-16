@@ -34,7 +34,15 @@ pub fn project_dir() -> PathBuf {
     project_dir
 }
 
+#[cfg_attr(tarpaulin, skip)]
 pub fn binaries_directory() -> Result<PathBuf, String> {
+    let exec_dir = dirs::executable_dir().unwrap();
+    let mut rider_editor = exec_dir.clone();
+    rider_editor.push("rider-editor");
+    if rider_editor.exists() {
+        return Ok(exec_dir);
+    }
+
     let runtime = dirs::runtime_dir().unwrap();
     let mut rider_editor = runtime.clone();
     rider_editor.push("rider-editor");
@@ -59,6 +67,40 @@ pub fn binaries_directory() -> Result<PathBuf, String> {
     }
 
     Err("Cannot find binaries!".to_string())
+}
+
+pub fn get_binary_path(name: &str) -> Result<String, String> {
+    if cfg!(test) {
+        use std::fs;
+        println!("#[cfg(test)]");
+
+        let mut current_dir = env::current_dir().unwrap();
+        current_dir.push("target");
+        current_dir.push("debug");
+        let name = name.to_string().to_lowercase().replace("-", "_");
+        println!("  name {:?}", name);
+        current_dir.push(vec![name.clone(), "*".to_string()].join("-"));
+        for entry in fs::read_dir(current_dir.to_str().unwrap()).unwrap() {
+            if let Ok(entry) = entry {
+                if let Ok(meta) = entry.metadata() {
+                    if meta.is_file() && !entry.path().ends_with(".d") {
+                        return Ok(entry.path().to_str().unwrap().to_string());
+                    }
+                }
+            }
+        }
+        Err(format!("Cannot find {:?}", name))
+    } else {
+        println!("#[cfg(not(test))]");
+        let r = binaries_directory();
+        let mut binaries: PathBuf = r.unwrap_or_else(|e| panic!(e));
+        binaries.push(name.to_string());
+        println!("  name {}", name);
+        match binaries.to_str() {
+            Some(s) => Ok(s.to_owned()),
+            _ => Err(format!("Cannot find {:?}", name)),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -98,5 +140,4 @@ mod tests {
         let expected: PathBuf = Path::new("/tmp/rider").into();
         assert_eq!(path, expected);
     }
-
 }

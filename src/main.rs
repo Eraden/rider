@@ -2,17 +2,13 @@ extern crate rider_config;
 use std::process::Command;
 
 fn main() {
-    let r = rider_config::directories::binaries_directory();
-    #[cfg_attr(tarpaulin, skip)]
-    let binaries = r.unwrap_or_else(|e| panic!(e));
+    let generator = rider_config::directories::get_binary_path("rider-generator").unwrap();
+    println!("generator will be {:?}", generator);
+    Command::new(generator).status().unwrap();
 
-    let mut generator = binaries.clone();
-    generator.push("rider-generator");
-    Command::new(generator.to_str().unwrap()).status().unwrap();
-
-    let mut editor = binaries.clone();
-    editor.push("rider-editor");
-    Command::new(editor.to_str().unwrap()).status().unwrap();
+    let editor = rider_config::directories::get_binary_path("rider-editor").unwrap();
+    println!("editor will be {:?}", editor);
+    Command::new(editor).status().unwrap();
 }
 
 #[cfg(test)]

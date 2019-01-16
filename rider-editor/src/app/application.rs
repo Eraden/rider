@@ -59,10 +59,9 @@ pub struct Application {
 #[cfg_attr(tarpaulin, skip)]
 impl Application {
     pub fn new() -> Self {
-        let mut binaries =
-            rider_config::directories::binaries_directory().unwrap_or_else(|e| panic!(e));
-        binaries.push("rider-generator");
-        Command::new(binaries.to_str().unwrap()).status().unwrap();
+        let generator_path =
+            rider_config::directories::get_binary_path("rider-generator").unwrap_or_else(|e| panic!(e));
+        Command::new(generator_path).status().unwrap();
 
         let config = Arc::new(RwLock::new(Config::new()));
         let sdl_context = sdl2::init().unwrap();
@@ -203,7 +202,10 @@ impl Application {
             app_state.render(&mut self.canvas, &mut renderer, &RenderContext::Nothing);
 
             self.present();
-            sleep(sleep_time);
+
+            if !cfg!(test) {
+                sleep(sleep_time);
+            }
         }
     }
 
@@ -228,8 +230,8 @@ impl Application {
             .keyboard_state()
             .is_scancode_pressed(Scancode::LShift)
             || event_pump
-                .keyboard_state()
-                .is_scancode_pressed(Scancode::RShift);
+            .keyboard_state()
+            .is_scancode_pressed(Scancode::RShift);
 
         for event in event_pump.poll_iter() {
             match event {
