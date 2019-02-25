@@ -17,6 +17,7 @@ pub mod write_bytes_to;
 fn main() {
     config::create();
     themes::create();
+    images::create();
 }
 
 #[cfg(test)]
