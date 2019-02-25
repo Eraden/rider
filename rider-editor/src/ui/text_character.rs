@@ -106,11 +106,7 @@ impl Render for TextCharacter {
             return;
         }
 
-        let font_details = {
-            let config = renderer.config().read().unwrap();
-            let ec = config.editor_config();
-            FontDetails::new(ec.font_path().as_str(), ec.character_size().clone())
-        };
+        let font_details: FontDetails = renderer.config().read().unwrap().editor_config().into();
         let font = renderer
             .font_manager()
             .load(&font_details)

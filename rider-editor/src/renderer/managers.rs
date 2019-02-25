@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::env;
 use std::hash::Hash;
 use std::rc::Rc;
+use rider_config::editor_config::EditorConfig;
 
 #[cfg_attr(tarpaulin, skip)]
 //noinspection RsWrongLifetimeParametersNumber
@@ -36,6 +37,12 @@ pub trait ResourceLoader<'l, R> {
 pub struct FontDetails {
     pub path: String,
     pub size: u16,
+}
+
+impl From<&EditorConfig> for FontDetails {
+    fn from(config: &EditorConfig) -> Self {
+        FontDetails::new(config.font_path().as_str(), config.character_size().clone())
+    }
 }
 
 #[cfg_attr(tarpaulin, skip)]
