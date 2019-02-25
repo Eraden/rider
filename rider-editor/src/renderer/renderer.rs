@@ -4,14 +4,14 @@ use rider_config::{ConfigAccess, ConfigHolder};
 use sdl2::rect::Rect;
 use sdl2::render::TextureCreator;
 use sdl2::ttf::Sdl2TtfContext;
-use sdl2::video::WindowContext as WinCtxt;
 use std::collections::HashMap;
+use crate::ui::text_character::CharacterSizeManager;
 
 #[cfg_attr(tarpaulin, skip)]
 pub struct Renderer<'l> {
     config: ConfigAccess,
     font_manager: FontManager<'l>,
-    texture_manager: TextureManager<'l, WinCtxt>,
+    texture_manager: TextureManager<'l>,
     character_sizes: HashMap<TextCharacterDetails, Rect>,
 }
 
@@ -20,7 +20,7 @@ impl<'l> Renderer<'l> {
     pub fn new(
         config: ConfigAccess,
         font_context: &'l Sdl2TtfContext,
-        texture_creator: &'l TextureCreator<WinCtxt>,
+        texture_creator: &'l TextureCreator<sdl2::video::WindowContext>,
     ) -> Self {
         let texture_manager = TextureManager::new(&texture_creator);
         let font_manager = FontManager::new(&font_context);
@@ -35,8 +35,10 @@ impl<'l> Renderer<'l> {
     pub fn character_sizes_mut(&mut self) -> &mut HashMap<TextCharacterDetails, Rect> {
         &mut self.character_sizes
     }
+}
 
-    pub fn load_character_size(&mut self, c: char) -> Rect {
+impl<'l> CharacterSizeManager for Renderer<'l> {
+    fn load_character_size(&mut self, c: char) -> Rect {
         let (font_path, font_size) = {
             let config = self.config().read().unwrap();
             (
@@ -68,7 +70,7 @@ impl<'l> ManagersHolder<'l> for Renderer<'l> {
         &mut self.font_manager
     }
 
-    fn texture_manager(&mut self) -> &mut TextureManager<'l, WinCtxt> {
+    fn texture_manager(&mut self) -> &mut TextureManager<'l> {
         &mut self.texture_manager
     }
 }

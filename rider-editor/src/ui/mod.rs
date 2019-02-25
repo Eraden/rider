@@ -59,7 +59,7 @@ pub fn get_text_character_rect<'l, T>(c: char, renderer: &mut T) -> Option<Rect>
 where
     T: ManagersHolder<'l> + ConfigHolder,
 {
-    let font_details = build_font_details(renderer);
+    let font_details = renderer.config().read().unwrap().editor_config().into();
     renderer
         .font_manager()
         .load(&font_details)

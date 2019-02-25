@@ -8,6 +8,10 @@ use rider_config::{ConfigAccess, ConfigHolder};
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 
+pub trait CharacterSizeManager {
+    fn load_character_size(&mut self, c: char) -> Rect;
+}
+
 #[derive(Clone, Debug)]
 pub struct TextCharacter {
     text_character: char,
@@ -96,21 +100,17 @@ impl TextCharacter {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-impl Render for TextCharacter {
+impl TextCharacter {
     /**
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext) {
+    pub fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext) {
         if self.is_new_line() {
             return;
         }
 
         let font_details: FontDetails = renderer.config().read().unwrap().editor_config().into();
-        let font = renderer
-            .font_manager()
-            .load(&font_details)
-            .unwrap_or_else(|_| panic!("Could not load font for {:?}", font_details));
 
         let c = self.text_character.clone();
         let mut details = TextDetails {
@@ -122,6 +122,11 @@ impl Render for TextCharacter {
             RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
             _ => self.dest(),
         };
+
+        let font = renderer
+            .font_manager()
+            .load(&font_details)
+            .unwrap_or_else(|_| panic!("Could not load font for {:?}", font_details));
         if let Ok(texture) = renderer.texture_manager().load_text(&mut details, &font) {
             canvas
                 .copy_ex(
@@ -140,27 +145,25 @@ impl Render for TextCharacter {
         //        canvas.draw_rect(dest.clone()).unwrap();
     }
 
-    fn prepare_ui(&mut self, renderer: &mut Renderer) {
-        let font_details = build_font_details(renderer);
+    pub fn prepare_ui<'l, T>(&mut self, renderer: &mut T)
+    where T: ConfigHolder + CharacterSizeManager + ManagersHolder<'l>
+    {
+        let font_details: FontDetails = renderer.config().read().unwrap().editor_config().into();
 
-        let font = renderer
-            .font_manager()
-            .load(&font_details)
-            .unwrap_or_else(|_| panic!("Font not found {:?}", font_details));
+        let rect = renderer.load_character_size(self.text_character);
+        self.set_source(&rect);
+        self.set_dest(&rect);
 
-        let c = match self.text_character {
-            '\n' => 'W',
-            c => c,
-        };
-        if let Some(rect) = get_text_character_rect(c, renderer) {
-            self.set_source(&rect);
-            self.set_dest(&rect);
-        }
         let mut details = TextDetails {
             text: self.text_character.to_string(),
             color: self.color.clone(),
             font: font_details.clone(),
         };
+
+        let font = renderer
+            .font_manager()
+            .load(&font_details)
+            .unwrap_or_else(|_| panic!("Font not found {:?}", font_details));
         renderer
             .texture_manager()
             .load_text(&mut details, &font)
