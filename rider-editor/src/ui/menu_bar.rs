@@ -102,7 +102,7 @@ impl RenderBox for MenuBar {
 mod test_getters {
     use crate::tests::*;
     use crate::ui::*;
-    use sdl2::pixels::*;
+    use sdl2::pixels::Color;
     use sdl2::rect::Rect;
     use std::sync::*;
 

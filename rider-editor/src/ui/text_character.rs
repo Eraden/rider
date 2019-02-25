@@ -210,7 +210,7 @@ impl RenderBox for TextCharacter {
 mod test_getters {
     use crate::tests::*;
     use crate::ui::*;
-    use sdl2::pixels::*;
+    use sdl2::pixels::Color;
     use sdl2::rect::Rect;
     use std::sync::*;
 
@@ -339,7 +339,6 @@ mod test_getters {
 mod test_own_methods {
     use crate::tests::*;
     use crate::ui::*;
-    use sdl2::pixels::*;
     use sdl2::rect::Rect;
     use std::sync::*;
 
@@ -377,7 +376,6 @@ mod test_click_handler {
     use crate::app::*;
     use crate::tests::*;
     use crate::ui::*;
-    use sdl2::pixels::*;
     use sdl2::rect::{Point, Rect};
     use std::sync::*;
 
@@ -462,7 +460,6 @@ mod test_click_handler {
 mod test_render_box {
     use crate::tests::*;
     use crate::ui::*;
-    use sdl2::pixels::*;
     use sdl2::rect::{Point, Rect};
     use std::sync::*;
 
@@ -484,7 +481,6 @@ mod test_update {
     use crate::app::*;
     use crate::tests::*;
     use crate::ui::*;
-    use sdl2::pixels::*;
     use sdl2::rect::{Point, Rect};
     use std::sync::*;
 

@@ -215,12 +215,10 @@ impl Render for FileEditor {
         );
         self.vertical_scroll_bar.render(
             canvas,
-            renderer,
             &RenderContext::RelativePosition(self.dest.top_left()),
         );
         self.horizontal_scroll_bar.render(
             canvas,
-            renderer,
             &RenderContext::RelativePosition(self.dest.top_left()),
         );
     }

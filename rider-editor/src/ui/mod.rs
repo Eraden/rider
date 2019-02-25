@@ -1,8 +1,13 @@
 use sdl2::rect::{Point, Rect};
+use sdl2::pixels::Color;
+use sdl2::render::Texture;
+
+use std::rc::Rc;
 
 use crate::app::{UpdateResult as UR, WindowCanvas as WC};
 use crate::renderer::managers::*;
 use crate::renderer::Renderer;
+use crate::app::application::WindowCanvas;
 use rider_config::*;
 
 pub mod caret;
@@ -36,6 +41,46 @@ pub enum UpdateContext<'l> {
 pub enum RenderContext {
     Nothing,
     RelativePosition(Point),
+}
+
+pub trait RenderRect {
+    fn render_rect(&mut self, rect: Rect, color: sdl2::pixels::Color)  -> Result<(), String>;
+}
+
+pub trait RenderBorder {
+    fn render_border(&mut self, rect: Rect, color: sdl2::pixels::Color)  -> Result<(), String>;
+}
+
+pub trait RenderImage {
+    fn render_image(&mut self, tex: Rc<Texture>, src: Rect, dest: Rect) -> Result<(), String>;
+}
+
+impl RenderRect for WindowCanvas {
+    fn render_rect(&mut self, rect: Rect, color: sdl2::pixels::Color) -> Result<(), String> {
+        self.set_draw_color(color);
+        self.fill_rect(rect)
+    }
+}
+
+impl RenderBorder for WindowCanvas {
+    fn render_border(&mut self, rect: Rect, color: sdl2::pixels::Color)  -> Result<(), String> {
+        self.set_draw_color(color);
+        self.draw_rect(rect)
+    }
+}
+
+impl RenderImage for WindowCanvas {
+    fn render_image(&mut self, tex: Rc<Texture>, src: Rect, dest: Rect) -> Result<(), String> {
+        self.copy_ex(
+            &tex,
+            Some(src.clone()),
+            Some(dest.clone()),
+            0.0,
+            None,
+            false,
+            false,
+        )
+    }
 }
 
 #[inline]

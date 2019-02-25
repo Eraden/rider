@@ -168,7 +168,9 @@ impl DirectoryView {
         self.directories.sort_by(|a, b| a.name().cmp(&b.name()));
     }
 
-    fn render_icon(&self, canvas: &mut WC, renderer: &mut Renderer, dest: &mut Rect) {
+    fn render_icon<T>(&self, canvas: &mut T, renderer: &mut Renderer, dest: &mut Rect)
+    where T: RenderImage
+    {
         let dir_texture_path = {
             let c = self.config.read().unwrap();
             let mut themes_dir = directories::themes_dir();
@@ -182,24 +184,22 @@ impl DirectoryView {
             .unwrap_or_else(|_| panic!("Failed to load directory entry texture"));
 
         canvas
-            .copy_ex(
-                &texture,
-                Some(self.source.clone()),
-                Some(Rect::new(
+            .render_image(
+                texture,
+                self.source.clone(),
+                Rect::new(
                     dest.x(),
                     dest.y(),
                     self.icon_width,
                     self.icon_height,
-                )),
-                0.0,
-                None,
-                false,
-                false,
+                )
             )
             .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
     }
 
-    fn render_name(&self, canvas: &mut WC, renderer: &mut Renderer, dest: &mut Rect) {
+    fn render_name<T>(&self, canvas: &mut T, renderer: &mut Renderer, dest: &mut Rect)
+    where T: RenderImage
+    {
         let mut d = dest.clone();
         d.set_x(dest.x() + NAME_MARGIN);
         let font_details = build_font_details(self);
@@ -223,21 +223,19 @@ impl DirectoryView {
             d.set_height(size.height());
 
             canvas
-                .copy_ex(
-                    &text_texture,
-                    Some(self.source.clone()),
-                    Some(d.clone()),
-                    0.0,
-                    None,
-                    false,
-                    false,
+                .render_image(
+                    text_texture,
+                    self.source.clone(),
+                    d.clone(),
                 )
                 .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
             d.set_x(d.x() + size.width() as i32);
         }
     }
 
-    fn render_children(&self, canvas: &mut WC, renderer: &mut Renderer, dest: &mut Rect) {
+    fn render_children<T>(&self, canvas: &mut T, renderer: &mut Renderer, dest: &mut Rect)
+    where T: RenderImage
+    {
         if !self.expanded {
             return;
         }
@@ -295,20 +293,22 @@ impl ConfigHolder for DirectoryView {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-impl Render for DirectoryView {
-    fn render(&self, canvas: &mut WindowCanvas, renderer: &mut Renderer, context: &RenderContext) {
+impl DirectoryView {
+    pub fn render<T>(&self, canvas: &mut T, renderer: &mut Renderer, context: &RenderContext)
+    where T: RenderImage
+    {
         let dest = self.dest();
         let move_point = match context {
             &RenderContext::RelativePosition(p) => p.clone(),
             _ => Point::new(0, 0),
         };
         let mut dest = move_render_point(move_point, &dest);
-        self.render_icon(canvas, renderer, &mut dest);
-        self.render_name(canvas, renderer, &mut dest.clone());
-        self.render_children(canvas, renderer, &mut dest);
+        self.render_icon::<T>(canvas, renderer, &mut dest);
+        self.render_name::<T>(canvas, renderer, &mut dest.clone());
+        self.render_children::<T>(canvas, renderer, &mut dest);
     }
 
-    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+    pub fn prepare_ui(&mut self, renderer: &mut Renderer) {
         if self.opened {
             for dir in self.directories.iter_mut() {
                 dir.prepare_ui(renderer);

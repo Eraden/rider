@@ -1,4 +1,3 @@
-use crate::app::{UpdateResult as UR, WindowCanvas as WC};
 use crate::renderer::Renderer;
 use crate::ui::*;
 use crate::ui::{RenderContext as RC, UpdateContext as UC};
@@ -147,22 +146,26 @@ impl Update for OpenFile {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-impl Render for OpenFile {
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RC) {
+impl OpenFile {
+    pub fn render<T>(&self, canvas: &mut T, renderer: &mut Renderer, context: &RC)
+        where T: RenderRect + RenderBorder + RenderImage
+    {
         let dest = match context {
             RC::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
             _ => self.dest.clone(),
         };
 
         // Background
-        canvas.set_clip_rect(dest.clone());
-        canvas.set_draw_color(self.background_color.clone());
-        canvas
-            .fill_rect(dest.clone())
+//        canvas.set_clip_rect(dest.clone());
+        canvas.render_rect(
+            dest.clone(),
+            self.background_color.clone()
+        )
             .unwrap_or_else(|_| panic!("Failed to render open file modal background!"));
-        canvas.set_draw_color(self.border_color);
-        canvas
-            .draw_rect(dest.clone())
+        canvas.render_border(
+            dest.clone(),
+            self.border_color.clone()
+        )
             .unwrap_or_else(|_| panic!("Failed to render open file modal border!"));
 
         let context = RC::RelativePosition(
@@ -175,17 +178,15 @@ impl Render for OpenFile {
         // Scroll bars
         self.vertical_scroll_bar.render(
             canvas,
-            renderer,
             &RenderContext::RelativePosition(self.dest.top_left()),
         );
         self.horizontal_scroll_bar.render(
             canvas,
-            renderer,
             &RenderContext::RelativePosition(self.dest.top_left()),
         );
     }
 
-    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+    pub fn prepare_ui(&mut self, renderer: &mut Renderer) {
         self.directory_view.prepare_ui(renderer);
     }
 }

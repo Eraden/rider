@@ -71,7 +71,9 @@ impl FileEntry {
         )
     }
 
-    fn render_icon(&self, canvas: &mut WC, renderer: &mut Renderer, dest: &mut Rect) {
+    fn render_icon<T>(&self, canvas: &mut T, renderer: &mut Renderer, dest: &mut Rect)
+        where T: RenderImage
+    {
         let dir_texture_path = {
             let c = self.config.read().unwrap();
             let mut themes_dir = directories::themes_dir();
@@ -85,20 +87,17 @@ impl FileEntry {
             .unwrap_or_else(|_| panic!("Failed to load directory entry texture"));
         dest.set_width(16);
         dest.set_height(16);
-        canvas
-            .copy_ex(
-                &texture,
-                Some(self.source.clone()),
-                Some(dest.clone()),
-                0.0,
-                None,
-                false,
-                false,
-            )
+        canvas.render_image(
+            texture,
+            self.source.clone(),
+            dest.clone(),
+        )
             .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
     }
 
-    fn render_name(&self, canvas: &mut WC, renderer: &mut Renderer, dest: &mut Rect) {
+    fn render_name<T>(&self, canvas: &mut T, renderer: &mut Renderer, dest: &mut Rect)
+        where T: RenderImage
+    {
         let mut d = dest.clone();
         d.set_x(dest.x() + NAME_MARGIN);
 
@@ -122,15 +121,11 @@ impl FileEntry {
             d.set_width(size.width());
             d.set_height(size.height());
 
-            canvas
-                .copy_ex(
-                    &text_texture,
-                    Some(self.source.clone()),
-                    Some(d.clone()),
-                    0.0,
-                    None,
-                    false,
-                    false,
+            canvas.
+                render_image(
+                    text_texture,
+                    self.source.clone(),
+                    d.clone(),
                 )
                 .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
             d.set_x(d.x() + size.width() as i32)
@@ -145,8 +140,10 @@ impl ConfigHolder for FileEntry {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-impl Render for FileEntry {
-    fn render(&self, canvas: &mut WindowCanvas, renderer: &mut Renderer, context: &RenderContext) {
+impl FileEntry {
+    pub fn render<T>(&self, canvas: &mut T, renderer: &mut Renderer, context: &RenderContext)
+        where T: RenderImage
+    {
         let mut dest = match context {
             &RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
             _ => self.dest.clone(),
@@ -155,7 +152,7 @@ impl Render for FileEntry {
         self.render_name(canvas, renderer, &mut dest.clone());
     }
 
-    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+    pub fn prepare_ui(&mut self, renderer: &mut Renderer) {
         let w_rect = get_text_character_rect('W', renderer).unwrap();
         self.char_sizes.insert('W', w_rect.clone());
         self.height = w_rect.height();
