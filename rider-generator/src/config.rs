@@ -1,45 +1,46 @@
 use crate::images;
 use rider_config::directories::*;
 use std::fs;
+use std::path::PathBuf;
 
-pub fn create() -> std::io::Result<()> {
-    if !themes_dir().exists() {
-        fs::create_dir_all(&themes_dir())?;
-        images::create()?;
+pub fn create(directories: &Directories) -> std::io::Result<()> {
+    if !directories.themes_dir.exists() {
+        fs::create_dir_all(&directories.themes_dir)?;
+        images::create(directories)?;
     }
 
-    if !fonts_dir().exists() {
-        write_default_fonts()?;
+    if !directories.fonts_dir.exists() {
+        fs::create_dir_all(&directories.fonts_dir)?;
+    }
+    write_default_fonts(directories)?;
+
+    if !directories.log_dir.exists() {
+        fs::create_dir_all(&directories.log_dir)?;
     }
 
-    if !log_dir().exists() {
-        fs::create_dir_all(&log_dir())?;
-    }
-
-    if !project_dir().exists() {
-        fs::create_dir_all(&project_dir())?;
+    if !directories.project_dir.exists() {
+        fs::create_dir_all(&directories.project_dir)?;
     }
     Ok(())
 }
 
-fn write_default_fonts() -> std::io::Result<()> {
-    fs::create_dir_all(&fonts_dir())?;
-    #[cfg_attr(tarpaulin, skip)]
-    {
-        let mut default_font_path = fonts_dir();
-        let _x = default_font_path.as_os_str().to_str().unwrap();
-        default_font_path.push("DejaVuSansMono.ttf");
-        let _x = default_font_path.as_os_str().to_str().unwrap();
+fn write_default_fonts(directories: &Directories) -> std::io::Result<()> {
+    let path = directories.fonts_dir.clone().to_str().unwrap().to_owned();
+    let mut buf = PathBuf::new();
+    buf.push(path);
+    buf.push("DejaVuSansMono.ttf");
+    if !buf.exists() {
         let contents = include_bytes!("../assets/fonts/DejaVuSansMono.ttf");
-        fs::write(default_font_path, contents.to_vec())?;
+        fs::write(buf, contents.to_vec())?;
     }
-    {
-        let mut default_font_path = fonts_dir();
-        let _x = default_font_path.as_os_str().to_str().unwrap();
-        default_font_path.push("ElaineSans-Medium.ttf");
-        let _x = default_font_path.as_os_str().to_str().unwrap();
+
+    let path = directories.fonts_dir.clone().to_str().unwrap().to_owned();
+    let mut buf = PathBuf::new();
+    buf.push(path);
+    buf.push("ElaineSans-Medium.ttf");
+    if !buf.exists() {
         let contents = include_bytes!("../assets/fonts/ElaineSans-Medium.ttf");
-        fs::write(default_font_path, contents.to_vec())?;
+        fs::write(buf, contents.to_vec())?;
     }
     Ok(())
 }
@@ -47,7 +48,6 @@ fn write_default_fonts() -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::env::set_var;
     use std::fs::create_dir_all;
     use std::path::Path;
     use uuid::Uuid;
@@ -58,40 +58,44 @@ mod tests {
     }
 
     #[test]
-    fn assert_create() {
+    fn assert_create_fonts() {
         let uniq = Uuid::new_v4();
-        let test_path = join("/tmp".to_owned(), uniq.to_string());
+        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
         create_dir_all(test_path.clone()).unwrap();
-        set_var("XDG_CONFIG_HOME", test_path.as_str());
-        set_var("XDG_RUNTIME_DIR", test_path.as_str());
-        let rider_dir = join(test_path.clone(), "rider".to_owned());
+        let directories = Directories::new(Some(test_path.clone()), None);
+        assert_eq!(create(&directories).is_ok(), true);
         assert_eq!(
-            Path::new(join(rider_dir.clone(), "themes".to_owned()).as_str()).exists(),
-            false
-        );
-        assert_eq!(
-            Path::new(join(rider_dir.clone(), "log".to_owned()).as_str()).exists(),
-            false
-        );
-        assert_eq!(
-            Path::new(join(test_path.clone(), ".rider".to_owned()).as_str()).exists(),
-            false
-        );
-        assert_eq!(create().is_ok(), true);
-        assert_eq!(
-            Path::new(join(rider_dir.clone(), "fonts".to_owned()).as_str()).exists(),
+            Path::new(join(test_path.clone(), "rider/fonts".to_owned()).as_str()).exists(),
             true
         );
+    }
+
+    #[test]
+    fn assert_create_log() {
+        let uniq = Uuid::new_v4();
+        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
+        create_dir_all(test_path.clone()).unwrap();
+        let directories = Directories::new(Some(test_path.clone()), None);
+        assert_eq!(create(&directories).is_ok(), true);
         assert_eq!(
-            Path::new(join(rider_dir.clone(), "log".to_owned()).as_str()).exists(),
+            Path::new(join(test_path.clone(), "rider/log".to_owned()).as_str()).exists(),
             true
         );
+    }
+
+    #[test]
+    fn assert_create_themes() {
+        let uniq = Uuid::new_v4();
+        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
+        create_dir_all(test_path.clone()).unwrap();
+        let directories = Directories::new(Some(test_path.clone()), None);
         assert_eq!(
-            Path::new(join(rider_dir.clone(), "themes".to_owned()).as_str()).exists(),
-            true
+            Path::new(join(test_path.clone(), "rider/themes".to_owned()).as_str()).exists(),
+            false
         );
+        assert_eq!(create(&directories).is_ok(), true);
         assert_eq!(
-            Path::new(join(test_path.clone(), ".rider".to_owned()).as_str()).exists(),
+            Path::new(join(test_path.clone(), "rider/themes".to_owned()).as_str()).exists(),
             true
         );
     }

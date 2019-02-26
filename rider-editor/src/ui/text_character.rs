@@ -395,8 +395,14 @@ mod test_click_handler {
     #[test]
     fn refute_when_not_click_target() {
         let config = support::build_config();
-        let mut widget =
-            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        let mut widget = TextCharacter::new(
+            '\n',
+            0,
+            0,
+            true,
+            sdl2::pixels::Color::RGB(0, 0, 0),
+            Arc::clone(&config),
+        );
         widget.set_dest(&Rect::new(10, 20, 30, 40));
         widget.set_source(&Rect::new(50, 60, 70, 80));
         let point = Point::new(0, 0);
@@ -408,8 +414,14 @@ mod test_click_handler {
     #[test]
     fn assert_when_click_target() {
         let config = support::build_config();
-        let mut widget =
-            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        let mut widget = TextCharacter::new(
+            '\n',
+            0,
+            0,
+            true,
+            sdl2::pixels::Color::RGB(0, 0, 0),
+            Arc::clone(&config),
+        );
         widget.set_dest(&Rect::new(10, 20, 30, 40));
         widget.set_source(&Rect::new(50, 60, 70, 80));
         let point = Point::new(20, 30);
@@ -421,8 +433,14 @@ mod test_click_handler {
     #[test]
     fn refute_when_not_click_target_because_parent() {
         let config = support::build_config();
-        let mut widget =
-            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        let mut widget = TextCharacter::new(
+            '\n',
+            0,
+            0,
+            true,
+            sdl2::pixels::Color::RGB(0, 0, 0),
+            Arc::clone(&config),
+        );
         widget.set_dest(&Rect::new(10, 20, 30, 40));
         widget.set_source(&Rect::new(50, 60, 70, 80));
         let point = Point::new(20, 30);
@@ -434,8 +452,14 @@ mod test_click_handler {
     #[test]
     fn assert_when_click_target_because_parent() {
         let config = support::build_config();
-        let mut widget =
-            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        let mut widget = TextCharacter::new(
+            '\n',
+            0,
+            0,
+            true,
+            sdl2::pixels::Color::RGB(0, 0, 0),
+            Arc::clone(&config),
+        );
         widget.set_dest(&Rect::new(10, 20, 30, 40));
         widget.set_source(&Rect::new(50, 60, 70, 80));
         let point = Point::new(120, 130);
@@ -454,7 +478,7 @@ mod test_click_handler {
             position.clone(),
             line.clone(),
             true,
-            Color::RGB(0, 0, 0),
+            sdl2::pixels::Color::RGB(0, 0, 0),
             Arc::clone(&config),
         );
         let dest = Rect::new(10, 20, 30, 40);
@@ -479,8 +503,14 @@ mod test_render_box {
     #[test]
     fn must_return_top_left_point() {
         let config = support::build_config();
-        let mut widget =
-            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        let mut widget = TextCharacter::new(
+            '\n',
+            0,
+            0,
+            true,
+            sdl2::pixels::Color::RGB(0, 0, 0),
+            Arc::clone(&config),
+        );
         widget.set_dest(&Rect::new(10, 20, 30, 40));
         widget.set_source(&Rect::new(50, 60, 70, 80));
         let result = widget.render_start_point();
@@ -500,8 +530,14 @@ mod test_update {
     #[test]
     fn assert_do_nothing() {
         let config = support::build_config();
-        let mut widget =
-            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        let mut widget = TextCharacter::new(
+            '\n',
+            0,
+            0,
+            true,
+            sdl2::pixels::Color::RGB(0, 0, 0),
+            Arc::clone(&config),
+        );
         widget.set_dest(&Rect::new(10, 20, 30, 40));
         widget.set_source(&Rect::new(50, 60, 70, 80));
         let result = widget.update(

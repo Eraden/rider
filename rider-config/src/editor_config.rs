@@ -1,4 +1,4 @@
-use crate::directories;
+use crate::directories::Directories;
 
 #[derive(Debug, Clone)]
 pub struct EditorConfig {
@@ -10,8 +10,8 @@ pub struct EditorConfig {
 }
 
 impl EditorConfig {
-    pub fn new() -> Self {
-        let mut default_font_path = directories::fonts_dir();
+    pub fn new(directories: &Directories) -> Self {
+        let mut default_font_path = directories.fonts_dir.clone();
         default_font_path.push("DejaVuSansMono.ttf");
         Self {
             character_size: 14,
@@ -46,12 +46,10 @@ impl EditorConfig {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::env::{set_var, temp_dir};
-
     #[test]
     fn assert_font_path() {
-        let config = EditorConfig::new();
-        set_var("XDG_CONFIG_HOME", temp_dir());
+        let directories = Directories::new(Some("/tmp".to_owned()), None);
+        let config = EditorConfig::new(&directories);
         let path = config.font_path().to_owned();
         let expected: String = "/tmp/rider/fonts/DejaVuSansMono.ttf".to_owned();
         assert_eq!(path, expected);
@@ -59,7 +57,8 @@ mod test {
 
     #[test]
     fn assert_character_size() {
-        let config = EditorConfig::new();
+        let directories = Directories::new(Some("/tmp".to_owned()), None);
+        let config = EditorConfig::new(&directories);
         let result = config.character_size();
         let expected: u16 = 14;
         assert_eq!(result, expected);
@@ -67,7 +66,8 @@ mod test {
 
     #[test]
     fn assert_current_theme() {
-        let config = EditorConfig::new();
+        let directories = Directories::new(Some("/tmp".to_owned()), None);
+        let config = EditorConfig::new(&directories);
         let result = config.current_theme().to_owned();
         let expected = "railscasts".to_owned();
         assert_eq!(result, expected);
@@ -75,7 +75,8 @@ mod test {
 
     #[test]
     fn assert_margin_left() {
-        let config = EditorConfig::new();
+        let directories = Directories::new(Some("/tmp".to_owned()), None);
+        let config = EditorConfig::new(&directories);
         let result = config.margin_left();
         let expected: u16 = 10;
         assert_eq!(result, expected);
@@ -83,7 +84,8 @@ mod test {
 
     #[test]
     fn assert_margin_top() {
-        let config = EditorConfig::new();
+        let directories = Directories::new(Some("/tmp".to_owned()), None);
+        let config = EditorConfig::new(&directories);
         let result = config.margin_top();
         let expected: u16 = 10;
         assert_eq!(result, expected);

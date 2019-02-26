@@ -32,7 +32,7 @@ mod tests {
     #[test]
     fn assert_main() {
         let uniq = Uuid::new_v4();
-        let test_path = join("/tmp".to_owned(), uniq.to_string());
+        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
         create_dir_all(test_path.clone()).unwrap();
         set_var("XDG_CONFIG_HOME", test_path.as_str());
         set_var("XDG_RUNTIME_DIR", test_path.as_str());

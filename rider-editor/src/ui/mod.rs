@@ -1,4 +1,3 @@
-use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Texture;
 

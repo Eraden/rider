@@ -17,11 +17,13 @@ pub struct Config {
     theme: Theme,
     extensions_mapping: LanguageMapping,
     scroll: ScrollConfig,
+    directories: Directories
 }
 
 impl Config {
     pub fn new() -> Self {
-        let editor_config = EditorConfig::new();
+        let directories = Directories::new(None, None);
+        let editor_config = EditorConfig::new(&directories);
         let mut extensions_mapping = HashMap::new();
         extensions_mapping.insert(".".to_string(), Language::PlainText);
         extensions_mapping.insert("txt".to_string(), Language::PlainText);
@@ -31,10 +33,11 @@ impl Config {
             width: 1024,
             height: 860,
             menu_height: 60,
-            theme: Config::load_theme(editor_config.current_theme().clone()),
+            theme: Theme::default(),
             editor_config,
             extensions_mapping,
             scroll: ScrollConfig::new(),
+            directories
         }
     }
 
@@ -85,20 +88,24 @@ impl Config {
     pub fn scroll_mut(&mut self) -> &mut ScrollConfig {
         &mut self.scroll
     }
+
+    pub fn directories(&self) -> &Directories {
+        &self.directories
+    }
 }
 
 impl Config {
-    pub fn load_theme(theme_name: String) -> Theme {
+    pub fn load_theme(&self, theme_name: String) -> Theme {
         let home_dir = dirs::config_dir().unwrap();
         let mut config_dir = home_dir.clone();
         config_dir.push("rider");
         fs::create_dir_all(&config_dir)
             .unwrap_or_else(|_| panic!("Cannot create config directory"));
-        Self::load_theme_content(format!("{}.json", theme_name).as_str())
+        self.load_theme_content(format!("{}.json", theme_name).as_str())
     }
 
-    fn load_theme_content(file_name: &str) -> Theme {
-        let mut config_file = themes_dir();
+    fn load_theme_content(&self, file_name: &str) -> Theme {
+        let mut config_file = self.directories.themes_dir.clone();
         config_file.push(file_name);
         let contents = match fs::read_to_string(&config_file) {
             Ok(s) => s,

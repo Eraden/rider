@@ -3,9 +3,9 @@ use rider_config::directories::*;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
-pub fn create() -> std::io::Result<()> {
-    default_theme()?;
-    railscasts_theme()?;
+pub fn create(directories: &Directories) -> std::io::Result<()> {
+    default_theme(directories)?;
+    railscasts_theme(directories)?;
     Ok(())
 }
 
@@ -21,8 +21,9 @@ fn create_default_file_icon(dir: &PathBuf) -> std::io::Result<()> {
     Ok(())
 }
 
-fn default_theme() -> std::io::Result<()> {
-    let mut dir = themes_dir();
+fn default_theme(directories: &Directories) -> std::io::Result<()> {
+    let mut dir = PathBuf::new();
+    dir.push(directories.themes_dir.clone());
     dir.push("default");
     dir.push("images");
     let r = create_dir_all(&dir);
@@ -46,8 +47,9 @@ fn create_railscasts_file_icon(dir: &PathBuf) -> std::io::Result<()> {
     Ok(())
 }
 
-fn railscasts_theme() -> std::io::Result<()> {
-    let mut dir = themes_dir();
+fn railscasts_theme(directories: &Directories) -> std::io::Result<()> {
+    let mut dir = PathBuf::new();
+    dir.push(directories.themes_dir.clone());
     dir.push("railscasts");
     dir.push("images");
     create_dir_all(&dir)?;
@@ -59,7 +61,6 @@ fn railscasts_theme() -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::env::set_var;
     use std::fs::create_dir_all;
     use std::path::{Path, PathBuf};
     use uuid::Uuid;
@@ -72,9 +73,9 @@ mod tests {
     #[test]
     fn assert_create() {
         let uniq = Uuid::new_v4();
-        let test_path = join("/tmp".to_owned(), uniq.to_string());
+        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
         create_dir_all(test_path.clone()).unwrap();
-        set_var("XDG_CONFIG_HOME", test_path.as_str());
+        let directories = Directories::new(Some(test_path.clone()), None);
         let themes_dir = join(test_path.clone(), "rider/themes".to_owned());
         assert_eq!(
             Path::new(
@@ -120,7 +121,7 @@ mod tests {
             .exists(),
             false
         );
-        assert_eq!(create().is_ok(), true);
+        assert_eq!(create(&directories).is_ok(), true);
         assert_eq!(
             Path::new(
                 join(
@@ -170,9 +171,8 @@ mod tests {
     #[test]
     fn assert_create_default_directory_icon() {
         let uniq = Uuid::new_v4();
-        let test_path = join("/tmp".to_owned(), uniq.to_string());
+        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
         create_dir_all(test_path.clone()).unwrap();
-        set_var("XDG_CONFIG_HOME", test_path.as_str());
         let file_path: String = join(test_path.clone(), "directory-64x64.png".to_owned());
         let dir: PathBuf = test_path.into();
         assert_eq!(Path::new(file_path.as_str()).exists(), false);
@@ -183,10 +183,9 @@ mod tests {
     #[test]
     fn assert_create_default_file_icon() {
         let uniq = Uuid::new_v4();
-        let test_path = join("/tmp".to_owned(), uniq.to_string());
+        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
         create_dir_all(test_path.clone()).unwrap();
         let file_path: String = join(test_path.clone(), "file-64x64.png".to_owned());
-        set_var("XDG_CONFIG_HOME", test_path.as_str());
         let dir: PathBuf = test_path.into();
         assert_eq!(Path::new(file_path.as_str()).exists(), false);
         assert_eq!(create_default_file_icon(&dir).is_ok(), true);
@@ -196,10 +195,9 @@ mod tests {
     #[test]
     fn assert_create_railscasts_directory_icon() {
         let uniq = Uuid::new_v4();
-        let test_path = join("/tmp".to_owned(), uniq.to_string());
+        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
         create_dir_all(test_path.clone()).unwrap();
         let file_path: String = join(test_path.clone(), "directory-64x64.png".to_owned());
-        set_var("XDG_CONFIG_HOME", test_path.as_str());
         let dir: PathBuf = test_path.into();
         assert_eq!(Path::new(file_path.as_str()).exists(), false);
         assert_eq!(create_railscasts_directory_icon(&dir).is_ok(), true);
@@ -209,10 +207,9 @@ mod tests {
     #[test]
     fn assert_create_railscasts_file_icon() {
         let uniq = Uuid::new_v4();
-        let test_path = join("/tmp".to_owned(), uniq.to_string());
+        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
         create_dir_all(test_path.clone()).unwrap();
         let file_path: String = join(test_path.clone(), "file-64x64.png".to_owned());
-        set_var("XDG_CONFIG_HOME", test_path.as_str());
         let dir: PathBuf = test_path.into();
         assert_eq!(Path::new(file_path.as_str()).exists(), false);
         assert_eq!(create_railscasts_file_icon(&dir).is_ok(), true);

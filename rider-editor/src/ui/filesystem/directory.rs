@@ -1,7 +1,6 @@
 use crate::app::*;
 use crate::renderer::*;
 use crate::ui::*;
-use rider_config::directories;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use std::fs;
@@ -174,7 +173,7 @@ impl DirectoryView {
     {
         let dir_texture_path = {
             let c = self.config.read().unwrap();
-            let mut themes_dir = directories::themes_dir();
+            let mut themes_dir = c.directories().themes_dir.clone();
             let path = c.theme().images().directory_icon();
             themes_dir.push(path);
             themes_dir.to_str().unwrap().to_owned()

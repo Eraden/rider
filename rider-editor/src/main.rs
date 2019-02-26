@@ -12,9 +12,9 @@ extern crate serde_json;
 extern crate simplelog;
 
 use crate::app::Application;
-use rider_config::log_dir;
 use simplelog::*;
 use std::fs::File;
+use rider_config::directories::Directories;
 
 pub mod app;
 pub mod renderer;
@@ -23,10 +23,10 @@ pub mod tests;
 pub mod ui;
 
 #[cfg_attr(tarpaulin, skip)]
-fn init_logger() {
+fn init_logger(directories: &Directories) {
     use simplelog::SharedLogger;
 
-    let mut log_file_path = log_dir();
+    let mut log_file_path = directories.log_dir.clone();
     log_file_path.push("rider.log");
 
     let mut outputs: Vec<Box<SharedLogger>> = vec![WriteLogger::new(
@@ -48,9 +48,10 @@ fn init_logger() {
 
 #[cfg_attr(tarpaulin, skip)]
 fn main() {
+    let directories = Directories::new(None, None);
     let mut app = Application::new();
     app.init();
-    init_logger();
+    init_logger(&directories);
     app.open_file("./test_files/test.rs".to_string());
     app.run();
 }
