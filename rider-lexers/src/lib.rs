@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate log;
 extern crate simplelog;
 
@@ -118,19 +117,19 @@ impl Token {
     }
 
     pub fn line(&self) -> usize {
-        self.line.clone()
+        self.line
     }
 
     pub fn character(&self) -> usize {
-        self.character.clone()
+        self.character
     }
 
     pub fn start(&self) -> usize {
-        self.start.clone()
+        self.start
     }
 
     pub fn end(&self) -> usize {
-        self.end.clone()
+        self.end
     }
 
     pub fn move_to(&self, line: usize, character: usize, start: usize, end: usize) -> Self {
@@ -144,13 +143,13 @@ impl Token {
     }
 }
 
-pub fn parse(text: String, language: &Language) -> Vec<TokenType> {
+pub fn parse(text: String, language: Language) -> Vec<TokenType> {
     match language {
-        &Language::PlainText => plain::lexer::Lexer::new(text.as_str())
+        Language::PlainText => plain::lexer::Lexer::new(text.as_str())
             //            .inspect(|tok| warn!("tok: {:?}", tok))
             .map(|t| t.0)
             .collect(),
-        &Language::Rust => rust_lang::lexer::Lexer::new(text.as_str())
+        Language::Rust => rust_lang::lexer::Lexer::new(text.as_str())
             //            .inspect(|tok| warn!("tok: {:?}", tok))
             .map(|t| t.0)
             .collect(),
@@ -165,7 +164,7 @@ mod tests {
     #[test]
     fn must_parse_plain() {
         let buffer = "foo bar";
-        let language = &Language::PlainText;
+        let language = Language::PlainText;
         let result = parse(buffer.to_string(), language);
         assert_eq!(result.len(), 3);
     }
@@ -173,7 +172,7 @@ mod tests {
     #[test]
     fn must_parse_rust() {
         let buffer = "foo bar";
-        let language = &Language::Rust;
+        let language = Language::Rust;
         let result = parse(buffer.to_string(), language);
         assert_eq!(result.len(), 3);
     }

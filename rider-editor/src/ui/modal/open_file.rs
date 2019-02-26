@@ -148,7 +148,8 @@ impl Update for OpenFile {
 #[cfg_attr(tarpaulin, skip)]
 impl OpenFile {
     pub fn render<T>(&self, canvas: &mut T, renderer: &mut Renderer, context: &RC)
-        where T: RenderRect + RenderBorder + RenderImage
+    where
+        T: RenderRect + RenderBorder + RenderImage,
     {
         let dest = match context {
             RC::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
@@ -156,16 +157,12 @@ impl OpenFile {
         };
 
         // Background
-//        canvas.set_clip_rect(dest.clone());
-        canvas.render_rect(
-            dest.clone(),
-            self.background_color.clone()
-        )
+        //        canvas.set_clip_rect(dest.clone());
+        canvas
+            .render_rect(dest.clone(), self.background_color.clone())
             .unwrap_or_else(|_| panic!("Failed to render open file modal background!"));
-        canvas.render_border(
-            dest.clone(),
-            self.border_color.clone()
-        )
+        canvas
+            .render_border(dest.clone(), self.border_color.clone())
             .unwrap_or_else(|_| panic!("Failed to render open file modal border!"));
 
         let context = RC::RelativePosition(

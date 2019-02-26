@@ -53,12 +53,8 @@ pub mod lexer {
                 match tok {
                     (tok, text) => {
                         let span = self.span_in(text);
-                        let token = tok.move_to(
-                            self.line.clone(),
-                            self.character - text.len(),
-                            span.lo.clone(),
-                            span.hi.clone(),
-                        );
+                        let token =
+                            tok.move_to(self.line, self.character - text.len(), span.lo, span.hi);
                         return Some((token, span));
                     }
                 }

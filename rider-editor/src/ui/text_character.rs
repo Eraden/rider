@@ -146,7 +146,8 @@ impl TextCharacter {
     }
 
     pub fn prepare_ui<'l, T>(&mut self, renderer: &mut T)
-    where T: ConfigHolder + CharacterSizeManager + ManagersHolder<'l>
+    where
+        T: ConfigHolder + CharacterSizeManager + ManagersHolder<'l>,
     {
         let font_details: FontDetails = renderer.config().read().unwrap().editor_config().into();
 
@@ -345,22 +346,34 @@ mod test_own_methods {
     #[test]
     fn must_update_position_of_new_line() {
         let config = support::build_config();
-        let mut widget =
-            TextCharacter::new('\n', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        let mut widget = TextCharacter::new(
+            '\n',
+            0,
+            0,
+            true,
+            sdl2::pixels::Color::RGB(0, 0, 0),
+            Arc::clone(&config),
+        );
         widget.set_dest(&Rect::new(10, 20, 30, 40));
         widget.set_source(&Rect::new(50, 60, 70, 80));
         let mut current = Rect::new(10, 23, 0, 0);
         widget.update_position(&mut current);
         assert_eq!(current, Rect::new(0, 103, 1, 1));
-        assert_eq!(widget.dest(), Rect::new(0, 103, 30, 40));
+        assert_eq!(widget.dest(), Rect::new(10, 23, 30, 40));
         assert_eq!(widget.source(), &Rect::new(50, 60, 70, 80));
     }
 
     #[test]
     fn must_update_position_of_non_new_line() {
         let config = support::build_config();
-        let mut widget =
-            TextCharacter::new('W', 0, 0, true, Color::RGB(0, 0, 0), Arc::clone(&config));
+        let mut widget = TextCharacter::new(
+            'W',
+            0,
+            0,
+            true,
+            sdl2::pixels::Color::RGB(0, 0, 0),
+            Arc::clone(&config),
+        );
         widget.set_dest(&Rect::new(10, 20, 30, 40));
         widget.set_source(&Rect::new(50, 60, 70, 80));
         let mut current = Rect::new(10, 23, 0, 0);

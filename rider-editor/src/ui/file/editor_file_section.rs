@@ -26,7 +26,7 @@ impl EditorFileSection {
             .get(ext.as_str())
             .unwrap_or(&Language::PlainText)
             .clone();
-        let lexer_tokens = rider_lexers::parse(buffer.clone(), &language);
+        let lexer_tokens = rider_lexers::parse(buffer.clone(), language);
 
         let mut tokens: Vec<EditorFileToken> = vec![];
         let mut iterator = lexer_tokens.iter().peekable();

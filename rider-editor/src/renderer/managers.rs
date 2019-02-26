@@ -3,13 +3,13 @@ use sdl2::pixels::Color;
 use sdl2::render::{Texture, TextureCreator};
 use sdl2::ttf::{Font, Sdl2TtfContext};
 //use sdl2::video::WindowContext as WinCtxt;
+use rider_config::editor_config::EditorConfig;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 #[allow(unused_imports)]
 use std::env;
 use std::hash::Hash;
 use std::rc::Rc;
-use rider_config::editor_config::EditorConfig;
 
 #[cfg_attr(tarpaulin, skip)]
 //noinspection RsWrongLifetimeParametersNumber
@@ -97,7 +97,8 @@ impl<'a> From<&'a FontDetails> for FontDetails {
 
 #[cfg_attr(tarpaulin, skip)]
 //noinspection RsWrongLifetimeParametersNumber
-pub type TextureManager<'l> = ResourceManager<'l, String, Texture<'l>, TextureCreator<sdl2::video::WindowContext>>;
+pub type TextureManager<'l> =
+    ResourceManager<'l, String, Texture<'l>, TextureCreator<sdl2::video::WindowContext>>;
 #[cfg_attr(tarpaulin, skip)]
 pub type FontManager<'l> = ResourceManager<'l, FontDetails, Font<'l, 'static>, Sdl2TtfContext>;
 

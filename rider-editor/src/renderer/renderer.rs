@@ -1,11 +1,11 @@
 use crate::renderer::managers::*;
 use crate::ui::get_text_character_rect;
+use crate::ui::text_character::CharacterSizeManager;
 use rider_config::{ConfigAccess, ConfigHolder};
 use sdl2::rect::Rect;
 use sdl2::render::TextureCreator;
 use sdl2::ttf::Sdl2TtfContext;
 use std::collections::HashMap;
-use crate::ui::text_character::CharacterSizeManager;
 
 #[cfg_attr(tarpaulin, skip)]
 pub struct Renderer<'l> {

@@ -169,7 +169,8 @@ impl DirectoryView {
     }
 
     fn render_icon<T>(&self, canvas: &mut T, renderer: &mut Renderer, dest: &mut Rect)
-    where T: RenderImage
+    where
+        T: RenderImage,
     {
         let dir_texture_path = {
             let c = self.config.read().unwrap();
@@ -187,18 +188,14 @@ impl DirectoryView {
             .render_image(
                 texture,
                 self.source.clone(),
-                Rect::new(
-                    dest.x(),
-                    dest.y(),
-                    self.icon_width,
-                    self.icon_height,
-                )
+                Rect::new(dest.x(), dest.y(), self.icon_width, self.icon_height),
             )
             .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
     }
 
     fn render_name<T>(&self, canvas: &mut T, renderer: &mut Renderer, dest: &mut Rect)
-    where T: RenderImage
+    where
+        T: RenderImage,
     {
         let mut d = dest.clone();
         d.set_x(dest.x() + NAME_MARGIN);
@@ -223,18 +220,15 @@ impl DirectoryView {
             d.set_height(size.height());
 
             canvas
-                .render_image(
-                    text_texture,
-                    self.source.clone(),
-                    d.clone(),
-                )
+                .render_image(text_texture, self.source.clone(), d.clone())
                 .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
             d.set_x(d.x() + size.width() as i32);
         }
     }
 
     fn render_children<T>(&self, canvas: &mut T, renderer: &mut Renderer, dest: &mut Rect)
-    where T: RenderImage
+    where
+        T: RenderImage,
     {
         if !self.expanded {
             return;
@@ -295,7 +289,8 @@ impl ConfigHolder for DirectoryView {
 #[cfg_attr(tarpaulin, skip)]
 impl DirectoryView {
     pub fn render<T>(&self, canvas: &mut T, renderer: &mut Renderer, context: &RenderContext)
-    where T: RenderImage
+    where
+        T: RenderImage,
     {
         let dest = self.dest();
         let move_point = match context {

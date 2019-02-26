@@ -3,22 +3,25 @@ use rider_config::directories::*;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 
-pub fn create() {
-    default_theme();
-    railscasts_theme();
+pub fn create() -> std::io::Result<()> {
+    default_theme()?;
+    railscasts_theme()?;
+    Ok(())
 }
 
-fn create_default_directory_icon(dir: &PathBuf) {
+fn create_default_directory_icon(dir: &PathBuf) -> std::io::Result<()> {
     let blob = include_bytes!("../assets/themes/default/images/directory-64x64.png");
-    write_bytes_to(dir, "directory-64x64.png", blob);
+    write_bytes_to(dir, "directory-64x64.png", blob)?;
+    Ok(())
 }
 
-fn create_default_file_icon(dir: &PathBuf) {
+fn create_default_file_icon(dir: &PathBuf) -> std::io::Result<()> {
     let blob = include_bytes!("../assets/themes/default/images/file-64x64.png");
-    write_bytes_to(dir, "file-64x64.png", blob);
+    write_bytes_to(dir, "file-64x64.png", blob)?;
+    Ok(())
 }
 
-fn default_theme() {
+fn default_theme() -> std::io::Result<()> {
     let mut dir = themes_dir();
     dir.push("default");
     dir.push("images");
@@ -26,30 +29,31 @@ fn default_theme() {
     #[cfg_attr(tarpaulin, skip)]
     r.unwrap_or_else(|_| panic!("Cannot create themes config directory"));
 
-    create_default_directory_icon(&dir);
-    create_default_file_icon(&dir);
+    create_default_directory_icon(&dir)?;
+    create_default_file_icon(&dir)?;
+    Ok(())
 }
 
-fn create_railscasts_directory_icon(dir: &PathBuf) {
+fn create_railscasts_directory_icon(dir: &PathBuf) -> std::io::Result<()> {
     let blob = include_bytes!("../assets/themes/railscasts/images/directory-64x64.png");
-    write_bytes_to(dir, "directory-64x64.png", blob);
+    write_bytes_to(dir, "directory-64x64.png", blob)?;
+    Ok(())
 }
 
-fn create_railscasts_file_icon(dir: &PathBuf) {
+fn create_railscasts_file_icon(dir: &PathBuf) -> std::io::Result<()> {
     let blob = include_bytes!("../assets/themes/railscasts/images/file-64x64.png");
-    write_bytes_to(dir, "file-64x64.png", blob);
+    write_bytes_to(dir, "file-64x64.png", blob)?;
+    Ok(())
 }
 
-fn railscasts_theme() {
+fn railscasts_theme() -> std::io::Result<()> {
     let mut dir = themes_dir();
     dir.push("railscasts");
     dir.push("images");
-    let r = create_dir_all(&dir);
-    #[cfg_attr(tarpaulin, skip)]
-    r.unwrap_or_else(|_| panic!("Cannot create themes config directory"));
-
-    create_railscasts_directory_icon(&dir);
-    create_railscasts_file_icon(&dir);
+    create_dir_all(&dir)?;
+    create_railscasts_directory_icon(&dir)?;
+    create_railscasts_file_icon(&dir)?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -116,7 +120,7 @@ mod tests {
             .exists(),
             false
         );
-        create();
+        assert_eq!(create().is_ok(), true);
         assert_eq!(
             Path::new(
                 join(
@@ -172,7 +176,7 @@ mod tests {
         let file_path: String = join(test_path.clone(), "directory-64x64.png".to_owned());
         let dir: PathBuf = test_path.into();
         assert_eq!(Path::new(file_path.as_str()).exists(), false);
-        create_default_directory_icon(&dir);
+        assert_eq!(create_default_directory_icon(&dir).is_ok(), true);
         assert_eq!(Path::new(file_path.as_str()).exists(), true);
     }
 
@@ -185,7 +189,7 @@ mod tests {
         set_var("XDG_CONFIG_HOME", test_path.as_str());
         let dir: PathBuf = test_path.into();
         assert_eq!(Path::new(file_path.as_str()).exists(), false);
-        create_default_file_icon(&dir);
+        assert_eq!(create_default_file_icon(&dir).is_ok(), true);
         assert_eq!(Path::new(file_path.as_str()).exists(), true);
     }
 
@@ -198,7 +202,7 @@ mod tests {
         set_var("XDG_CONFIG_HOME", test_path.as_str());
         let dir: PathBuf = test_path.into();
         assert_eq!(Path::new(file_path.as_str()).exists(), false);
-        create_railscasts_directory_icon(&dir);
+        assert_eq!(create_railscasts_directory_icon(&dir).is_ok(), true);
         assert_eq!(Path::new(file_path.as_str()).exists(), true);
     }
 
@@ -211,7 +215,7 @@ mod tests {
         set_var("XDG_CONFIG_HOME", test_path.as_str());
         let dir: PathBuf = test_path.into();
         assert_eq!(Path::new(file_path.as_str()).exists(), false);
-        create_railscasts_file_icon(&dir);
+        assert_eq!(create_railscasts_file_icon(&dir).is_ok(), true);
         assert_eq!(Path::new(file_path.as_str()).exists(), true);
     }
 }

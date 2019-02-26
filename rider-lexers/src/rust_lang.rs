@@ -78,12 +78,8 @@ pub mod lexer {
                             self.character += text.len();
                         }
                         let span = self.span_in(text);
-                        let token = tok.move_to(
-                            line,
-                            self.character - text.len(),
-                            span.lo.clone(),
-                            span.hi.clone(),
-                        );
+                        let token =
+                            tok.move_to(line, self.character - text.len(), span.lo, span.hi);
                         return Some((token, span));
                     }
                 }
@@ -214,7 +210,7 @@ mod tests {
                 token: Token::new("foo".to_string(), 0, 0, 0, 3),
             },
             TokenType::Whitespace {
-                token: Token::new("\n".to_string(), 1, 0, 3, 4),
+                token: Token::new("\n".to_string(), 0, 0, 3, 4),
             },
             TokenType::Identifier {
                 token: Token::new("bar".to_string(), 1, 1, 4, 7),
@@ -409,7 +405,7 @@ mod tests {
                 token: Token::new("{".to_string(), 0, 30, 30, 31),
             },
             TokenType::Whitespace {
-                token: Token::new("\n".to_string(), 1, 0, 31, 32),
+                token: Token::new("\n".to_string(), 0, 0, 31, 32),
             },
             TokenType::Whitespace {
                 token: Token::new("            ".to_string(), 1, 1, 32, 44),
@@ -430,7 +426,7 @@ mod tests {
                 token: Token::new("b".to_string(), 1, 17, 48, 49),
             },
             TokenType::Whitespace {
-                token: Token::new("\n".to_string(), 2, 0, 49, 50),
+                token: Token::new("\n".to_string(), 1, 0, 49, 50),
             },
             TokenType::Whitespace {
                 token: Token::new("        ".to_string(), 2, 1, 50, 58),

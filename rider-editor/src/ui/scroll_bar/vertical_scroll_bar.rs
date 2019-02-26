@@ -1,4 +1,4 @@
-use crate::app::{UpdateResult as UR};
+use crate::app::UpdateResult as UR;
 use crate::ui::*;
 use rider_config::ConfigAccess;
 use sdl2::pixels::Color;
@@ -56,19 +56,21 @@ impl Update for VerticalScrollBar {
 #[cfg_attr(tarpaulin, skip)]
 impl VerticalScrollBar {
     pub fn render<T>(&self, canvas: &mut T, context: &RenderContext)
-    where T: RenderBorder
+    where
+        T: RenderBorder,
     {
         if self.full_height() < self.viewport() {
             return;
         }
 
-        canvas.render_border(
-            match context {
-                RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.rect),
-                _ => self.rect.clone(),
-            },
-            Color::RGBA(255, 255, 255, 0)
-        )
+        canvas
+            .render_border(
+                match context {
+                    RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.rect),
+                    _ => self.rect.clone(),
+                },
+                Color::RGBA(255, 255, 255, 0),
+            )
             .unwrap_or_else(|_| panic!("Failed to render vertical scroll back"));
     }
 }

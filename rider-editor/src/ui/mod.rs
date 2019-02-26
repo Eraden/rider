@@ -1,13 +1,13 @@
-use sdl2::rect::{Point, Rect};
 use sdl2::pixels::Color;
+use sdl2::rect::{Point, Rect};
 use sdl2::render::Texture;
 
 use std::rc::Rc;
 
+use crate::app::application::WindowCanvas;
 use crate::app::{UpdateResult as UR, WindowCanvas as WC};
 use crate::renderer::managers::*;
 use crate::renderer::Renderer;
-use crate::app::application::WindowCanvas;
 use rider_config::*;
 
 pub mod caret;
@@ -44,11 +44,11 @@ pub enum RenderContext {
 }
 
 pub trait RenderRect {
-    fn render_rect(&mut self, rect: Rect, color: sdl2::pixels::Color)  -> Result<(), String>;
+    fn render_rect(&mut self, rect: Rect, color: sdl2::pixels::Color) -> Result<(), String>;
 }
 
 pub trait RenderBorder {
-    fn render_border(&mut self, rect: Rect, color: sdl2::pixels::Color)  -> Result<(), String>;
+    fn render_border(&mut self, rect: Rect, color: sdl2::pixels::Color) -> Result<(), String>;
 }
 
 pub trait RenderImage {
@@ -63,7 +63,7 @@ impl RenderRect for WindowCanvas {
 }
 
 impl RenderBorder for WindowCanvas {
-    fn render_border(&mut self, rect: Rect, color: sdl2::pixels::Color)  -> Result<(), String> {
+    fn render_border(&mut self, rect: Rect, color: sdl2::pixels::Color) -> Result<(), String> {
         self.set_draw_color(color);
         self.draw_rect(rect)
     }

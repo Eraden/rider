@@ -1,8 +1,8 @@
-use crate::app::{UpdateResult as UR};
+use crate::app::UpdateResult as UR;
 use crate::ui::*;
 use rider_config::ConfigAccess;
-use sdl2::rect::Rect;
 use sdl2::pixels::Color;
+use sdl2::rect::Rect;
 
 pub struct HorizontalScrollBar {
     scroll_value: i32,
@@ -56,19 +56,21 @@ impl Update for HorizontalScrollBar {
 #[cfg_attr(tarpaulin, skip)]
 impl HorizontalScrollBar {
     pub fn render<T>(&self, canvas: &mut T, context: &RenderContext)
-        where T: RenderRect
+    where
+        T: RenderRect,
     {
         if self.full_width < self.viewport {
             return;
         }
 
-        canvas.render_rect(
-            match context {
-                RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.rect),
-                _ => self.rect.clone(),
-            },
-            Color::RGBA(255, 255, 255, 0),
-        )
+        canvas
+            .render_rect(
+                match context {
+                    RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.rect),
+                    _ => self.rect.clone(),
+                },
+                Color::RGBA(255, 255, 255, 0),
+            )
             .unwrap_or_else(|_| panic!("Failed to render vertical scroll back"));
     }
 }

@@ -102,8 +102,7 @@ impl Config {
         config_file.push(file_name);
         let contents = match fs::read_to_string(&config_file) {
             Ok(s) => s,
-            Err(_) => fs::read_to_string(&config_file)
-                .unwrap_or_else(|_| panic!("Failed to load theme config file")),
+            Err(_) => fs::read_to_string(&config_file).unwrap_or("".to_owned()),
         };
         serde_json::from_str(&contents).unwrap_or_default()
     }
