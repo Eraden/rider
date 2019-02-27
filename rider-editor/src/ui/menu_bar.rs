@@ -50,10 +50,10 @@ impl Render for MenuBar {
             })
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
 
-        canvas.set_draw_color(self.border_color.clone());
+        canvas.set_draw_color(self.border_color);
         canvas
             .draw_rect(match context.borrow() {
-                RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
+                RenderContext::RelativePosition(p) => move_render_point((*p).clone(), &self.dest),
                 _ => self.dest(),
             })
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
@@ -61,7 +61,7 @@ impl Render for MenuBar {
 
     fn prepare_ui(&mut self, _renderer: &mut Renderer) {
         let width = self.config.read().unwrap().width();
-        let height = self.config.read().unwrap().menu_height() as u32;
+        let height = u32::from(self.config.read().unwrap().menu_height());
         self.dest = Rect::new(0, 0, width, height);
     }
 }
@@ -80,7 +80,7 @@ impl ClickHandler for MenuBar {
     }
 
     fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
-        let rect = match context.clone() {
+        let rect = match *context {
             UpdateContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
             _ => self.dest(),
         };
@@ -94,7 +94,7 @@ impl RenderBox for MenuBar {
     }
 
     fn dest(&self) -> Rect {
-        self.dest.clone()
+        self.dest
     }
 }
 

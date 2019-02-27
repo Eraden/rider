@@ -12,9 +12,9 @@ extern crate serde_json;
 extern crate simplelog;
 
 use crate::app::Application;
+use rider_config::directories::Directories;
 use simplelog::*;
 use std::fs::File;
-use rider_config::directories::Directories;
 
 pub mod app;
 pub mod renderer;

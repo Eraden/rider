@@ -17,7 +17,7 @@ pub struct Config {
     theme: Theme,
     extensions_mapping: LanguageMapping,
     scroll: ScrollConfig,
-    directories: Directories
+    directories: Directories,
 }
 
 impl Config {
@@ -37,7 +37,7 @@ impl Config {
             editor_config,
             extensions_mapping,
             scroll: ScrollConfig::new(),
-            directories
+            directories,
         }
     }
 
@@ -70,11 +70,11 @@ impl Config {
     }
 
     pub fn editor_top_margin(&self) -> i32 {
-        (self.menu_height() as i32) + (self.editor_config().margin_top() as i32)
+        i32::from(self.menu_height()) + i32::from(self.editor_config().margin_top())
     }
 
     pub fn editor_left_margin(&self) -> i32 {
-        self.editor_config().margin_left() as i32
+        i32::from(self.editor_config().margin_left())
     }
 
     pub fn extensions_mapping(&self) -> &LanguageMapping {
@@ -91,6 +91,10 @@ impl Config {
 
     pub fn directories(&self) -> &Directories {
         &self.directories
+    }
+
+    pub fn set_theme(&mut self, theme: String) {
+        self.theme = self.load_theme(theme);
     }
 }
 
@@ -109,7 +113,7 @@ impl Config {
         config_file.push(file_name);
         let contents = match fs::read_to_string(&config_file) {
             Ok(s) => s,
-            Err(_) => fs::read_to_string(&config_file).unwrap_or("".to_owned()),
+            Err(_) => fs::read_to_string(&config_file).unwrap_or_else(|_| "".to_owned()),
         };
         serde_json::from_str(&contents).unwrap_or_default()
     }

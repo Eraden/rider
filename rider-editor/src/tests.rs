@@ -4,6 +4,8 @@ pub mod support {
     use std::sync::*;
 
     pub fn build_config() -> Arc<RwLock<Config>> {
-        Arc::new(RwLock::new(Config::new()))
+        let mut config = Config::new();
+        config.set_theme(config.editor_config().current_theme().clone());
+        Arc::new(RwLock::new(config))
     }
 }

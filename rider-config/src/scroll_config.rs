@@ -39,6 +39,16 @@ impl ScrollConfig {
     }
 }
 
+impl Default for ScrollConfig {
+    fn default() -> Self {
+        Self {
+            width: 4,
+            margin_right: 5,
+            speed: 10,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

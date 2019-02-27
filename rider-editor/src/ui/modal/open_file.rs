@@ -153,16 +153,16 @@ impl OpenFile {
     {
         let dest = match context {
             RC::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
-            _ => self.dest.clone(),
+            _ => self.dest,
         };
 
         // Background
         //        canvas.set_clip_rect(dest.clone());
         canvas
-            .render_rect(dest.clone(), self.background_color.clone())
+            .render_rect(dest, self.background_color)
             .unwrap_or_else(|_| panic!("Failed to render open file modal background!"));
         canvas
-            .render_border(dest.clone(), self.border_color.clone())
+            .render_border(dest, self.border_color)
             .unwrap_or_else(|_| panic!("Failed to render open file modal border!"));
 
         let context = RC::RelativePosition(
@@ -201,8 +201,8 @@ impl RenderBox for OpenFile {
 impl ClickHandler for OpenFile {
     fn on_left_click(&mut self, point: &Point, context: &UC) -> UR {
         let dest = match context {
-            UC::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
-            _ => self.dest.clone(),
+            UC::ParentPosition(p) => move_render_point(*p, &self.dest),
+            _ => self.dest,
         };
         let context = UC::ParentPosition(
             dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP) + self.scroll(),

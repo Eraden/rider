@@ -6,7 +6,7 @@ pub fn write_bytes_to(dir: &PathBuf, file: &str, blob: &[u8]) -> std::io::Result
     let mut path = dir.clone();
     path.push(file);
     let mut f = File::create(path.to_str().unwrap())?;
-    f.write(blob)?;
+    f.write_all(blob)?;
     f.flush()?;
     Ok(())
 }

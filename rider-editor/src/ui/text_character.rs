@@ -187,13 +187,11 @@ impl ClickHandler for TextCharacter {
     }
 
     fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
-        is_in_rect(
-            point,
-            &match context {
-                &UpdateContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
-                _ => self.dest(),
-            },
-        )
+        let rect = match context {
+            &UpdateContext::ParentPosition(p) => move_render_point(p, &self.dest),
+            _ => self.dest(),
+        };
+        is_in_rect(point, &rect)
     }
 }
 
@@ -203,7 +201,7 @@ impl RenderBox for TextCharacter {
     }
 
     fn dest(&self) -> Rect {
-        self.dest.clone()
+        self.dest
     }
 }
 

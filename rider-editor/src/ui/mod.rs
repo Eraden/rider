@@ -70,15 +70,7 @@ impl RenderBorder for WindowCanvas {
 
 impl RenderImage for WindowCanvas {
     fn render_image(&mut self, tex: Rc<Texture>, src: Rect, dest: Rect) -> Result<(), String> {
-        self.copy_ex(
-            &tex,
-            Some(src.clone()),
-            Some(dest.clone()),
-            0.0,
-            None,
-            false,
-            false,
-        )
+        self.copy_ex(&tex, Some(src), Some(dest), 0.0, None, false, false)
     }
 }
 
@@ -95,7 +87,7 @@ where
     let c = config_holder.config().read().unwrap();
     FontDetails::new(
         c.editor_config().font_path().as_str(),
-        c.editor_config().character_size().clone(),
+        c.editor_config().character_size(),
     )
 }
 

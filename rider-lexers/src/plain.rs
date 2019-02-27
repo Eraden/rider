@@ -36,27 +36,25 @@ pub mod lexer {
         type Item = (TokenType, Span);
 
         fn next(&mut self) -> Option<(TokenType, Span)> {
-            loop {
-                let tok: (TokenType, &str) =
-                    if let Some(((token_type, text), new_remaining)) = next_token(self.remaining) {
-                        self.remaining = new_remaining;
-                        if token_type.is_new_line() {
-                            self.line += 1;
-                            self.character = text.len();
-                        } else {
-                            self.character += text.len();
-                        }
-                        (token_type, text)
+            let tok: (TokenType, &str) =
+                if let Some(((token_type, text), new_remaining)) = next_token(self.remaining) {
+                    self.remaining = new_remaining;
+                    if token_type.is_new_line() {
+                        self.line += 1;
+                        self.character = text.len();
                     } else {
-                        return None;
-                    };
-                match tok {
-                    (tok, text) => {
-                        let span = self.span_in(text);
-                        let token =
-                            tok.move_to(self.line, self.character - text.len(), span.lo, span.hi);
-                        return Some((token, span));
+                        self.character += text.len();
                     }
+                    (token_type, text)
+                } else {
+                    return None;
+                };
+            match tok {
+                (tok, text) => {
+                    let span = self.span_in(text);
+                    let token =
+                        tok.move_to(self.line, self.character - text.len(), span.lo, span.hi);
+                    Some((token, span))
                 }
             }
         }

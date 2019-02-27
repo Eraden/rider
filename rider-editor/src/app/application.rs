@@ -63,7 +63,9 @@ impl Application {
             .unwrap_or_else(|e| panic!(e));
         Command::new(generator_path).status().unwrap();
 
-        let config = Arc::new(RwLock::new(Config::new()));
+        let mut config = Config::new();
+        config.set_theme(config.editor_config().current_theme().clone());
+        let config = Arc::new(RwLock::new(config));
         let sdl_context = sdl2::init().unwrap();
 
         hint::set("SDL_GL_MULTISAMPLEBUFFERS", "1");

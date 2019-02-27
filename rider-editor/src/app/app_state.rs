@@ -121,17 +121,15 @@ impl AppState {
         {
             video_subsystem.text_input().stop();
             return self.menu_bar.on_left_click(point, &UpdateContext::Nothing);
+        } else if !self
+            .file_editor
+            .is_left_click_target(point, &UpdateContext::Nothing)
+        {
+            return UpdateResult::NoOp;
         } else {
-            if !self
-                .file_editor
-                .is_left_click_target(point, &UpdateContext::Nothing)
-            {
-                return UpdateResult::NoOp;
-            } else {
-                video_subsystem.text_input().start();
-                self.file_editor
-                    .on_left_click(point, &UpdateContext::Nothing);
-            }
+            video_subsystem.text_input().start();
+            self.file_editor
+                .on_left_click(point, &UpdateContext::Nothing);
         }
         UpdateResult::NoOp
     }
