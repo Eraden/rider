@@ -1,0 +1,17 @@
+[package]
+name = "rider-generator"
+version = "0.1.0"
+authors = ["Adrian Wozniak <adrian.wozniak@ita-prog.pl>"]
+edition = "2018"
+
+[dependencies]
+rider-config = { path = "../rider-config", version = "0.1.0" }
+rider-themes = { path = "../rider-themes", version = "0.1.0" }
+log = "*"
+simplelog = "*"
+serde = "*"
+serde_json = "*"
+serde_derive = "*"
+dirs = "*"
+uuid = { version = "0.7", features = ["v4"] }
+rand = "0.5"

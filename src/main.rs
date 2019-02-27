@@ -1,59 +1,53 @@
-#![allow(unused_imports)]
-
-extern crate dirs;
-extern crate plex;
-extern crate rand;
-extern crate sdl2;
-#[macro_use]
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate serde_json;
-#[macro_use]
-extern crate log;
-extern crate simplelog;
-#[macro_use]
-extern crate lazy_static;
-
-use crate::app::Application;
-use crate::config::directories::log_dir;
-use log::Level;
-use simplelog::*;
-use std::fs::create_dir_all;
-use std::fs::File;
-
-pub mod app;
-pub mod config;
-pub mod lexer;
-pub mod renderer;
-#[cfg(test)]
-pub mod tests;
-pub mod themes;
-pub mod ui;
-
-fn init_logger() {
-    use simplelog::SharedLogger;
-
-    let mut log_file_path = log_dir();
-    log_file_path.push("rider.log");
-
-    let mut outputs: Vec<Box<SharedLogger>> = vec![WriteLogger::new(
-        LevelFilter::Info,
-        Config::default(),
-        File::create(log_file_path).unwrap(),
-    )];
-    if let Some(term) = TermLogger::new(LevelFilter::Warn, Config::default()) {
-        outputs.push(term);
-    }
-
-    CombinedLogger::init(outputs).unwrap();
-}
+extern crate rider_config;
+use std::process::Command;
 
 fn main() {
-    let mut app = Application::new();
-    app.init();
-    init_logger();
-    app.open_file("./assets/examples/test.rs".to_string());
-    app.run();
+    let generator = rider_config::directories::get_binary_path("rider-generator").unwrap();
+    println!("generator will be {:?}", generator);
+    Command::new(generator).status().unwrap();
+
+    let editor = rider_config::directories::get_binary_path("rider-editor").unwrap();
+    println!("editor will be {:?}", editor);
+    Command::new(editor).status().unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env::set_var;
+    use std::fs::create_dir_all;
+    use std::path::Path;
+    use uuid::Uuid;
+
+    #[cfg(test)]
+    fn exists(dir: &String, sub: &str) -> bool {
+        Path::new(join(dir.clone(), sub.to_owned()).as_str()).exists()
+    }
+
+    #[cfg(test)]
+    fn join(a: String, b: String) -> String {
+        vec![a, b].join("/")
+    }
+
+    #[test]
+    fn assert_main() {
+        let uniq = Uuid::new_v4();
+        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
+        create_dir_all(test_path.clone()).unwrap();
+        set_var("XDG_CONFIG_HOME", test_path.as_str());
+        set_var("XDG_RUNTIME_DIR", test_path.as_str());
+        let rider_dir = join(test_path.clone(), "rider".to_owned());
+        assert_eq!(exists(&rider_dir, "themes"), false);
+        assert_eq!(exists(&rider_dir, "log"), false);
+        assert_eq!(exists(&test_path, ".rider"), false);
+        assert_eq!(exists(&rider_dir, "themes/default.json"), false);
+        assert_eq!(exists(&rider_dir, "themes/railscasts.json"), false);
+        main();
+        assert_eq!(exists(&rider_dir, "fonts"), true);
+        assert_eq!(exists(&rider_dir, "log"), true);
+        assert_eq!(exists(&rider_dir, "themes"), true);
+        assert_eq!(exists(&test_path, ".rider"), true);
+        assert_eq!(exists(&rider_dir, "themes/default.json"), true);
+        assert_eq!(exists(&rider_dir, "themes/railscasts.json"), true);
+    }
 }

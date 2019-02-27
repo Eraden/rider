@@ -4,17 +4,25 @@ version = "0.1.0"
 authors = ["Adrian Wozniak <adrian.wozniak@ita-prog.pl>"]
 edition = "2018"
 
+[workspace]
+members = [
+    "rider-generator",
+    "rider-config",
+    "rider-themes",
+    "rider-lexers",
+    "rider-editor"
+]
+default-members = [
+    "rider-generator",
+    "rider-config",
+    "rider-themes",
+    "rider-lexers",
+    "rider-editor"
+]
+
 [dependencies]
-rand = "0.5"
-plex = "*"
-dirs = "*"
-serde = "*"
-serde_json = "*"
-serde_derive = "*"
-log = "*"
-env_logger = "*"
-simplelog = "*"
-lazy_static = "*"
+rider-config = { version = "*", path = "./rider-config" }
+uuid = { version = "0.7", features = ["v4"] }
 
 [dependencies.sdl2]
 version = "0.31.0"

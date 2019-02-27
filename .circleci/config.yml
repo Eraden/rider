@@ -9,6 +9,7 @@ jobs:
     environment:
       CODECOV_TOKEN: "e58da505-19f2-481c-8068-e845cb36fbe4"
       TZ: "/usr/share/zoneinfo/Europe/Paris"
+      rider-config: "1"
 
     steps:
       - checkout
@@ -31,15 +32,23 @@ jobs:
           command: |
             rustup run nightly rustc --version --verbose
             rustup run nightly cargo --version --verbose
-            rustup run nightly cargo build
+            rustup run nightly cargo build --all
+            mkdir -p ~/.local/bin
+            cp $(pwd)/target/debug/rider-* $HOME/.local/bin
+            export XDG_BIN_HOME=$HOME/.local/bin
+      - run:
+          name: Run rider-generator
+          command: |
+            export XDG_RUNTIME_DIR=$(pwd)
+            export XDG_BIN_HOME=$HOME/.local/bin
+            rustup run nightly cargo run -p rider-generator
       - run:
           name: Test and code coverage
           command: |
-            RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin
-            Xvfb :5 -screen 0 800x600x24 +extension GLX +render -noreset &
-            export DISPLAY=:5
+            RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin || echo 0
             export XDG_RUNTIME_DIR=$(pwd)
-            rustup run nightly cargo tarpaulin --ciserver circle-ci --out Xml
+            export XDG_BIN_HOME=$HOME/.local/bin
+            rustup run nightly cargo tarpaulin --all --ciserver circle-ci --out Xml
       - run:
           name: Upload Coverage
           command: |

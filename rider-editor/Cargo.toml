@@ -1,0 +1,22 @@
+[package]
+name = "rider-editor"
+version = "0.1.0"
+authors = ["Adrian Wozniak <adrian.wozniak@ita-prog.pl>"]
+edition = "2018"
+
+[dependencies]
+rider-config = { path = "../rider-config", version = "0.1.0" }
+rider-lexers = { path = "../rider-lexers", version = "0.1.0" }
+rider-themes = { path = "../rider-themes", version = "0.1.0" }
+rand = "0.5"
+dirs = "*"
+serde = "*"
+serde_json = "*"
+serde_derive = "*"
+log = "*"
+simplelog = "*"
+lazy_static = "*"
+
+[dependencies.sdl2]
+version = "0.31.0"
+features = ["gfx", "image", "mixer", "ttf"]
