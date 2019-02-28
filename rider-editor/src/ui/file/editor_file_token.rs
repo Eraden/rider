@@ -195,3 +195,62 @@ impl ClickHandler for EditorFileToken {
         false
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tests::support::build_config;
+    use rider_lexers::Token;
+
+    #[test]
+    fn assert_is_last_in_line() {
+        let config = build_config();
+        let token = TokenType::String {
+            token: Token::new("".to_string(), 0, 0, 0, 0),
+        };
+        let widget = EditorFileToken::new(&token, true, config);
+        assert_eq!(widget.is_last_in_line(), true);
+    }
+
+    #[test]
+    fn assert_is_not_last_in_line() {
+        let config = build_config();
+        let token = TokenType::String {
+            token: Token::new("".to_string(), 0, 0, 0, 0),
+        };
+        let widget = EditorFileToken::new(&token, false, config);
+        assert_eq!(widget.is_last_in_line(), false);
+    }
+
+    #[test]
+    fn assert_is_new_line() {
+        let config = build_config();
+        let token = TokenType::Whitespace {
+            token: Token::new("\n".to_string(), 0, 0, 0, 0),
+        };
+        let widget = EditorFileToken::new(&token, true, config);
+        assert_eq!(widget.is_new_line(), true);
+    }
+
+    #[test]
+    fn assert_is_not_new_line() {
+        let config = build_config();
+        let token = TokenType::String {
+            token: Token::new("".to_string(), 0, 0, 0, 0),
+        };
+        let widget = EditorFileToken::new(&token, false, config);
+        assert_eq!(widget.is_new_line(), false);
+    }
+
+    #[test]
+    fn assert_empty_characters_update_position() {
+        let config = build_config();
+        let token = TokenType::String {
+            token: Token::new("".to_string(), 0, 0, 0, 0),
+        };
+        let mut widget = EditorFileToken::new(&token, false, config);
+        let mut rect = Rect::new(1, 2, 3, 4);
+        widget.update_position(&mut rect);
+        assert_eq!(widget.is_new_line(), false);
+    }
+}
