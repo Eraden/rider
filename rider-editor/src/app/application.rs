@@ -1,5 +1,5 @@
 pub use crate::app::app_state::AppState;
-pub use crate::renderer::Renderer;
+pub use crate::renderer::CanvasRenderer;
 use crate::ui::caret::{CaretPosition, MoveDirection};
 use crate::ui::*;
 pub use rider_config::{Config, ConfigAccess, ConfigHolder};
@@ -115,7 +115,8 @@ impl Application {
         let texture_creator = self.canvas.texture_creator();
         let sleep_time = Duration::new(0, 1_000_000_000u32 / 60);
         let mut app_state = AppState::new(Arc::clone(&self.config));
-        let mut renderer = Renderer::new(Arc::clone(&self.config), &font_context, &texture_creator);
+        let mut renderer =
+            CanvasRenderer::new(Arc::clone(&self.config), &font_context, &texture_creator);
         app_state.prepare_ui(&mut renderer);
 
         'running: loop {

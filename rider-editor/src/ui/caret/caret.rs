@@ -1,5 +1,4 @@
-use crate::app::{UpdateResult as UR, WindowCanvas as WC};
-use crate::renderer::*;
+use crate::app::UpdateResult as UR;
 use crate::ui::*;
 use rider_config::ConfigAccess;
 use sdl2::rect::{Point, Rect};
@@ -7,7 +6,6 @@ use std::ops::Deref;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Caret {
-    pending: bool,
     blink_delay: u8,
     state: CaretState,
     position: CaretPosition,
@@ -25,7 +23,6 @@ impl Caret {
             blink_delay: 0,
             dest: Rect::new(0, 0, 6, 0),
             colors: CaretColor::new(bright, blur),
-            pending: true,
             position: CaretPosition::new(0, 0, 0),
         }
     }
@@ -67,8 +64,11 @@ impl Deref for Caret {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-impl Render for Caret {
-    fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, context: &RenderContext) {
+impl Caret {
+    pub fn render<T>(&self, canvas: &mut T, context: &RenderContext)
+    where
+        T: CanvasAccess,
+    {
         use std::borrow::*;
 
         let dest = match context.borrow() {
@@ -82,26 +82,22 @@ impl Render for Caret {
             CaretState::Blur => self.colors.blur(),
         }
         .clone();
-        canvas.set_draw_color(color);
         canvas
-            .draw_line(start, end)
+            .render_line(start, end, color)
             .unwrap_or_else(|_| panic!("Failed to draw a caret"));
     }
 
-    fn prepare_ui(&mut self, renderer: &mut Renderer) {
-        if !self.pending {
-            return;
-        }
-
-        if let Some(rect) = get_text_character_rect('W', renderer) {
-            self.dest.set_height(rect.height());
-        }
-        self.pending = false;
+    pub fn prepare_ui<T>(&mut self, renderer: &mut T)
+    where
+        T: CharacterSizeManager,
+    {
+        let rect = renderer.load_character_size('I');
+        self.dest.set_height(rect.height());
     }
 }
 
-impl Update for Caret {
-    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UR {
+impl Caret {
+    pub fn update(&mut self) -> UR {
         self.blink_delay += 1;
         if self.blink_delay >= 30 {
             self.blink_delay = 0;
@@ -310,5 +306,93 @@ mod test_click_handler {
         let result = widget.on_left_click(&point, &context);
         let expected = UpdateResult::NoOp;
         assert_eq!(result, expected);
+    }
+}
+
+#[cfg(test)]
+mod test_render {
+    use crate::tests::support::build_config;
+    use crate::ui::*;
+    use sdl2::pixels::Color;
+    use sdl2::rect::{Point, Rect};
+    use sdl2::render::Texture;
+    use std::rc::Rc;
+
+    struct CanvasMock {
+        pub start: Point,
+        pub end: Point,
+        pub color: sdl2::pixels::Color,
+    }
+
+    impl CanvasAccess for CanvasMock {
+        fn render_rect(&mut self, _rect: Rect, _color: Color) -> Result<(), String> {
+            unimplemented!()
+        }
+
+        fn render_border(&mut self, _rect: Rect, _color: Color) -> Result<(), String> {
+            unimplemented!()
+        }
+
+        fn render_image(
+            &mut self,
+            _tex: Rc<Texture>,
+            _src: Rect,
+            _dest: Rect,
+        ) -> Result<(), String> {
+            unimplemented!()
+        }
+
+        fn render_line(
+            &mut self,
+            start: Point,
+            end: Point,
+            color: sdl2::pixels::Color,
+        ) -> Result<(), String> {
+            self.start = start;
+            self.end = end;
+            self.color = color;
+            Ok(())
+        }
+
+        fn set_clipping(&mut self, _rect: Rect) {
+            unimplemented!()
+        }
+    }
+
+    impl CharacterSizeManager for CanvasMock {
+        fn load_character_size(&mut self, _c: char) -> Rect {
+            Rect::new(0, 2, 12, 23)
+        }
+    }
+
+    #[test]
+    fn assert_render_line() {
+        let config = build_config();
+        let context = RenderContext::RelativePosition(Point::new(10, 14));
+        let mut canvas = CanvasMock {
+            start: Point::new(0, 0),
+            end: Point::new(0, 0),
+            color: sdl2::pixels::Color::RGB(0, 0, 0),
+        };
+        let mut widget = Caret::new(config);
+        widget.move_caret(CaretPosition::new(0, 0, 0), Point::new(23, 23));
+        widget.render(&mut canvas, &context);
+        assert_eq!(canvas.start, Point::new(33, 37));
+        assert_eq!(canvas.end, Point::new(33, 38));
+        assert_eq!(canvas.color, sdl2::pixels::Color::RGBA(121, 121, 121, 0));
+    }
+
+    #[test]
+    fn assert_prepare_ui() {
+        let config = build_config();
+        let mut canvas = CanvasMock {
+            start: Point::new(0, 0),
+            end: Point::new(0, 0),
+            color: sdl2::pixels::Color::RGB(0, 0, 0),
+        };
+        let mut widget = Caret::new(config);
+        widget.move_caret(CaretPosition::new(0, 0, 0), Point::new(11, 12));
+        widget.prepare_ui(&mut canvas);
+        assert_eq!(widget.dest(), Rect::new(11, 12, 6, 23));
     }
 }

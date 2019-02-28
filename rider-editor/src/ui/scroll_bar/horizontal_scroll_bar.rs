@@ -57,7 +57,7 @@ impl Update for HorizontalScrollBar {
 impl HorizontalScrollBar {
     pub fn render<T>(&self, canvas: &mut T, context: &RenderContext)
     where
-        T: RenderRect,
+        T: CanvasAccess,
     {
         if self.full_width < self.viewport {
             return;

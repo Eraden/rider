@@ -57,7 +57,7 @@ impl Update for VerticalScrollBar {
 impl VerticalScrollBar {
     pub fn render<T>(&self, canvas: &mut T, context: &RenderContext)
     where
-        T: RenderBorder,
+        T: CanvasAccess,
     {
         if self.full_height() < self.viewport() {
             return;

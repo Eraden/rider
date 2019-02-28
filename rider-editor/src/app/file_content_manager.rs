@@ -1,5 +1,5 @@
 use crate::app::*;
-use crate::renderer::Renderer;
+use crate::renderer::CanvasRenderer;
 use crate::ui::*;
 use sdl2::rect::{Point, Rect};
 use std::sync::*;
@@ -11,7 +11,7 @@ pub fn current_file_path(file_editor: &mut FileEditor) -> String {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-pub fn delete_front(file_editor: &mut FileEditor, renderer: &mut Renderer) {
+pub fn delete_front(file_editor: &mut FileEditor, renderer: &mut CanvasRenderer) {
     let mut buffer: String = if let Some(file) = file_editor.file() {
         file
     } else {
@@ -53,7 +53,7 @@ pub fn delete_front(file_editor: &mut FileEditor, renderer: &mut Renderer) {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-pub fn delete_back(file_editor: &mut FileEditor, renderer: &mut Renderer) {
+pub fn delete_back(file_editor: &mut FileEditor, renderer: &mut CanvasRenderer) {
     let file: &EditorFile = if let Some(file) = file_editor.file() {
         file
     } else {
@@ -71,7 +71,7 @@ pub fn delete_back(file_editor: &mut FileEditor, renderer: &mut Renderer) {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-pub fn insert_text(file_editor: &mut FileEditor, text: String, renderer: &mut Renderer) {
+pub fn insert_text(file_editor: &mut FileEditor, text: String, renderer: &mut CanvasRenderer) {
     let mut buffer: String = file_editor.file().map_or(String::new(), |f| f.buffer());
     if buffer.is_empty() {
         return;
@@ -109,7 +109,7 @@ pub fn insert_text(file_editor: &mut FileEditor, text: String, renderer: &mut Re
 }
 
 #[cfg_attr(tarpaulin, skip)]
-pub fn insert_new_line(file_editor: &mut FileEditor, renderer: &mut Renderer) {
+pub fn insert_new_line(file_editor: &mut FileEditor, renderer: &mut CanvasRenderer) {
     let mut buffer: String = if let Some(file) = file_editor.file() {
         file
     } else {

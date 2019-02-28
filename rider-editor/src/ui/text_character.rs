@@ -1,5 +1,4 @@
-use crate::app::{UpdateResult as UR, WindowCanvas as WC};
-use crate::renderer::managers::*;
+use crate::app::UpdateResult as UR;
 use crate::renderer::*;
 use crate::ui::caret::CaretPosition;
 use crate::ui::*;
@@ -105,7 +104,11 @@ impl TextCharacter {
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    pub fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext) {
+    pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
+    where
+        R: Renderer + ConfigHolder,
+        C: CanvasAccess,
+    {
         if self.is_new_line() {
             return;
         }
@@ -123,21 +126,9 @@ impl TextCharacter {
             _ => self.dest(),
         };
 
-        let font = renderer
-            .font_manager()
-            .load(&font_details)
-            .unwrap_or_else(|_| panic!("Could not load font for {:?}", font_details));
-        if let Ok(texture) = renderer.texture_manager().load_text(&mut details, &font) {
+        if let Ok(texture) = renderer.load_text_tex(&mut details, font_details) {
             canvas
-                .copy_ex(
-                    &texture,
-                    Some(self.source.clone()),
-                    Some(dest.clone()),
-                    0.0,
-                    None,
-                    false,
-                    false,
-                )
+                .render_image(texture, self.source.clone(), dest)
                 .unwrap();
         }
         //        let c = Color::RGB(255, 0, 0);
@@ -147,10 +138,9 @@ impl TextCharacter {
 
     pub fn prepare_ui<'l, T>(&mut self, renderer: &mut T)
     where
-        T: ConfigHolder + CharacterSizeManager + ManagersHolder<'l>,
+        T: ConfigHolder + CharacterSizeManager + Renderer,
     {
         let font_details: FontDetails = renderer.config().read().unwrap().editor_config().into();
-
         let rect = renderer.load_character_size(self.text_character);
         self.set_source(&rect);
         self.set_dest(&rect);
@@ -161,13 +151,8 @@ impl TextCharacter {
             font: font_details.clone(),
         };
 
-        let font = renderer
-            .font_manager()
-            .load(&font_details)
-            .unwrap_or_else(|_| panic!("Font not found {:?}", font_details));
         renderer
-            .texture_manager()
-            .load_text(&mut details, &font)
+            .load_text_tex(&mut details, font_details)
             .unwrap_or_else(|_| panic!("Could not create texture for {:?}", self.text_character));
     }
 }

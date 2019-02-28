@@ -1,5 +1,5 @@
 use crate::app::*;
-use crate::app::{UpdateResult as UR, WindowCanvas as WS};
+use crate::app::{UpdateResult as UR};
 use crate::ui::scroll_bar::horizontal_scroll_bar::*;
 use crate::ui::scroll_bar::vertical_scroll_bar::*;
 use crate::ui::scroll_bar::Scrollable;
@@ -7,6 +7,7 @@ use crate::ui::*;
 use sdl2::rect::{Point, Rect};
 use std::mem;
 use std::sync::*;
+use crate::renderer::renderer::Renderer;
 
 pub struct FileEditor {
     dest: Rect,
@@ -40,19 +41,19 @@ impl FileEditor {
         }
     }
 
-    pub fn delete_front(&mut self, renderer: &mut Renderer) {
+    pub fn delete_front(&mut self, renderer: &mut CanvasRenderer) {
         file_content_manager::delete_front(self, renderer);
     }
 
-    pub fn delete_back(&mut self, renderer: &mut Renderer) {
+    pub fn delete_back(&mut self, renderer: &mut CanvasRenderer) {
         file_content_manager::delete_back(self, renderer);
     }
 
-    pub fn insert_text(&mut self, text: String, renderer: &mut Renderer) {
+    pub fn insert_text(&mut self, text: String, renderer: &mut CanvasRenderer) {
         file_content_manager::insert_text(self, text, renderer);
     }
 
-    pub fn insert_new_line(&mut self, renderer: &mut Renderer) {
+    pub fn insert_new_line(&mut self, renderer: &mut CanvasRenderer) {
         file_content_manager::insert_new_line(self, renderer);
     }
 
@@ -196,10 +197,13 @@ impl CaretAccess for FileEditor {
     }
 }
 
-#[cfg_attr(tarpaulin, skip)]
-impl Render for FileEditor {
-    fn render(&self, canvas: &mut WS, renderer: &mut Renderer, _context: &RenderContext) {
-        canvas.set_clip_rect(self.dest.clone());
+impl FileEditor {
+    pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R)
+        where
+            R: Renderer + ConfigHolder,
+            C: CanvasAccess,
+    {
+        canvas.set_clipping(self.dest.clone());
         match self.file() {
             Some(file) => file.render(
                 canvas,
@@ -210,7 +214,6 @@ impl Render for FileEditor {
         };
         self.caret.render(
             canvas,
-            renderer,
             &RenderContext::RelativePosition(self.render_start_point()),
         );
         self.vertical_scroll_bar.render(
@@ -223,7 +226,10 @@ impl Render for FileEditor {
         );
     }
 
-    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+    pub fn prepare_ui<T>(&mut self, renderer: &mut T)
+        where
+            T: CharacterSizeManager,
+    {
         self.caret.prepare_ui(renderer);
     }
 }
@@ -258,7 +264,7 @@ impl Update for FileEditor {
             .set_location(self.dest.height() as i32 - (scroll_width as i32 + scroll_margin));
         self.horizontal_scroll_bar.update(ticks, context);
 
-        self.caret.update(ticks, context);
+        self.caret.update();
         match self.file_mut() {
             Some(file) => file.update(ticks, context),
             _ => UR::NoOp,

@@ -181,7 +181,7 @@ pub trait TextTextureManager<'l> {
     fn load_text(
         &mut self,
         details: &mut TextDetails,
-        font: &Rc<Font>,
+        font: Rc<Font>,
     ) -> Result<Rc<Texture<'l>>, String>;
 }
 
@@ -191,7 +191,7 @@ impl<'l> TextTextureManager<'l> for TextureManager<'l> {
     fn load_text(
         &mut self,
         details: &mut TextDetails,
-        font: &Rc<Font>,
+        font: Rc<Font>,
     ) -> Result<Rc<Texture<'l>>, String> {
         let key = details.get_cache_key();
         self.cache.get(key.as_str()).cloned().map_or_else(

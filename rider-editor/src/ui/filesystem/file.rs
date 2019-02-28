@@ -70,9 +70,9 @@ impl FileEntry {
         )
     }
 
-    fn render_icon<T>(&self, canvas: &mut T, renderer: &mut Renderer, dest: &mut Rect)
+    fn render_icon<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, dest: &mut Rect)
     where
-        T: RenderImage,
+        T: CanvasAccess,
     {
         let dir_texture_path = {
             let c = self.config.read().unwrap();
@@ -92,9 +92,9 @@ impl FileEntry {
             .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
     }
 
-    fn render_name<T>(&self, canvas: &mut T, renderer: &mut Renderer, dest: &mut Rect)
+    fn render_name<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, dest: &mut Rect)
     where
-        T: RenderImage,
+        T: CanvasAccess,
     {
         let mut d = dest.clone();
         d.set_x(dest.x() + NAME_MARGIN);
@@ -115,7 +115,9 @@ impl FileEntry {
                 text: c.to_string(),
                 font: font_details.clone(),
             };
-            let text_texture = texture_manager.load_text(&mut text_details, &font).unwrap();
+            let text_texture = texture_manager
+                .load_text(&mut text_details, font.clone())
+                .unwrap();
             d.set_width(size.width());
             d.set_height(size.height());
 
@@ -135,9 +137,9 @@ impl ConfigHolder for FileEntry {
 
 #[cfg_attr(tarpaulin, skip)]
 impl FileEntry {
-    pub fn render<T>(&self, canvas: &mut T, renderer: &mut Renderer, context: &RenderContext)
+    pub fn render<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, context: &RenderContext)
     where
-        T: RenderImage,
+        T: CanvasAccess,
     {
         let mut dest = match context {
             &RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
@@ -147,7 +149,7 @@ impl FileEntry {
         self.render_name(canvas, renderer, &mut dest.clone());
     }
 
-    pub fn prepare_ui(&mut self, renderer: &mut Renderer) {
+    pub fn prepare_ui(&mut self, renderer: &mut CanvasRenderer) {
         let w_rect = get_text_character_rect('W', renderer).unwrap();
         self.char_sizes.insert('W', w_rect.clone());
         self.height = w_rect.height();

@@ -1,7 +1,8 @@
-use crate::app::{UpdateResult as UR, WindowCanvas as WC};
+use crate::app::UpdateResult as UR;
 use crate::renderer::*;
 use crate::ui::*;
 use rider_config::Config;
+use rider_config::ConfigHolder;
 use rider_lexers::TokenType;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
@@ -123,13 +124,16 @@ impl TextCollection for EditorFileToken {
     }
 }
 
-#[cfg_attr(tarpaulin, skip)]
-impl Render for EditorFileToken {
+impl EditorFileToken {
     /**
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext) {
+    pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
+    where
+        R: Renderer + ConfigHolder,
+        C: CanvasAccess,
+    {
         if self.token_type.is_new_line() {
             return;
         }
@@ -138,7 +142,10 @@ impl Render for EditorFileToken {
         }
     }
 
-    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
+    where
+        R: ConfigHolder + CharacterSizeManager + Renderer,
+    {
         if !self.characters.is_empty() {
             return;
         }
