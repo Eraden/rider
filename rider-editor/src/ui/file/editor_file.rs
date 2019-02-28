@@ -8,7 +8,6 @@ use crate::ui::file::editor_file_section::EditorFileSection;
 use crate::ui::text_character::TextCharacter;
 use crate::ui::*;
 use rider_config::Config;
-use crate::renderer::renderer::Renderer;
 use rider_config::ConfigHolder;
 
 #[derive(Clone, Debug)]
@@ -118,9 +117,9 @@ impl TextCollection for EditorFile {
 
 impl EditorFile {
     pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
-        where
-            R: Renderer + ConfigHolder,
-            C: CanvasAccess,
+    where
+        R: Renderer + ConfigHolder,
+        C: CanvasAccess,
     {
         for section in self.sections.iter() {
             section.render(canvas, renderer, context);
@@ -128,8 +127,8 @@ impl EditorFile {
     }
 
     pub fn prepare_ui<R>(&mut self, renderer: &mut R)
-        where
-            R: ConfigHolder + CharacterSizeManager + Renderer,
+    where
+        R: ConfigHolder + CharacterSizeManager + Renderer,
     {
         for section in self.sections.iter_mut() {
             section.prepare_ui(renderer);
