@@ -1,7 +1,7 @@
 use sdl2::rect::{Point, Rect};
 use std::sync::*;
 
-use crate::app::{UpdateResult as UR};
+use crate::app::UpdateResult as UR;
 use crate::renderer::renderer::Renderer;
 use crate::ui::file::editor_file_token::EditorFileToken;
 use crate::ui::text_character::TextCharacter;
@@ -62,9 +62,9 @@ impl EditorFileSection {
     }
 
     pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
-        where
-            R: Renderer + ConfigHolder,
-            C: CanvasAccess,
+    where
+        R: Renderer + ConfigHolder,
+        C: CanvasAccess,
     {
         for token in self.tokens.iter() {
             token.render(canvas, renderer, context);
@@ -72,8 +72,8 @@ impl EditorFileSection {
     }
 
     pub fn prepare_ui<'l, T>(&mut self, renderer: &mut T)
-        where
-            T: ConfigHolder + CharacterSizeManager + Renderer,
+    where
+        T: ConfigHolder + CharacterSizeManager + Renderer,
     {
         for token in self.tokens.iter_mut() {
             token.prepare_ui(renderer);
@@ -206,11 +206,7 @@ mod tests {
     #[test]
     fn assert_new() {
         let config = build_config();
-        let widget = EditorFileSection::new(
-            "".to_owned(),
-            "rs".to_owned(),
-            config
-        );
+        let widget = EditorFileSection::new("".to_owned(), "rs".to_owned(), config);
         assert_eq!(widget.language(), Language::Rust);
         assert_eq!(widget.tokens_count(), 0);
     }
@@ -218,11 +214,7 @@ mod tests {
     #[test]
     fn assert_new_with_content() {
         let config = build_config();
-        let widget = EditorFileSection::new(
-            "fn main() {}".to_owned(),
-            "rs".to_owned(),
-            config
-        );
+        let widget = EditorFileSection::new("fn main() {}".to_owned(), "rs".to_owned(), config);
         assert_eq!(widget.language(), Language::Rust);
         assert_eq!(widget.tokens_count(), 8);
     }

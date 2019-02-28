@@ -76,8 +76,7 @@ impl AppState {
 #[cfg_attr(tarpaulin, skip)]
 impl AppState {
     pub fn render(&self, canvas: &mut WC, renderer: &mut CanvasRenderer, _context: &RenderContext) {
-        self.file_editor
-            .render(canvas, renderer);
+        self.file_editor.render(canvas, renderer);
         self.menu_bar.render(canvas, &RenderContext::Nothing);
         match self.open_file_modal.as_ref() {
             Some(modal) => modal.render(canvas, renderer, &RenderContext::Nothing),

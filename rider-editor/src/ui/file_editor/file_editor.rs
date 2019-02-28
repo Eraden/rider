@@ -1,5 +1,6 @@
+use crate::app::UpdateResult as UR;
 use crate::app::*;
-use crate::app::{UpdateResult as UR};
+use crate::renderer::renderer::Renderer;
 use crate::ui::scroll_bar::horizontal_scroll_bar::*;
 use crate::ui::scroll_bar::vertical_scroll_bar::*;
 use crate::ui::scroll_bar::Scrollable;
@@ -7,7 +8,6 @@ use crate::ui::*;
 use sdl2::rect::{Point, Rect};
 use std::mem;
 use std::sync::*;
-use crate::renderer::renderer::Renderer;
 
 pub struct FileEditor {
     dest: Rect,
@@ -199,9 +199,9 @@ impl CaretAccess for FileEditor {
 
 impl FileEditor {
     pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R)
-        where
-            R: Renderer + ConfigHolder,
-            C: CanvasAccess,
+    where
+        R: Renderer + ConfigHolder,
+        C: CanvasAccess,
     {
         canvas.set_clipping(self.dest.clone());
         match self.file() {
@@ -227,8 +227,8 @@ impl FileEditor {
     }
 
     pub fn prepare_ui<T>(&mut self, renderer: &mut T)
-        where
-            T: CharacterSizeManager,
+    where
+        T: CharacterSizeManager,
     {
         self.caret.prepare_ui(renderer);
     }
