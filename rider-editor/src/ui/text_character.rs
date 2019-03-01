@@ -6,12 +6,15 @@ use rider_config::{ConfigAccess, ConfigHolder};
 
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
+use std::fmt::Debug;
+use std::fmt::Error;
+use std::fmt::Formatter;
 
 pub trait CharacterSizeManager {
     fn load_character_size(&mut self, c: char) -> Rect;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct TextCharacter {
     text_character: char,
     position: usize,
@@ -98,7 +101,6 @@ impl TextCharacter {
     }
 }
 
-#[cfg_attr(tarpaulin, skip)]
 impl TextCharacter {
     /**
      * Must first create targets so even if new line appear renderer will know
@@ -151,9 +153,12 @@ impl TextCharacter {
             font: font_details.clone(),
         };
 
-        renderer
-            .load_text_tex(&mut details, font_details)
-            .unwrap_or_else(|_| panic!("Could not create texture for {:?}", self.text_character));
+        if let Err(error_message) = renderer.load_text_tex(&mut details, font_details) {
+            info!(
+                "Could not create texture for '{:?}' with {:?}",
+                self.text_character, error_message
+            )
+        }
     }
 }
 
@@ -187,6 +192,33 @@ impl RenderBox for TextCharacter {
 
     fn dest(&self) -> Rect {
         self.dest
+    }
+}
+
+impl PartialEq for TextCharacter {
+    fn eq(&self, other: &Self) -> bool {
+        self.line == other.line
+            && self.position == other.position
+            && self.last_in_line == other.last_in_line
+            && self.dest == other.dest
+            && self.source == other.source
+            && self.color == other.color
+    }
+}
+
+impl Debug for TextCharacter {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        write!(
+            f,
+            "TextCharacter {{ text_character: {:?}, position: {:?}, line: {:?}, last_in_line: {:?}, source: {:?}, dest: {:?}, color: {:?} }}",
+            self.text_character,
+            self.position,
+            self.line,
+            self.last_in_line,
+            self.source,
+            self.dest,
+            self.color
+        )
     }
 }
 

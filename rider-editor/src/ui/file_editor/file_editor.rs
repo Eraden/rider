@@ -49,7 +49,10 @@ impl FileEditor {
         file_content_manager::delete_back(self, renderer);
     }
 
-    pub fn insert_text(&mut self, text: String, renderer: &mut CanvasRenderer) {
+    pub fn insert_text<T>(&mut self, text: String, renderer: &mut T)
+    where
+        T: ConfigHolder + CharacterSizeManager + Renderer,
+    {
         file_content_manager::insert_text(self, text, renderer);
     }
 

@@ -5,3 +5,5 @@ log
 .rider
 .codecov
 cobertura.xml
+cov
+
