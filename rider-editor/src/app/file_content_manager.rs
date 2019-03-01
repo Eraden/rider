@@ -1,5 +1,6 @@
 use crate::app::*;
 use crate::renderer::renderer::Renderer;
+use crate::renderer::renderer::Renderer;
 use crate::ui::*;
 use sdl2::rect::{Point, Rect};
 use std::sync::*;
