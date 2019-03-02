@@ -166,6 +166,7 @@ mod tests {
     }
 
     impl Renderer for RendererMock {
+        #[cfg_attr(tarpaulin, skip)]
         fn load_font(&mut self, _details: FontDetails) -> Rc<Font> {
             unimplemented!()
         }

@@ -50,6 +50,7 @@ impl<'l> CanvasRenderer<'l> {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl<'l> CharacterSizeManager for CanvasRenderer<'l> {
     fn load_character_size(&mut self, c: char) -> Rect {
         let (font_path, font_size) = {
@@ -95,6 +96,7 @@ impl<'l> ConfigHolder for CanvasRenderer<'l> {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl<'l> Renderer for CanvasRenderer<'l> {
     fn load_font(&mut self, details: FontDetails) -> Rc<Font> {
         self.font_manager()
