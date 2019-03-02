@@ -6,7 +6,6 @@ use std::rc::Rc;
 use crate::app::application::WindowCanvas;
 use crate::app::UpdateResult as UR;
 use crate::renderer::managers::*;
-use crate::renderer::CanvasRenderer;
 use rider_config::*;
 
 pub mod caret;

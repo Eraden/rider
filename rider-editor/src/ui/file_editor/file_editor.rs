@@ -41,22 +41,31 @@ impl FileEditor {
         }
     }
 
-    pub fn delete_front(&mut self, renderer: &mut CanvasRenderer) {
+    pub fn delete_front<R>(&mut self, renderer: &mut R)
+    where
+        R: ConfigHolder + CharacterSizeManager + Renderer,
+    {
         file_content_manager::delete_front(self, renderer);
     }
 
-    pub fn delete_back(&mut self, renderer: &mut CanvasRenderer) {
+    pub fn delete_back<R>(&mut self, renderer: &mut R)
+    where
+        R: ConfigHolder + CharacterSizeManager + Renderer,
+    {
         file_content_manager::delete_back(self, renderer);
     }
 
-    pub fn insert_text<T>(&mut self, text: String, renderer: &mut T)
+    pub fn insert_text<R>(&mut self, text: String, renderer: &mut R)
     where
-        T: ConfigHolder + CharacterSizeManager + Renderer,
+        R: ConfigHolder + CharacterSizeManager + Renderer,
     {
         file_content_manager::insert_text(self, text, renderer);
     }
 
-    pub fn insert_new_line(&mut self, renderer: &mut CanvasRenderer) {
+    pub fn insert_new_line<R>(&mut self, renderer: &mut R)
+    where
+        R: ConfigHolder + CharacterSizeManager + Renderer,
+    {
         file_content_manager::insert_new_line(self, renderer);
     }
 

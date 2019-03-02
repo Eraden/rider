@@ -1,6 +1,5 @@
 use crate::app::*;
 use crate::renderer::renderer::Renderer;
-use crate::renderer::CanvasRenderer;
 use crate::ui::*;
 use sdl2::rect::{Point, Rect};
 use std::sync::*;
@@ -12,7 +11,10 @@ pub fn current_file_path(file_editor: &mut FileEditor) -> String {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-pub fn delete_front(file_editor: &mut FileEditor, renderer: &mut CanvasRenderer) {
+pub fn delete_front<R>(file_editor: &mut FileEditor, renderer: &mut R)
+where
+    R: ConfigHolder + CharacterSizeManager + Renderer,
+{
     let mut buffer: String = if let Some(file) = file_editor.file() {
         file
     } else {
@@ -54,7 +56,10 @@ pub fn delete_front(file_editor: &mut FileEditor, renderer: &mut CanvasRenderer)
 }
 
 #[cfg_attr(tarpaulin, skip)]
-pub fn delete_back(file_editor: &mut FileEditor, renderer: &mut CanvasRenderer) {
+pub fn delete_back<R>(file_editor: &mut FileEditor, renderer: &mut R)
+where
+    R: ConfigHolder + CharacterSizeManager + Renderer,
+{
     let file: &EditorFile = if let Some(file) = file_editor.file() {
         file
     } else {
@@ -83,9 +88,6 @@ where
     let maybe_character = file_editor
         .file()
         .and_then(|file| file.get_character_at(file_editor.caret().text_position()));
-    println!("File exists? {:?}", file_editor.file().is_some());
-    println!("Current caret {:?}", file_editor.caret());
-    println!("Current character {:?}", maybe_character);
 
     let mut pos = match maybe_character {
         Some(ref current) => current.dest().top_left(),
@@ -109,28 +111,27 @@ where
     file_editor.replace_current_file(new_file);
 }
 
-#[cfg_attr(tarpaulin, skip)]
-pub fn insert_new_line(file_editor: &mut FileEditor, renderer: &mut CanvasRenderer) {
-    let mut buffer: String = if let Some(file) = file_editor.file() {
-        file
-    } else {
-        return;
-    }
-    .buffer();
-    let current = match file_editor
-        .file()
-        .and_then(|file| file.get_character_at(file_editor.caret().text_position()))
-    {
-        Some(c) => c,
-        _ => return,
+pub fn insert_new_line<R>(file_editor: &mut FileEditor, renderer: &mut R)
+where
+    R: ConfigHolder + CharacterSizeManager + Renderer,
+{
+    let mut buffer: String = match file_editor.file() {
+        Some(file) => file.buffer(),
+        None => return,
     };
 
-    let mut pos = Point::new(current.dest().x(), current.dest().y());
+    let maybe_character = file_editor
+        .file()
+        .and_then(|file| file.get_character_at(file_editor.caret().text_position()));
+    let mut pos = match maybe_character {
+        None => Point::new(0, 0),
+        Some(current) => current.dest().top_left(),
+    };
     let mut position: CaretPosition = file_editor.caret().position().clone();
     buffer.insert(position.text_position(), '\n');
     let rect = renderer.load_character_size('\n');
     pos = Point::new(0, pos.y() + rect.height() as i32);
-    position = position.moved(0, 1, 0);
+    position = position.moved(1, 1, -(position.line_position() as i32));
     file_editor.caret_mut().move_caret(position, pos.clone());
 
     let mut new_file = EditorFile::new(
@@ -215,6 +216,10 @@ mod tests {
         assert_eq!(result, "/foo/bar".to_owned());
     }
 
+    //##################################################
+    // insert text
+    //##################################################
+
     #[test]
     fn assert_insert_text_without_file() {
         let config = support::build_config();
@@ -292,5 +297,74 @@ mod tests {
         let buffer = widget.file().unwrap().buffer();
         let expected = "old contentnew content\n";
         assert_eq!(buffer, expected);
+    }
+
+    //##################################################
+    // insert new line
+    //##################################################
+
+    #[test]
+    fn assert_insert_new_line_without_file() {
+        let config = support::build_config();
+        let mut renderer = RendererMock::new(config.clone());
+        let mut widget = FileEditor::new(config.clone());
+        widget.prepare_ui(&mut renderer);
+        widget.insert_new_line(&mut renderer);
+        let expected = CaretPosition::new(0, 0, 0);
+        assert_eq!(widget.caret().position(), &expected);
+        let expected = Rect::new(0, 0, 6, 15);
+        assert_eq!(widget.caret().dest(), expected);
+    }
+
+    #[test]
+    fn assert_insert_new_line_to_empty_file() {
+        let config = support::build_config();
+        let mut renderer = RendererMock::new(config.clone());
+        let mut widget = FileEditor::new(config.clone());
+        let file = EditorFile::new("".to_owned(), "".to_owned(), config.clone());
+        widget.open_file(file);
+        widget.prepare_ui(&mut renderer);
+        widget.insert_new_line(&mut renderer);
+        let expected = CaretPosition::new(1, 1, 0);
+        assert_eq!(widget.caret().position(), &expected);
+        let expected = Rect::new(0, 13, 6, 15);
+        assert_eq!(widget.caret().dest(), expected);
+    }
+
+    #[test]
+    fn assert_insert_new_line_to_file_at_beginning() {
+        let config = support::build_config();
+        let mut renderer = RendererMock::new(config.clone());
+        let mut widget = FileEditor::new(config.clone());
+        let file = EditorFile::new("".to_owned(), "foo".to_owned(), config.clone());
+        widget.open_file(file);
+        widget.prepare_ui(&mut renderer);
+        widget.insert_new_line(&mut renderer);
+        let expected = CaretPosition::new(1, 1, 0);
+        assert_eq!(widget.caret().position(), &expected);
+        let expected = Rect::new(0, 13, 6, 15);
+        assert_eq!(widget.caret().dest(), expected);
+        assert_eq!(widget.file().is_some(), true);
+        assert_eq!(widget.file().unwrap().buffer(), "\nfoo".to_owned());
+    }
+
+    #[test]
+    fn assert_insert_new_line_to_file_in_middle() {
+        let config = support::build_config();
+        let mut renderer = RendererMock::new(config.clone());
+        let mut widget = FileEditor::new(config.clone());
+        let mut file = EditorFile::new("hello.txt".to_owned(), "abcd".to_owned(), config.clone());
+        file.prepare_ui(&mut renderer);
+        widget.open_file(file);
+        widget.prepare_ui(&mut renderer);
+        widget.move_caret(MoveDirection::Right);
+        widget.move_caret(MoveDirection::Right);
+        widget.insert_new_line(&mut renderer);
+        let expected = CaretPosition::new(3, 1, 0);
+        assert_eq!(widget.caret().position(), &expected);
+        let expected = Rect::new(0, 13, 6, 15);
+        assert_eq!(widget.caret().dest(), expected);
+        assert_eq!(widget.file().is_some(), true);
+        assert_eq!(widget.file().unwrap().buffer(), "ab\ncd".to_owned());
     }
 }
