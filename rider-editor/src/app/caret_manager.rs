@@ -204,6 +204,7 @@ mod test_move_left {
         file.prepare_ui(&mut renderer);
         editor.open_file(file);
         editor.prepare_ui(&mut renderer);
+        editor.move_caret(MoveDirection::Right);
 
         assert_eq!(move_caret_left(&mut editor), ());
     }
@@ -217,6 +218,7 @@ mod test_move_left {
         file.prepare_ui(&mut renderer);
         editor.open_file(file);
         editor.prepare_ui(&mut renderer);
+        editor.move_caret(MoveDirection::Right);
 
         assert_eq!(move_caret_left(&mut editor), ());
     }
