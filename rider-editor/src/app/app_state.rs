@@ -1,5 +1,5 @@
 use crate::app::{UpdateResult, WindowCanvas as WC};
-use crate::renderer::Renderer;
+use crate::renderer::CanvasRenderer;
 use crate::ui::*;
 use rider_config::*;
 use sdl2::rect::Point;
@@ -27,7 +27,7 @@ impl AppState {
     }
 
     #[cfg_attr(tarpaulin, skip)]
-    pub fn open_file(&mut self, file_path: String, renderer: &mut Renderer) {
+    pub fn open_file(&mut self, file_path: String, renderer: &mut CanvasRenderer) {
         if let Ok(buffer) = read_to_string(&file_path) {
             let mut file = EditorFile::new(file_path.clone(), buffer, self.config.clone());
             file.prepare_ui(renderer);
@@ -41,7 +41,7 @@ impl AppState {
     }
 
     #[cfg_attr(tarpaulin, skip)]
-    pub fn open_directory(&mut self, dir_path: String, renderer: &mut Renderer) {
+    pub fn open_directory(&mut self, dir_path: String, renderer: &mut CanvasRenderer) {
         match self.open_file_modal.as_mut() {
             Some(modal) => modal.open_directory(dir_path, renderer),
             _ => (),
@@ -74,20 +74,18 @@ impl AppState {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-impl Render for AppState {
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, _context: &RenderContext) {
-        self.file_editor
-            .render(canvas, renderer, &RenderContext::Nothing);
-        self.menu_bar
-            .render(canvas, renderer, &RenderContext::Nothing);
+impl AppState {
+    pub fn render(&self, canvas: &mut WC, renderer: &mut CanvasRenderer, _context: &RenderContext) {
+        self.file_editor.render(canvas, renderer);
+        self.menu_bar.render(canvas, &RenderContext::Nothing);
         match self.open_file_modal.as_ref() {
             Some(modal) => modal.render(canvas, renderer, &RenderContext::Nothing),
             _ => (),
         };
     }
 
-    fn prepare_ui(&mut self, renderer: &mut Renderer) {
-        self.menu_bar.prepare_ui(renderer);
+    pub fn prepare_ui(&mut self, renderer: &mut CanvasRenderer) {
+        self.menu_bar.prepare_ui();
         self.file_editor.prepare_ui(renderer);
     }
 }

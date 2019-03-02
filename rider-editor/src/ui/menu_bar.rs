@@ -1,5 +1,4 @@
-use crate::app::{UpdateResult as UR, WindowCanvas as WC};
-use crate::renderer::*;
+use crate::app::UpdateResult as UR;
 use crate::ui::*;
 use rider_config::ConfigAccess;
 use sdl2::pixels::Color;
@@ -34,32 +33,37 @@ impl MenuBar {
     pub fn background_color(&self) -> &Color {
         &self.background_color
     }
-}
 
-#[cfg_attr(tarpaulin, skip)]
-impl Render for MenuBar {
-    fn render(&self, canvas: &mut WC, _renderer: &mut Renderer, context: &RenderContext) {
+    pub fn render<C>(&self, canvas: &mut C, context: &RenderContext)
+    where
+        C: CanvasAccess,
+    {
         use std::borrow::*;
 
-        canvas.set_clip_rect(self.dest.clone());
-        canvas.set_draw_color(self.background_color.clone());
+        canvas.set_clipping(self.dest.clone());
         canvas
-            .fill_rect(match context.borrow() {
-                RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
-                _ => self.dest(),
-            })
+            .render_rect(
+                match context.borrow() {
+                    RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
+                    _ => self.dest(),
+                },
+                self.background_color.clone(),
+            )
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
-
-        canvas.set_draw_color(self.border_color);
         canvas
-            .draw_rect(match context.borrow() {
-                RenderContext::RelativePosition(p) => move_render_point((*p).clone(), &self.dest),
-                _ => self.dest(),
-            })
+            .render_border(
+                match context.borrow() {
+                    RenderContext::RelativePosition(p) => {
+                        move_render_point((*p).clone(), &self.dest)
+                    }
+                    _ => self.dest(),
+                },
+                self.border_color.clone(),
+            )
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
     }
 
-    fn prepare_ui(&mut self, _renderer: &mut Renderer) {
+    pub fn prepare_ui(&mut self) {
         let width = self.config.read().unwrap().width();
         let height = u32::from(self.config.read().unwrap().menu_height());
         self.dest = Rect::new(0, 0, width, height);
@@ -209,5 +213,89 @@ mod test_click_handler {
         let result = widget.on_left_click(&point, &context);
         let expected = UpdateResult::NoOp;
         assert_eq!(result, expected);
+    }
+}
+
+#[cfg(test)]
+mod test_render {
+    use crate::tests::*;
+    use crate::ui::*;
+    use sdl2::pixels::Color;
+    use sdl2::rect::{Point, Rect};
+    use sdl2::render::Texture;
+    use std::rc::Rc;
+    use std::sync::*;
+
+    #[derive(Debug, PartialEq)]
+    struct CanvasMock {
+        pub clipping: Rect,
+        pub background_rect: Rect,
+        pub background_color: Color,
+        pub border_rect: Rect,
+        pub border_color: Color,
+    }
+
+    impl CanvasAccess for CanvasMock {
+        fn render_rect(&mut self, rect: Rect, color: Color) -> Result<(), String> {
+            self.background_color = color;
+            self.background_rect = rect;
+            Ok(())
+        }
+
+        fn render_border(&mut self, rect: Rect, color: Color) -> Result<(), String> {
+            self.border_color = color;
+            self.border_rect = rect;
+            Ok(())
+        }
+
+        fn render_image(
+            &mut self,
+            _tex: Rc<Texture>,
+            _src: Rect,
+            _dest: Rect,
+        ) -> Result<(), String> {
+            unimplemented!()
+        }
+
+        fn render_line(&mut self, _start: Point, _end: Point, _color: Color) -> Result<(), String> {
+            unimplemented!()
+        }
+
+        fn set_clipping(&mut self, rect: Rect) {
+            self.clipping = rect;
+        }
+    }
+
+    #[test]
+    fn assert_render() {
+        let context = RenderContext::Nothing;
+        let config = support::build_config();
+        let mut canvas = CanvasMock {
+            clipping: Rect::new(0, 0, 0, 0),
+            background_rect: Rect::new(0, 0, 0, 0),
+            background_color: Color::RGB(0, 0, 0),
+            border_rect: Rect::new(0, 0, 0, 0),
+            border_color: Color::RGB(0, 0, 0),
+        };
+        let mut widget = MenuBar::new(Arc::clone(&config));
+        widget.prepare_ui();
+        widget.render(&mut canvas, &context);
+        assert_eq!(widget.dest(), Rect::new(0, 0, 1024, 60));
+        let expected = CanvasMock {
+            clipping: Rect::new(0, 0, 1024, 60),
+            background_rect: Rect::new(0, 0, 1024, 60),
+            background_color: Color::RGBA(18, 18, 18, 0),
+            border_rect: Rect::new(0, 0, 1024, 60),
+            border_color: Color::RGBA(200, 200, 200, 0),
+        };
+        assert_eq!(canvas, expected);
+    }
+
+    #[test]
+    fn assert_prepare_ui() {
+        let config = support::build_config();
+        let mut widget = MenuBar::new(Arc::clone(&config));
+        widget.prepare_ui();
+        assert_eq!(widget.dest(), Rect::new(0, 0, 1024, 60));
     }
 }

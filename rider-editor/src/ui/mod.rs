@@ -4,9 +4,8 @@ use sdl2::render::Texture;
 use std::rc::Rc;
 
 use crate::app::application::WindowCanvas;
-use crate::app::{UpdateResult as UR, WindowCanvas as WC};
+use crate::app::UpdateResult as UR;
 use crate::renderer::managers::*;
-use crate::renderer::Renderer;
 use rider_config::*;
 
 pub mod caret;
@@ -42,35 +41,47 @@ pub enum RenderContext {
     RelativePosition(Point),
 }
 
-pub trait RenderRect {
+pub trait CanvasAccess {
     fn render_rect(&mut self, rect: Rect, color: sdl2::pixels::Color) -> Result<(), String>;
-}
-
-pub trait RenderBorder {
     fn render_border(&mut self, rect: Rect, color: sdl2::pixels::Color) -> Result<(), String>;
-}
-
-pub trait RenderImage {
     fn render_image(&mut self, tex: Rc<Texture>, src: Rect, dest: Rect) -> Result<(), String>;
+    fn render_line(
+        &mut self,
+        start: Point,
+        end: Point,
+        color: sdl2::pixels::Color,
+    ) -> Result<(), String>;
+
+    fn set_clipping(&mut self, rect: Rect);
 }
 
-impl RenderRect for WindowCanvas {
+impl CanvasAccess for WindowCanvas {
     fn render_rect(&mut self, rect: Rect, color: sdl2::pixels::Color) -> Result<(), String> {
         self.set_draw_color(color);
         self.fill_rect(rect)
     }
-}
 
-impl RenderBorder for WindowCanvas {
     fn render_border(&mut self, rect: Rect, color: sdl2::pixels::Color) -> Result<(), String> {
         self.set_draw_color(color);
         self.draw_rect(rect)
     }
-}
 
-impl RenderImage for WindowCanvas {
     fn render_image(&mut self, tex: Rc<Texture>, src: Rect, dest: Rect) -> Result<(), String> {
         self.copy_ex(&tex, Some(src), Some(dest), 0.0, None, false, false)
+    }
+
+    fn render_line(
+        &mut self,
+        start: Point,
+        end: Point,
+        color: sdl2::pixels::Color,
+    ) -> Result<(), String> {
+        self.set_draw_color(color);
+        self.draw_line(start, end)
+    }
+
+    fn set_clipping(&mut self, rect: Rect) {
+        self.set_clip_rect(rect);
     }
 }
 
@@ -107,13 +118,6 @@ where
 #[inline]
 pub fn move_render_point(p: Point, d: &Rect) -> Rect {
     Rect::new(d.x() + p.x(), d.y() + p.y(), d.width(), d.height())
-}
-
-#[cfg_attr(tarpaulin, skip)]
-pub trait Render {
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext);
-
-    fn prepare_ui(&mut self, renderer: &mut Renderer);
 }
 
 pub trait Update {

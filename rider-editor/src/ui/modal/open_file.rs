@@ -1,4 +1,4 @@
-use crate::renderer::Renderer;
+use crate::renderer::CanvasRenderer;
 use crate::ui::*;
 use crate::ui::{RenderContext as RC, UpdateContext as UC};
 use rider_config::ConfigAccess;
@@ -56,7 +56,7 @@ impl OpenFile {
         self.root_path.clone()
     }
 
-    pub fn open_directory(&mut self, dir_path: String, renderer: &mut Renderer) {
+    pub fn open_directory(&mut self, dir_path: String, renderer: &mut CanvasRenderer) {
         self.directory_view.open_directory(dir_path, renderer);
         {
             let dest = self.directory_view.dest();
@@ -147,9 +147,9 @@ impl Update for OpenFile {
 
 #[cfg_attr(tarpaulin, skip)]
 impl OpenFile {
-    pub fn render<T>(&self, canvas: &mut T, renderer: &mut Renderer, context: &RC)
+    pub fn render<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, context: &RC)
     where
-        T: RenderRect + RenderBorder + RenderImage,
+        T: CanvasAccess,
     {
         let dest = match context {
             RC::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
@@ -183,7 +183,7 @@ impl OpenFile {
         );
     }
 
-    pub fn prepare_ui(&mut self, renderer: &mut Renderer) {
+    pub fn prepare_ui(&mut self, renderer: &mut CanvasRenderer) {
         self.directory_view.prepare_ui(renderer);
     }
 }

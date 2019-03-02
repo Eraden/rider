@@ -1,12 +1,13 @@
 use sdl2::rect::{Point, Rect};
 use std::sync::*;
 
-use crate::app::{UpdateResult as UR, WindowCanvas as WC};
-use crate::renderer::Renderer;
+use crate::app::UpdateResult as UR;
+use crate::renderer::renderer::Renderer;
 use crate::ui::file::editor_file_section::EditorFileSection;
 use crate::ui::text_character::TextCharacter;
 use crate::ui::*;
 use rider_config::Config;
+use rider_config::ConfigHolder;
 
 #[derive(Clone, Debug)]
 pub struct EditorFile {
@@ -113,21 +114,27 @@ impl TextCollection for EditorFile {
     }
 }
 
-#[cfg_attr(tarpaulin, skip)]
-impl Render for EditorFile {
-    fn render(&self, canvas: &mut WC, renderer: &mut Renderer, context: &RenderContext) {
+impl EditorFile {
+    pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
+    where
+        R: Renderer + ConfigHolder,
+        C: CanvasAccess,
+    {
         for section in self.sections.iter() {
             section.render(canvas, renderer, context);
         }
     }
 
-    fn prepare_ui(&mut self, renderer: &mut Renderer) {
+    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
+    where
+        R: ConfigHolder + CharacterSizeManager + Renderer,
+    {
         for section in self.sections.iter_mut() {
             section.prepare_ui(renderer);
         }
-        if let Some(r) = get_text_character_rect('W', renderer) {
-            self.line_height = r.height();
-        }
+
+        let r = renderer.load_character_size('W');
+        self.line_height = r.height();
         self.refresh_characters_position();
     }
 }
@@ -202,10 +209,71 @@ impl RenderBox for EditorFile {
 }
 
 #[cfg(test)]
-mod test_render_box {
+mod tests {
     use crate::tests::support;
     use crate::ui::*;
     use sdl2::rect::{Point, Rect};
+
+    //##################################################
+    // path
+    //##################################################
+
+    #[test]
+    fn assert_path_txt() {
+        let config = support::build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        assert_eq!(widget.path(), "/example.txt".to_owned());
+    }
+
+    #[test]
+    fn assert_path_rs() {
+        let config = support::build_config();
+        let buffer = "".to_owned();
+        let path = "/example.rs".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        assert_eq!(widget.path(), "/example.rs".to_owned());
+    }
+
+    //##################################################
+    // buffer
+    //##################################################
+
+    #[test]
+    fn assert_empty_buffer() {
+        let config = support::build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        assert_eq!(widget.buffer(), "".to_owned());
+    }
+
+    #[test]
+    fn assert_some_buffer() {
+        let config = support::build_config();
+        let buffer = "fn main(){}".to_owned();
+        let path = "some.rs".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        assert_eq!(widget.buffer(), "fn main(){}".to_owned());
+    }
+
+    //##################################################
+    // line height
+    //##################################################
+
+    #[test]
+    fn assert_initial_line_height() {
+        let config = support::build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        assert_eq!(widget.line_height(), 0);
+    }
+
+    //##################################################
+    // render box
+    //##################################################
 
     #[test]
     fn assert_dest() {
