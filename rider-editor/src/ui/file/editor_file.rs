@@ -209,10 +209,71 @@ impl RenderBox for EditorFile {
 }
 
 #[cfg(test)]
-mod test_render_box {
+mod tests {
     use crate::tests::support;
     use crate::ui::*;
     use sdl2::rect::{Point, Rect};
+
+    //##################################################
+    // path
+    //##################################################
+
+    #[test]
+    fn assert_path_txt() {
+        let config = support::build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        assert_eq!(widget.path(), "/example.txt".to_owned());
+    }
+
+    #[test]
+    fn assert_path_rs() {
+        let config = support::build_config();
+        let buffer = "".to_owned();
+        let path = "/example.rs".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        assert_eq!(widget.path(), "/example.rs".to_owned());
+    }
+
+    //##################################################
+    // buffer
+    //##################################################
+
+    #[test]
+    fn assert_empty_buffer() {
+        let config = support::build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        assert_eq!(widget.buffer(), "".to_owned());
+    }
+
+    #[test]
+    fn assert_some_buffer() {
+        let config = support::build_config();
+        let buffer = "fn main(){}".to_owned();
+        let path = "some.rs".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        assert_eq!(widget.buffer(), "fn main(){}".to_owned());
+    }
+
+    //##################################################
+    // line height
+    //##################################################
+
+    #[test]
+    fn assert_initial_line_height() {
+        let config = support::build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        assert_eq!(widget.line_height(), 0);
+    }
+
+    //##################################################
+    // render box
+    //##################################################
 
     #[test]
     fn assert_dest() {
