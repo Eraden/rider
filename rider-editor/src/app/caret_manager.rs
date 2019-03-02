@@ -41,18 +41,18 @@ pub fn move_caret_left(file_editor: &mut FileEditor) {
 #[cfg(test)]
 mod test_move_right {
     use super::*;
-    use crate::tests::support;
-    use std::sync::Arc;
-    use std::sync::RwLock;
-    use rider_config::config::Config;
-    use sdl2::ttf::Font;
-    use crate::renderer::renderer::Renderer;
+    use crate::renderer::managers::FontDetails;
     use crate::renderer::managers::TextDetails;
+    use crate::renderer::renderer::Renderer;
+    use crate::tests::support;
+    use rider_config::config::Config;
     use rider_config::ConfigHolder;
     use sdl2::rect::Rect;
-    use crate::renderer::managers::FontDetails;
-    use std::rc::Rc;
     use sdl2::render::Texture;
+    use sdl2::ttf::Font;
+    use std::rc::Rc;
+    use std::sync::Arc;
+    use std::sync::RwLock;
 
     struct RendererMock {
         pub config: Arc<RwLock<Config>>,
@@ -134,18 +134,18 @@ mod test_move_right {
 #[cfg(test)]
 mod test_move_left {
     use super::*;
-    use crate::tests::support;
-    use std::sync::Arc;
-    use std::sync::RwLock;
-    use rider_config::config::Config;
-    use sdl2::ttf::Font;
-    use crate::renderer::renderer::Renderer;
+    use crate::renderer::managers::FontDetails;
     use crate::renderer::managers::TextDetails;
+    use crate::renderer::renderer::Renderer;
+    use crate::tests::support;
+    use rider_config::config::Config;
     use rider_config::ConfigHolder;
     use sdl2::rect::Rect;
-    use crate::renderer::managers::FontDetails;
-    use std::rc::Rc;
     use sdl2::render::Texture;
+    use sdl2::ttf::Font;
+    use std::rc::Rc;
+    use std::sync::Arc;
+    use std::sync::RwLock;
 
     struct RendererMock {
         pub config: Arc<RwLock<Config>>,
