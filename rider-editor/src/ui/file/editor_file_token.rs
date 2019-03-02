@@ -203,21 +203,19 @@ mod tests {
     use rider_lexers::Token;
     use sdl2::pixels::PixelFormatEnum;
     use sdl2::render::Texture;
+    use sdl2::render::TextureCreator;
     use sdl2::surface::Surface;
+    use sdl2::surface::SurfaceContext;
     use sdl2::ttf::Font;
     use std::fmt::Debug;
     use std::fmt::Error;
     use std::fmt::Formatter;
     use std::rc::Rc;
     use std::sync::{Arc, RwLock};
-    //    use sdl2::render::TextureAccess;
-    use sdl2::render::TextureCreator;
-    use sdl2::surface::SurfaceContext;
-    //    use sdl2::image::LoadTexture;
 
-    //    struct TextureMock {
-    //        pub name: String,
-    //    }
+    //##################################################
+    // models
+    //##################################################
 
     #[derive(Debug, PartialEq)]
     struct RendererRect {
@@ -225,6 +223,7 @@ mod tests {
         pub color: Color,
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     struct CanvasMock {
         pub rects: Vec<RendererRect>,
         pub borders: Vec<RendererRect>,
@@ -232,12 +231,14 @@ mod tests {
         pub clippings: Vec<Rect>,
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     impl Debug for CanvasMock {
         fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
             write!(f, "CanvasMock {{}}")
         }
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     impl PartialEq for CanvasMock {
         fn eq(&self, other: &CanvasMock) -> bool {
             self.rects == other.rects
@@ -247,6 +248,7 @@ mod tests {
         }
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     impl CanvasMock {
         pub fn new() -> Self {
             Self {
@@ -258,6 +260,7 @@ mod tests {
         }
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     impl CanvasAccess for CanvasMock {
         fn render_rect(&mut self, rect: Rect, color: Color) -> Result<(), String> {
             self.rects.push(RendererRect { rect, color });
@@ -291,6 +294,7 @@ mod tests {
         }
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     struct RendererMock<'l> {
         pub config: Arc<RwLock<Config>>,
         pub canvas: sdl2::render::Canvas<Surface<'l>>,
@@ -298,6 +302,7 @@ mod tests {
         pub creator: TextureCreator<SurfaceContext<'l>>,
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     impl<'l> RendererMock<'l> {
         pub fn new(config: Arc<RwLock<Config>>, surface: Surface<'l>) -> Self {
             let canvas = sdl2::render::Canvas::from_surface(surface).unwrap();
@@ -310,6 +315,7 @@ mod tests {
         }
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     impl<'l> Renderer for RendererMock<'l> {
         fn load_font(&mut self, _details: FontDetails) -> Rc<Font> {
             unimplemented!("load_font")
@@ -345,6 +351,103 @@ mod tests {
             &self.config
         }
     }
+
+    //##################################################
+    // token_to_color
+    //##################################################
+
+    #[test]
+    fn assert_whitespace_to_color() {
+        let config = build_config();
+        let surface = Surface::new(1024, 800, PixelFormatEnum::RGBA8888).unwrap();
+        let mut renderer = RendererMock::new(config.clone(), surface);
+        let token_type = TokenType::Whitespace {
+            token: Token::new("".to_owned(), 0, 0, 0, 0),
+        };
+        let mut token = EditorFileToken::new(&token_type, false, config.clone());
+        token.prepare_ui(&mut renderer);
+    }
+    #[test]
+    fn assert_keyword_to_color() {
+        let config = build_config();
+        let surface = Surface::new(1024, 800, PixelFormatEnum::RGBA8888).unwrap();
+        let mut renderer = RendererMock::new(config.clone(), surface);
+        let token_type = TokenType::Keyword {
+            token: Token::new("".to_owned(), 0, 0, 0, 0),
+        };
+        let mut token = EditorFileToken::new(&token_type, false, config.clone());
+        token.prepare_ui(&mut renderer);
+    }
+    #[test]
+    fn assert_string_to_color() {
+        let config = build_config();
+        let surface = Surface::new(1024, 800, PixelFormatEnum::RGBA8888).unwrap();
+        let mut renderer = RendererMock::new(config.clone(), surface);
+        let token_type = TokenType::String {
+            token: Token::new("".to_owned(), 0, 0, 0, 0),
+        };
+        let mut token = EditorFileToken::new(&token_type, false, config.clone());
+        token.prepare_ui(&mut renderer);
+    }
+    #[test]
+    fn assert_identifier_to_color() {
+        let config = build_config();
+        let surface = Surface::new(1024, 800, PixelFormatEnum::RGBA8888).unwrap();
+        let mut renderer = RendererMock::new(config.clone(), surface);
+        let token_type = TokenType::Identifier {
+            token: Token::new("".to_owned(), 0, 0, 0, 0),
+        };
+        let mut token = EditorFileToken::new(&token_type, false, config.clone());
+        token.prepare_ui(&mut renderer);
+    }
+    #[test]
+    fn assert_literal_to_color() {
+        let config = build_config();
+        let surface = Surface::new(1024, 800, PixelFormatEnum::RGBA8888).unwrap();
+        let mut renderer = RendererMock::new(config.clone(), surface);
+        let token_type = TokenType::Literal {
+            token: Token::new("".to_owned(), 0, 0, 0, 0),
+        };
+        let mut token = EditorFileToken::new(&token_type, false, config.clone());
+        token.prepare_ui(&mut renderer);
+    }
+    #[test]
+    fn assert_comment_to_color() {
+        let config = build_config();
+        let surface = Surface::new(1024, 800, PixelFormatEnum::RGBA8888).unwrap();
+        let mut renderer = RendererMock::new(config.clone(), surface);
+        let token_type = TokenType::Comment {
+            token: Token::new("".to_owned(), 0, 0, 0, 0),
+        };
+        let mut token = EditorFileToken::new(&token_type, false, config.clone());
+        token.prepare_ui(&mut renderer);
+    }
+    #[test]
+    fn assert_operator_to_color() {
+        let config = build_config();
+        let surface = Surface::new(1024, 800, PixelFormatEnum::RGBA8888).unwrap();
+        let mut renderer = RendererMock::new(config.clone(), surface);
+        let token_type = TokenType::Operator {
+            token: Token::new("".to_owned(), 0, 0, 0, 0),
+        };
+        let mut token = EditorFileToken::new(&token_type, false, config.clone());
+        token.prepare_ui(&mut renderer);
+    }
+    #[test]
+    fn assert_separator_to_color() {
+        let config = build_config();
+        let surface = Surface::new(1024, 800, PixelFormatEnum::RGBA8888).unwrap();
+        let mut renderer = RendererMock::new(config.clone(), surface);
+        let token_type = TokenType::Separator {
+            token: Token::new("".to_owned(), 0, 0, 0, 0),
+        };
+        let mut token = EditorFileToken::new(&token_type, false, config.clone());
+        token.prepare_ui(&mut renderer);
+    }
+
+    //##################################################
+    // render
+    //##################################################
 
     #[test]
     fn assert_is_last_in_line() {
