@@ -326,10 +326,8 @@ impl DirectoryView {
         }
         self.calculate_size(renderer);
     }
-}
 
-impl Update for DirectoryView {
-    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
+    pub fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
         if !path::Path::new(&self.path).exists() {
             return UpdateResult::RefreshFsTree;
         }

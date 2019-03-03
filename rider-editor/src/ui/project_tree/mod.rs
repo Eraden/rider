@@ -3,8 +3,10 @@ use crate::ui::filesystem::directory::DirectoryView;
 use crate::ui::text_character::CharacterSizeManager;
 use crate::ui::CanvasAccess;
 use crate::ui::RenderContext;
+use crate::ui::UpdateContext;
 use rider_config::config::Config;
 use sdl2::pixels::Color;
+use sdl2::rect::Point;
 use sdl2::rect::Rect;
 use std::sync::Arc;
 use std::sync::RwLock;
@@ -39,7 +41,7 @@ impl ProjectTreeSidebar {
         }
     }
 
-    pub fn update(&mut self, _ticks: i32) {
+    pub fn update(&mut self, ticks: i32) {
         let config = self.config.read().unwrap();
         let height = config.height();
         //        let left_margin = config.editor_left_margin();
@@ -47,6 +49,7 @@ impl ProjectTreeSidebar {
         //        self.dest.set_x(left_margin);
         self.dest.set_y(top_margin);
         self.dest.set_height(height - top_margin as u32);
+        self.dir_view.update(ticks, &UpdateContext::Nothing);
     }
 
     pub fn prepare_ui<R>(&mut self, renderer: &mut R)
@@ -61,6 +64,7 @@ impl ProjectTreeSidebar {
         self.dest.set_y(top_margin);
         self.dest.set_height(height);
         self.dir_view.prepare_ui(renderer);
+        self.dir_view.open_directory(self.root.clone(), renderer);
     }
 
     pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R)
@@ -77,7 +81,7 @@ impl ProjectTreeSidebar {
             .unwrap();
 
         // dir view
-        let context = RenderContext::RelativePosition(self.dest.top_left());
+        let context = RenderContext::RelativePosition(self.dest.top_left() + Point::new(10, 10));
         self.dir_view.render(canvas, renderer, &context);
     }
 

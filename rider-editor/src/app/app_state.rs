@@ -100,12 +100,11 @@ impl AppState {
 
     pub fn prepare_ui(&mut self, renderer: &mut CanvasRenderer) {
         self.menu_bar.prepare_ui();
+        self.project_tree.prepare_ui(renderer);
         self.file_editor.prepare_ui(renderer);
     }
-}
 
-impl Update for AppState {
-    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
+    pub fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
         // open file modal
         let res = match self.open_file_modal.as_mut() {
             Some(modal) => modal.update(ticks, &UpdateContext::Nothing),

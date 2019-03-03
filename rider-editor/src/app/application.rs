@@ -30,6 +30,8 @@ pub enum UpdateResult {
     Stop,
     RefreshPositions,
     MouseLeftClicked(Point),
+    MouseDragStart(Point),
+    MouseDragStop(Point),
     MoveCaret(Rect, CaretPosition),
     DeleteFront,
     DeleteBack,
@@ -45,6 +47,7 @@ pub enum UpdateResult {
     OpenFile(String),
     OpenDirectory(String),
     OpenFileModal,
+    FileDropped(String),
 }
 
 #[cfg_attr(tarpaulin, skip)]
@@ -195,6 +198,9 @@ impl Application {
                         modal.open_directory(pwd.clone(), &mut renderer);
                         app_state.set_open_file_modal(Some(modal));
                     }
+                    UpdateResult::MouseDragStart(_point) => (),
+                    UpdateResult::MouseDragStop(_point) => (),
+                    UpdateResult::FileDropped(_path) => (),
                 }
             }
             self.tasks = new_tasks;
@@ -241,12 +247,20 @@ impl Application {
                 Event::Quit { .. } => self.tasks.push(UpdateResult::Stop),
                 Event::MouseButtonUp {
                     mouse_btn, x, y, ..
-                } => match mouse_btn {
-                    MouseButton::Left => self
-                        .tasks
-                        .push(UpdateResult::MouseLeftClicked(Point::new(x, y))),
-                    _ => (),
-                },
+                } if mouse_btn == MouseButton::Left => {
+                    self.tasks
+                        .push(UpdateResult::MouseDragStart(Point::new(x, y)));
+                    self.tasks
+                        .push(UpdateResult::MouseLeftClicked(Point::new(x, y)));
+                }
+                Event::DropFile { filename, .. } => {
+                    self.tasks.push(UpdateResult::FileDropped(filename))
+                }
+                Event::MouseButtonDown {
+                    x, y, mouse_btn, ..
+                } if mouse_btn == MouseButton::Left => self
+                    .tasks
+                    .push(UpdateResult::MouseDragStart(Point::new(x, y))),
                 Event::KeyDown { keycode, .. } => {
                     let keycode = if keycode.is_some() {
                         keycode.unwrap()
