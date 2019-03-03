@@ -68,7 +68,10 @@ impl DirectoryView {
         &self.source
     }
 
-    pub fn open_directory(&mut self, dir_path: String, renderer: &mut CanvasRenderer) -> bool {
+    pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R) -> bool
+    where
+        R: Renderer + CharacterSizeManager,
+    {
         match dir_path {
             _ if dir_path == self.path => {
                 if !self.opened {
@@ -127,7 +130,10 @@ impl DirectoryView {
         }
     }
 
-    fn read_directory(&mut self, renderer: &mut CanvasRenderer) {
+    fn read_directory<R>(&mut self, renderer: &mut R)
+    where
+        R: Renderer + CharacterSizeManager,
+    {
         let entries: fs::ReadDir = match fs::read_dir(self.path.clone()) {
             Ok(d) => d,
             _ => return,
@@ -167,9 +173,10 @@ impl DirectoryView {
         self.directories.sort_by(|a, b| a.name().cmp(&b.name()));
     }
 
-    fn render_icon<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, dest: &mut Rect)
+    fn render_icon<C, R>(&self, canvas: &mut C, renderer: &mut R, dest: &mut Rect)
     where
-        T: CanvasAccess,
+        C: CanvasAccess,
+        R: Renderer,
     {
         let dir_texture_path = {
             let c = self.config.read().unwrap();
@@ -179,8 +186,7 @@ impl DirectoryView {
             themes_dir.to_str().unwrap().to_owned()
         };
         let texture = renderer
-            .texture_manager()
-            .load(dir_texture_path.as_str())
+            .load_image(dir_texture_path.clone())
             .unwrap_or_else(|_| panic!("Failed to load directory entry texture"));
 
         canvas
@@ -192,14 +198,14 @@ impl DirectoryView {
             .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
     }
 
-    fn render_name<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, dest: &mut Rect)
+    fn render_name<C, R>(&self, canvas: &mut C, renderer: &mut R, dest: &mut Rect)
     where
-        T: CanvasAccess,
+        C: CanvasAccess,
+        R: Renderer + CharacterSizeManager,
     {
         let mut d = dest.clone();
         d.set_x(dest.x() + NAME_MARGIN);
         let font_details = build_font_details(self);
-        let font = renderer.font_manager().load(&font_details).unwrap();
         let name = self.name();
         let config = self.config.read().unwrap();
         let text_color = config.theme().code_highlighting().title.color();
@@ -212,8 +218,7 @@ impl DirectoryView {
                 font: font_details.clone(),
             };
             let text_texture = renderer
-                .texture_manager()
-                .load_text(&mut text_details, font.clone())
+                .load_text_tex(&mut text_details, font_details.clone())
                 .unwrap();
             d.set_width(size.width());
             d.set_height(size.height());
@@ -225,9 +230,10 @@ impl DirectoryView {
         }
     }
 
-    fn render_children<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, dest: &mut Rect)
+    fn render_children<C, R>(&self, canvas: &mut C, renderer: &mut R, dest: &mut Rect)
     where
-        T: CanvasAccess,
+        C: CanvasAccess,
+        R: Renderer + CharacterSizeManager,
     {
         if !self.expanded {
             return;
@@ -249,7 +255,10 @@ impl DirectoryView {
         }
     }
 
-    fn calculate_size(&mut self, renderer: &mut CanvasRenderer) {
+    fn calculate_size<R>(&mut self, renderer: &mut R)
+    where
+        R: CharacterSizeManager,
+    {
         let size = renderer.load_character_size('W');
         self.height = size.height();
         self.icon_height = size.height();
@@ -287,9 +296,10 @@ impl ConfigHolder for DirectoryView {
 
 #[cfg_attr(tarpaulin, skip)]
 impl DirectoryView {
-    pub fn render<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, context: &RenderContext)
+    pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
-        T: CanvasAccess,
+        R: Renderer + CharacterSizeManager,
+        C: CanvasAccess,
     {
         let dest = self.dest();
         let move_point = match context {
@@ -297,12 +307,15 @@ impl DirectoryView {
             _ => Point::new(0, 0),
         };
         let mut dest = move_render_point(move_point, &dest);
-        self.render_icon::<T>(canvas, renderer, &mut dest);
-        self.render_name::<T>(canvas, renderer, &mut dest.clone());
-        self.render_children::<T>(canvas, renderer, &mut dest);
+        self.render_icon::<C, R>(canvas, renderer, &mut dest);
+        self.render_name::<C, R>(canvas, renderer, &mut dest.clone());
+        self.render_children::<C, R>(canvas, renderer, &mut dest);
     }
 
-    pub fn prepare_ui(&mut self, renderer: &mut CanvasRenderer) {
+    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
+    where
+        R: Renderer + CharacterSizeManager,
+    {
         if self.opened {
             for dir in self.directories.iter_mut() {
                 dir.prepare_ui(renderer);

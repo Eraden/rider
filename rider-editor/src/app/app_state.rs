@@ -1,3 +1,4 @@
+use crate::app::application::Application;
 use crate::app::{UpdateResult, WindowCanvas as WC};
 use crate::renderer::CanvasRenderer;
 use crate::ui::*;
@@ -9,6 +10,7 @@ use std::sync::*;
 
 pub struct AppState {
     menu_bar: MenuBar,
+    project_tree: ProjectTreeSidebar,
     files: Vec<EditorFile>,
     config: Arc<RwLock<Config>>,
     file_editor: FileEditor,
@@ -19,6 +21,10 @@ impl AppState {
     pub fn new(config: Arc<RwLock<Config>>) -> Self {
         Self {
             menu_bar: MenuBar::new(Arc::clone(&config)),
+            project_tree: ProjectTreeSidebar::new(
+                Application::current_working_directory(),
+                config.clone(),
+            ),
             files: vec![],
             file_editor: FileEditor::new(Arc::clone(&config)),
             open_file_modal: None,
@@ -76,8 +82,16 @@ impl AppState {
 #[cfg_attr(tarpaulin, skip)]
 impl AppState {
     pub fn render(&self, canvas: &mut WC, renderer: &mut CanvasRenderer, _context: &RenderContext) {
+        // file editor
         self.file_editor.render(canvas, renderer);
+
+        // menu bar
         self.menu_bar.render(canvas, &RenderContext::Nothing);
+
+        // project tree
+        self.project_tree.render(canvas, renderer);
+
+        // open file modal
         match self.open_file_modal.as_ref() {
             Some(modal) => modal.render(canvas, renderer, &RenderContext::Nothing),
             _ => (),
@@ -92,6 +106,7 @@ impl AppState {
 
 impl Update for AppState {
     fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
+        // open file modal
         let res = match self.open_file_modal.as_mut() {
             Some(modal) => modal.update(ticks, &UpdateContext::Nothing),
             _ => UpdateResult::NoOp,
@@ -100,8 +115,17 @@ impl Update for AppState {
             return res;
         }
 
+        // menu bar
         self.menu_bar.update(ticks, context);
-        self.file_editor.update(ticks, context);
+
+        // sidebar
+        self.project_tree.update(ticks);
+
+        // file editor
+        let context = UpdateContext::ParentPosition(
+            self.project_tree.full_rect().top_right() + Point::new(10, 0),
+        );
+        self.file_editor.update(ticks, &context);
         UpdateResult::NoOp
     }
 }

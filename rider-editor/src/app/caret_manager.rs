@@ -77,6 +77,11 @@ mod test_move_right {
         ) -> Result<Rc<Texture>, String> {
             Err("skip render character".to_owned())
         }
+
+        #[cfg_attr(tarpaulin, skip)]
+        fn load_image(&mut self, _path: String) -> Result<Rc<Texture>, String> {
+            unimplemented!()
+        }
     }
 
     impl ConfigHolder for RendererMock {
@@ -160,6 +165,11 @@ mod test_move_left {
     impl Renderer for RendererMock {
         #[cfg_attr(tarpaulin, skip)]
         fn load_font(&mut self, _details: FontDetails) -> Rc<Font> {
+            unimplemented!()
+        }
+
+        #[cfg_attr(tarpaulin, skip)]
+        fn load_image(&mut self, _path: String) -> Result<Rc<Texture>, String> {
             unimplemented!()
         }
 

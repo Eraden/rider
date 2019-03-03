@@ -16,6 +16,7 @@ use sdl2::surface::Surface;
 use sdl2::video::Window;
 use sdl2::EventPump;
 use sdl2::{Sdl, TimerSubsystem, VideoSubsystem};
+use std::env;
 use std::process::Command;
 use std::sync::{Arc, RwLock};
 use std::thread::sleep;
@@ -187,8 +188,7 @@ impl Application {
                         app_state.open_directory(dir_path.clone(), &mut renderer);
                     }
                     UpdateResult::OpenFileModal => {
-                        use std::env;
-                        let pwd = env::current_dir().unwrap().to_str().unwrap().to_string();
+                        let pwd = Self::current_working_directory();
                         let mut modal =
                             OpenFile::new(pwd.clone(), 400, 800, Arc::clone(&self.config));
                         modal.prepare_ui(&mut renderer);
@@ -314,6 +314,10 @@ impl Application {
                 _ => {}
             }
         }
+    }
+
+    pub fn current_working_directory() -> String {
+        env::current_dir().unwrap().to_str().unwrap().to_string()
     }
 }
 

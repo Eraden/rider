@@ -1,6 +1,5 @@
 use crate::app::*;
 use crate::renderer::renderer::Renderer;
-use crate::renderer::renderer::Renderer;
 use crate::ui::*;
 use sdl2::rect::{Point, Rect};
 use std::sync::*;
@@ -169,6 +168,11 @@ mod tests {
     impl Renderer for RendererMock {
         #[cfg_attr(tarpaulin, skip)]
         fn load_font(&mut self, _details: FontDetails) -> Rc<Font> {
+            unimplemented!()
+        }
+
+        #[cfg_attr(tarpaulin, skip)]
+        fn load_image(&mut self, _path: String) -> Result<Rc<Texture>, String> {
             unimplemented!()
         }
 

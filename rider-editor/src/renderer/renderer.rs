@@ -18,6 +18,8 @@ pub trait Renderer {
         details: &mut TextDetails,
         font_details: FontDetails,
     ) -> Result<Rc<Texture>, String>;
+
+    fn load_image(&mut self, path: String) -> Result<Rc<Texture>, String>;
 }
 
 #[cfg_attr(tarpaulin, skip)]
@@ -116,5 +118,9 @@ impl<'l> Renderer for CanvasRenderer<'l> {
             .unwrap_or_else(|_| panic!("Font not found {:?}", details));
         let tex_manager = self.texture_manager();
         tex_manager.load_text(details, font)
+    }
+
+    fn load_image(&mut self, path: String) -> Result<Rc<Texture>, String> {
+        self.texture_manager.load(path.as_str())
     }
 }

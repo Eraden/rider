@@ -2,7 +2,6 @@ use sdl2::rect::{Point, Rect};
 use std::sync::*;
 
 use crate::app::UpdateResult as UR;
-use crate::app::UpdateResult as UR;
 use crate::renderer::renderer::Renderer;
 use crate::ui::file::editor_file_section::EditorFileSection;
 use crate::ui::text_character::TextCharacter;

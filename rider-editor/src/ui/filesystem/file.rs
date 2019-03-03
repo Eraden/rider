@@ -70,9 +70,10 @@ impl FileEntry {
         )
     }
 
-    fn render_icon<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, dest: &mut Rect)
+    fn render_icon<C, R>(&self, canvas: &mut C, renderer: &mut R, dest: &mut Rect)
     where
-        T: CanvasAccess,
+        C: CanvasAccess,
+        R: Renderer,
     {
         let dir_texture_path = {
             let c = self.config.read().unwrap();
@@ -82,8 +83,7 @@ impl FileEntry {
             themes_dir.to_str().unwrap().to_owned()
         };
         let texture = renderer
-            .texture_manager()
-            .load(dir_texture_path.as_str())
+            .load_image(dir_texture_path.clone())
             .unwrap_or_else(|_| panic!("Failed to load directory entry texture"));
         dest.set_width(16);
         dest.set_height(16);
@@ -92,16 +92,15 @@ impl FileEntry {
             .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
     }
 
-    fn render_name<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, dest: &mut Rect)
+    fn render_name<C, R>(&self, canvas: &mut C, renderer: &mut R, dest: &mut Rect)
     where
-        T: CanvasAccess,
+        C: CanvasAccess,
+        R: Renderer,
     {
         let mut d = dest.clone();
         d.set_x(dest.x() + NAME_MARGIN);
 
         let font_details = build_font_details(self);
-        let font = renderer.font_manager().load(&font_details).unwrap();
-        let texture_manager = renderer.texture_manager();
         let name = self.name();
 
         for c in name.chars() {
@@ -115,8 +114,8 @@ impl FileEntry {
                 text: c.to_string(),
                 font: font_details.clone(),
             };
-            let text_texture = texture_manager
-                .load_text(&mut text_details, font.clone())
+            let text_texture = renderer
+                .load_text_tex(&mut text_details, font_details.clone())
                 .unwrap();
             d.set_width(size.width());
             d.set_height(size.height());
@@ -137,9 +136,10 @@ impl ConfigHolder for FileEntry {
 
 #[cfg_attr(tarpaulin, skip)]
 impl FileEntry {
-    pub fn render<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, context: &RenderContext)
+    pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
-        T: CanvasAccess,
+        C: CanvasAccess,
+        R: Renderer,
     {
         let mut dest = match context {
             &RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
@@ -149,15 +149,18 @@ impl FileEntry {
         self.render_name(canvas, renderer, &mut dest.clone());
     }
 
-    pub fn prepare_ui(&mut self, renderer: &mut CanvasRenderer) {
-        let w_rect = get_text_character_rect('W', renderer).unwrap();
+    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
+    where
+        R: Renderer + CharacterSizeManager,
+    {
+        let w_rect = renderer.load_character_size('W');
         self.char_sizes.insert('W', w_rect.clone());
         self.height = w_rect.height();
         self.icon_width = w_rect.height();
         self.name_width = 0;
 
         for c in self.name().chars() {
-            let size = { get_text_character_rect(c.clone(), renderer).unwrap() };
+            let size = { renderer.load_character_size(c.clone()) };
             self.char_sizes.insert(c, size);
             self.name_width += size.width();
         }
