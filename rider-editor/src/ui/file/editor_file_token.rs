@@ -367,6 +367,7 @@ mod tests {
         let mut token = EditorFileToken::new(&token_type, false, config.clone());
         token.prepare_ui(&mut renderer);
     }
+
     #[test]
     fn assert_keyword_to_color() {
         let config = build_config();
@@ -378,6 +379,7 @@ mod tests {
         let mut token = EditorFileToken::new(&token_type, false, config.clone());
         token.prepare_ui(&mut renderer);
     }
+
     #[test]
     fn assert_string_to_color() {
         let config = build_config();
@@ -389,6 +391,7 @@ mod tests {
         let mut token = EditorFileToken::new(&token_type, false, config.clone());
         token.prepare_ui(&mut renderer);
     }
+
     #[test]
     fn assert_identifier_to_color() {
         let config = build_config();
@@ -400,6 +403,7 @@ mod tests {
         let mut token = EditorFileToken::new(&token_type, false, config.clone());
         token.prepare_ui(&mut renderer);
     }
+
     #[test]
     fn assert_literal_to_color() {
         let config = build_config();
@@ -411,6 +415,7 @@ mod tests {
         let mut token = EditorFileToken::new(&token_type, false, config.clone());
         token.prepare_ui(&mut renderer);
     }
+
     #[test]
     fn assert_comment_to_color() {
         let config = build_config();
@@ -422,6 +427,7 @@ mod tests {
         let mut token = EditorFileToken::new(&token_type, false, config.clone());
         token.prepare_ui(&mut renderer);
     }
+
     #[test]
     fn assert_operator_to_color() {
         let config = build_config();
@@ -433,6 +439,7 @@ mod tests {
         let mut token = EditorFileToken::new(&token_type, false, config.clone());
         token.prepare_ui(&mut renderer);
     }
+
     #[test]
     fn assert_separator_to_color() {
         let config = build_config();
