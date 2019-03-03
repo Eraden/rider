@@ -185,17 +185,15 @@ impl DirectoryView {
             themes_dir.push(path);
             themes_dir.to_str().unwrap().to_owned()
         };
-        let texture = renderer
-            .load_image(dir_texture_path.clone())
-            .unwrap_or_else(|_| panic!("Failed to load directory entry texture"));
-
-        canvas
-            .render_image(
-                texture,
-                self.source.clone(),
-                Rect::new(dest.x(), dest.y(), self.icon_width, self.icon_height),
-            )
-            .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
+        if let Ok(texture) = renderer.load_image(dir_texture_path.clone()) {
+            canvas
+                .render_image(
+                    texture,
+                    self.source.clone(),
+                    Rect::new(dest.x(), dest.y(), self.icon_width, self.icon_height),
+                )
+                .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
+        }
     }
 
     fn render_name<C, R>(&self, canvas: &mut C, renderer: &mut R, dest: &mut Rect)
@@ -217,16 +215,17 @@ impl DirectoryView {
                 text: c.to_string(),
                 font: font_details.clone(),
             };
-            let text_texture = renderer
-                .load_text_tex(&mut text_details, font_details.clone())
-                .unwrap();
-            d.set_width(size.width());
-            d.set_height(size.height());
+            let maybe_texture = renderer.load_text_tex(&mut text_details, font_details.clone());
 
-            canvas
-                .render_image(text_texture, self.source.clone(), d.clone())
-                .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
-            d.set_x(d.x() + size.width() as i32);
+            if let Ok(texture) = maybe_texture {
+                d.set_width(size.width());
+                d.set_height(size.height());
+
+                canvas
+                    .render_image(texture, self.source.clone(), d.clone())
+                    .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
+                d.set_x(d.x() + size.width() as i32);
+            }
         }
     }
 

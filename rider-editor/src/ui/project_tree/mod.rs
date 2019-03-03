@@ -96,5 +96,99 @@ impl ProjectTreeSidebar {
 
 #[cfg(test)]
 mod tests {
+    use crate::renderer::managers::FontDetails;
+    use crate::renderer::managers::TextDetails;
+    use crate::renderer::renderer::Renderer;
+    use crate::tests::support::build_config;
+    use crate::tests::support::CanvasMock;
+    use crate::ui::project_tree::ProjectTreeSidebar;
+    use crate::ui::text_character::CharacterSizeManager;
+    use rider_config::ConfigAccess;
+    use rider_config::ConfigHolder;
+    use sdl2::rect::Rect;
+    use sdl2::render::Texture;
+    use sdl2::ttf::Font;
+    use std::rc::Rc;
+
+    #[cfg_attr(tarpaulin, skip)]
+    struct RendererMock {
+        config: ConfigAccess,
+    }
+
+    #[cfg_attr(tarpaulin, skip)]
+    impl RendererMock {
+        pub fn new(config: ConfigAccess) -> Self {
+            Self { config }
+        }
+    }
+
+    #[cfg_attr(tarpaulin, skip)]
+    impl Renderer for RendererMock {
+        fn load_font(&mut self, _details: FontDetails) -> Rc<Font> {
+            unimplemented!()
+        }
+
+        fn load_text_tex(
+            &mut self,
+            _details: &mut TextDetails,
+            _font_details: FontDetails,
+        ) -> Result<Rc<Texture>, String> {
+            Err("Skip load text texture".to_owned())
+        }
+
+        fn load_image(&mut self, _path: String) -> Result<Rc<Texture>, String> {
+            Err("Skip render".to_owned())
+        }
+    }
+
+    #[cfg_attr(tarpaulin, skip)]
+    impl ConfigHolder for RendererMock {
+        fn config(&self) -> &ConfigAccess {
+            &self.config
+        }
+    }
+
+    #[cfg_attr(tarpaulin, skip)]
+    impl CharacterSizeManager for RendererMock {
+        fn load_character_size(&mut self, _c: char) -> Rect {
+            Rect::new(0, 0, 13, 14)
+        }
+    }
+
+    #[test]
+    fn assert_full_rect() {
+        let config = build_config();
+        let mut renderer = RendererMock::new(config.clone());
+        let mut widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        assert_eq!(widget.full_rect(), Rect::new(10, 60, 100, 860));
+    }
+
+    #[test]
+    fn assert_update() {
+        let config = build_config();
+        let mut widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
+        widget.update(0);
+        assert_eq!(widget.full_rect(), Rect::new(0, 60, 100, 800));
+    }
+
+    #[test]
+    fn assert_prepare_ui() {
+        let config = build_config();
+        let mut renderer = RendererMock::new(config.clone());
+        let mut widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        assert_eq!(widget.full_rect(), Rect::new(10, 60, 100, 860));
+    }
+
+    #[test]
+    fn assert_render() {
+        let config = build_config();
+        let mut renderer = RendererMock::new(config.clone());
+        let mut canvas = CanvasMock::new();
+        let widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
+        //        widget.prepare_ui(&mut renderer); // skip load directory
+        widget.render(&mut canvas, &mut renderer);
+    }
     /*let pwd = env::current_dir().unwrap().to_str().unwrap().to_string();*/
 }

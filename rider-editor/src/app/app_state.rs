@@ -1,5 +1,6 @@
 use crate::app::application::Application;
-use crate::app::{UpdateResult, WindowCanvas as WC};
+use crate::app::UpdateResult;
+use crate::renderer::renderer::Renderer;
 use crate::renderer::CanvasRenderer;
 use crate::ui::*;
 use rider_config::*;
@@ -46,18 +47,22 @@ impl AppState {
         };
     }
 
-    #[cfg_attr(tarpaulin, skip)]
-    pub fn open_directory(&mut self, dir_path: String, renderer: &mut CanvasRenderer) {
+    pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R)
+    where
+        R: Renderer + CharacterSizeManager,
+    {
         match self.open_file_modal.as_mut() {
             Some(modal) => modal.open_directory(dir_path, renderer),
             _ => (),
         };
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     pub fn file_editor(&self) -> &FileEditor {
         &self.file_editor
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     pub fn file_editor_mut(&mut self) -> &mut FileEditor {
         &mut self.file_editor
     }
@@ -81,7 +86,11 @@ impl AppState {
 
 #[cfg_attr(tarpaulin, skip)]
 impl AppState {
-    pub fn render(&self, canvas: &mut WC, renderer: &mut CanvasRenderer, _context: &RenderContext) {
+    pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, _context: &RenderContext)
+    where
+        C: CanvasAccess,
+        R: Renderer + ConfigHolder + CharacterSizeManager,
+    {
         // file editor
         self.file_editor.render(canvas, renderer);
 
@@ -98,7 +107,10 @@ impl AppState {
         };
     }
 
-    pub fn prepare_ui(&mut self, renderer: &mut CanvasRenderer) {
+    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
+    where
+        R: Renderer + CharacterSizeManager,
+    {
         self.menu_bar.prepare_ui();
         self.project_tree.prepare_ui(renderer);
         self.file_editor.prepare_ui(renderer);

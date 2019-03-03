@@ -171,17 +171,17 @@ mod tests {
             unimplemented!()
         }
 
-        #[cfg_attr(tarpaulin, skip)]
-        fn load_image(&mut self, _path: String) -> Result<Rc<Texture>, String> {
-            unimplemented!()
-        }
-
         fn load_text_tex(
             &mut self,
             _details: &mut TextDetails,
             _font_details: FontDetails,
         ) -> Result<Rc<Texture>, String> {
             Err("skip render character".to_owned())
+        }
+
+        #[cfg_attr(tarpaulin, skip)]
+        fn load_image(&mut self, _path: String) -> Result<Rc<Texture>, String> {
+            unimplemented!()
         }
     }
 

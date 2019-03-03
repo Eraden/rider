@@ -200,6 +200,7 @@ impl ClickHandler for EditorFileToken {
 mod tests {
     use super::*;
     use crate::tests::support::build_config;
+    use crate::tests::support::CanvasMock;
     use rider_lexers::Token;
     use sdl2::pixels::PixelFormatEnum;
     use sdl2::render::Texture;
@@ -207,92 +208,12 @@ mod tests {
     use sdl2::surface::Surface;
     use sdl2::surface::SurfaceContext;
     use sdl2::ttf::Font;
-    use std::fmt::Debug;
-    use std::fmt::Error;
-    use std::fmt::Formatter;
     use std::rc::Rc;
     use std::sync::{Arc, RwLock};
 
     //##################################################
     // models
     //##################################################
-
-    #[derive(Debug, PartialEq)]
-    struct RendererRect {
-        pub rect: Rect,
-        pub color: Color,
-    }
-
-    #[cfg_attr(tarpaulin, skip)]
-    struct CanvasMock {
-        pub rects: Vec<RendererRect>,
-        pub borders: Vec<RendererRect>,
-        pub lines: Vec<RendererRect>,
-        pub clippings: Vec<Rect>,
-    }
-
-    #[cfg_attr(tarpaulin, skip)]
-    impl Debug for CanvasMock {
-        fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-            write!(f, "CanvasMock {{}}")
-        }
-    }
-
-    #[cfg_attr(tarpaulin, skip)]
-    impl PartialEq for CanvasMock {
-        fn eq(&self, other: &CanvasMock) -> bool {
-            self.rects == other.rects
-                && self.borders == other.borders
-                && self.clippings == other.clippings
-                && self.lines == other.lines
-        }
-    }
-
-    #[cfg_attr(tarpaulin, skip)]
-    impl CanvasMock {
-        pub fn new() -> Self {
-            Self {
-                rects: vec![],
-                borders: vec![],
-                lines: vec![],
-                clippings: vec![],
-            }
-        }
-    }
-
-    #[cfg_attr(tarpaulin, skip)]
-    impl CanvasAccess for CanvasMock {
-        fn render_rect(&mut self, rect: Rect, color: Color) -> Result<(), String> {
-            self.rects.push(RendererRect { rect, color });
-            Ok(())
-        }
-
-        fn render_border(&mut self, rect: Rect, color: Color) -> Result<(), String> {
-            self.borders.push(RendererRect { rect, color });
-            Ok(())
-        }
-
-        fn render_image(
-            &mut self,
-            _tex: Rc<Texture>,
-            _src: Rect,
-            _dest: Rect,
-        ) -> Result<(), String> {
-            unimplemented!()
-        }
-
-        fn render_line(&mut self, start: Point, end: Point, color: Color) -> Result<(), String> {
-            self.lines.push(RendererRect {
-                rect: Rect::new(start.x(), start.y(), end.x() as u32, end.y() as u32),
-                color,
-            });
-            Ok(())
-        }
-
-        fn set_clipping(&mut self, rect: Rect) {
-            self.clippings.push(rect);
-        }
-    }
 
     #[cfg_attr(tarpaulin, skip)]
     struct RendererMock<'l> {

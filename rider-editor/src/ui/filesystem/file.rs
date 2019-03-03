@@ -114,16 +114,17 @@ impl FileEntry {
                 text: c.to_string(),
                 font: font_details.clone(),
             };
-            let text_texture = renderer
-                .load_text_tex(&mut text_details, font_details.clone())
-                .unwrap();
-            d.set_width(size.width());
-            d.set_height(size.height());
+            let maybe_texture = renderer.load_text_tex(&mut text_details, font_details.clone());
 
-            canvas
-                .render_image(text_texture, self.source.clone(), d.clone())
-                .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
-            d.set_x(d.x() + size.width() as i32)
+            if let Ok(texture) = maybe_texture {
+                d.set_width(size.width());
+                d.set_height(size.height());
+
+                canvas
+                    .render_image(texture, self.source.clone(), d.clone())
+                    .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
+                d.set_x(d.x() + size.width() as i32)
+            }
         }
     }
 }
