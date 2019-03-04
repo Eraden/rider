@@ -53,7 +53,7 @@ impl AppState {
     {
         match self.open_file_modal.as_mut() {
             Some(modal) => modal.open_directory(dir_path, renderer),
-            _ => (),
+            None => self.project_tree.open_directory(dir_path, renderer),
         };
     }
 
@@ -144,6 +144,14 @@ impl AppState {
 impl AppState {
     #[cfg_attr(tarpaulin, skip)]
     pub fn on_left_click(&mut self, point: &Point, video_subsystem: &mut VS) -> UpdateResult {
+        if self
+            .project_tree
+            .is_left_click_target(point, &UpdateContext::Nothing)
+        {
+            return self
+                .project_tree
+                .on_left_click(point, &UpdateContext::Nothing);
+        }
         match self.open_file_modal.as_mut() {
             Some(modal) => return modal.on_left_click(point, &UpdateContext::Nothing),
             _ => (),

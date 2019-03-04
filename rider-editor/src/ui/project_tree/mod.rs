@@ -1,7 +1,14 @@
+use crate::app::application::UpdateResult;
 use crate::renderer::renderer::Renderer;
+use crate::ui::file_editor::ScrollableView;
 use crate::ui::filesystem::directory::DirectoryView;
+use crate::ui::horizontal_scroll_bar::HorizontalScrollBar;
+use crate::ui::move_render_point;
+use crate::ui::scroll_bar::Scrollable;
 use crate::ui::text_character::CharacterSizeManager;
+use crate::ui::vertical_scroll_bar::VerticalScrollBar;
 use crate::ui::CanvasAccess;
+use crate::ui::ClickHandler;
 use crate::ui::RenderContext;
 use crate::ui::UpdateContext;
 use rider_config::config::Config;
@@ -11,13 +18,20 @@ use sdl2::rect::Rect;
 use std::sync::Arc;
 use std::sync::RwLock;
 
+const CONTENT_MARGIN_LEFT: i32 = 16;
+const CONTENT_MARGIN_TOP: i32 = 24;
+const DEFAULT_ICON_SIZE: u32 = 16;
+
 pub struct ProjectTreeSidebar {
     dest: Rect,
+    full_dest: Rect,
     config: Arc<RwLock<Config>>,
     root: String,
     border_color: Color,
     background_color: Color,
     dir_view: DirectoryView,
+    vertical_scroll_bar: VerticalScrollBar,
+    horizontal_scroll_bar: HorizontalScrollBar,
 }
 
 impl ProjectTreeSidebar {
@@ -32,8 +46,11 @@ impl ProjectTreeSidebar {
         };
 
         Self {
-            dest: Rect::new(0, 0, 100, h),
+            dest: Rect::new(0, 0, 200, h),
+            full_dest: Rect::new(0, 0, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE),
             dir_view: DirectoryView::new(root.clone(), config.clone()),
+            vertical_scroll_bar: VerticalScrollBar::new(Arc::clone(&config)),
+            horizontal_scroll_bar: HorizontalScrollBar::new(Arc::clone(&config)),
             config,
             root,
             background_color,
@@ -53,12 +70,12 @@ impl ProjectTreeSidebar {
     }
 
     pub fn prepare_ui<R>(&mut self, renderer: &mut R)
-    where
-        R: Renderer + CharacterSizeManager,
+        where
+            R: Renderer + CharacterSizeManager,
     {
         let config = self.config.read().unwrap();
         let height = config.height();
-        let left_margin = config.editor_left_margin();
+        let left_margin = 0;
         let top_margin = config.menu_height() as i32;
         self.dest.set_x(left_margin);
         self.dest.set_y(top_margin);
@@ -68,9 +85,9 @@ impl ProjectTreeSidebar {
     }
 
     pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R)
-    where
-        R: Renderer + CharacterSizeManager,
-        C: CanvasAccess,
+        where
+            R: Renderer + CharacterSizeManager,
+            C: CanvasAccess,
     {
         canvas.set_clipping(self.dest.clone());
         canvas
@@ -81,7 +98,9 @@ impl ProjectTreeSidebar {
             .unwrap();
 
         // dir view
-        let context = RenderContext::RelativePosition(self.dest.top_left() + Point::new(10, 10));
+        let context = RenderContext::RelativePosition(
+            self.dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP),
+        );
         self.dir_view.render(canvas, renderer, &context);
     }
 
@@ -91,6 +110,93 @@ impl ProjectTreeSidebar {
 
     pub fn root(&self) -> String {
         self.root.clone()
+    }
+
+    pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R)
+        where
+            R: Renderer + CharacterSizeManager,
+    {
+        self.dir_view.open_directory(dir_path, renderer);
+        {
+            let dest = self.dir_view.dest();
+            let full_dest = Rect::new(
+                dest.x(),
+                dest.y(),
+                dest.width() + (2 * CONTENT_MARGIN_LEFT as u32),
+                dest.height() + (2 * CONTENT_MARGIN_TOP as u32),
+            );
+            self.full_dest = full_dest;
+        }
+    }
+}
+
+impl ClickHandler for ProjectTreeSidebar {
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UpdateResult {
+        let dest = match context {
+            UpdateContext::ParentPosition(p) => move_render_point(*p, &self.dest),
+            _ => self.dest,
+        };
+        let context = UpdateContext::ParentPosition(
+            dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP) + self.scroll(),
+        );
+        let res = self.dir_view.on_left_click(point, &context);
+        {
+            let dest = self.dir_view.dest();
+            let full_dest = Rect::new(
+                dest.x(),
+                dest.y(),
+                dest.width() + (2 * CONTENT_MARGIN_LEFT as u32),
+                dest.height() + (2 * CONTENT_MARGIN_TOP as u32),
+            );
+            self.full_dest = full_dest;
+        }
+        res
+    }
+
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
+        let dest = match context {
+            UpdateContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
+            _ => self.dest.clone(),
+        };
+        let p =
+            dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP) + self.scroll();
+        let context = UpdateContext::ParentPosition(p);
+        if self.dir_view.is_left_click_target(point, &context) {
+            true
+        } else {
+            Rect::new(p.x(), p.y(), dest.width(), dest.height()).contains_point(point.clone())
+        }
+    }
+}
+
+impl ScrollableView for ProjectTreeSidebar {
+    fn scroll_by(&mut self, x: i32, y: i32) {
+        let read_config = self.config.read().unwrap();
+
+        let value_x = read_config.scroll().speed() * x;
+        let value_y = read_config.scroll().speed() * y;
+        let old_x = self.horizontal_scroll_bar.scroll_value();
+        let old_y = self.vertical_scroll_bar.scroll_value();
+
+        if value_x + old_x >= 0 {
+            self.horizontal_scroll_bar.scroll_to(value_x + old_x);
+            if self.horizontal_scroll_bar.scrolled_part() > 1.0 {
+                self.horizontal_scroll_bar.scroll_to(old_x);
+            }
+        }
+        if value_y + old_y >= 0 {
+            self.vertical_scroll_bar.scroll_to(value_y + old_y);
+            if self.vertical_scroll_bar.scrolled_part() > 1.0 {
+                self.vertical_scroll_bar.scroll_to(old_y);
+            }
+        }
+    }
+
+    fn scroll(&self) -> Point {
+        Point::new(
+            -self.horizontal_scroll_bar.scroll_value(),
+            -self.vertical_scroll_bar.scroll_value(),
+        )
     }
 }
 
@@ -103,12 +209,16 @@ mod tests {
     use crate::tests::support::CanvasMock;
     use crate::ui::project_tree::ProjectTreeSidebar;
     use crate::ui::text_character::CharacterSizeManager;
+    use crate::ui::ClickHandler;
+    use crate::ui::UpdateContext;
     use rider_config::ConfigAccess;
     use rider_config::ConfigHolder;
+    use sdl2::rect::Point;
     use sdl2::rect::Rect;
     use sdl2::render::Texture;
     use sdl2::ttf::Font;
     use std::rc::Rc;
+    use crate::ui::file_editor::ScrollableView;
 
     #[cfg_attr(tarpaulin, skip)]
     struct RendererMock {
@@ -161,7 +271,7 @@ mod tests {
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
         widget.prepare_ui(&mut renderer);
-        assert_eq!(widget.full_rect(), Rect::new(10, 60, 100, 860));
+        assert_eq!(widget.full_rect(), Rect::new(0, 60, 200, 860));
     }
 
     #[test]
@@ -169,7 +279,7 @@ mod tests {
         let config = build_config();
         let mut widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
         widget.update(0);
-        assert_eq!(widget.full_rect(), Rect::new(0, 60, 100, 800));
+        assert_eq!(widget.full_rect(), Rect::new(0, 60, 200, 800));
     }
 
     #[test]
@@ -178,7 +288,7 @@ mod tests {
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
         widget.prepare_ui(&mut renderer);
-        assert_eq!(widget.full_rect(), Rect::new(10, 60, 100, 860));
+        assert_eq!(widget.full_rect(), Rect::new(0, 60, 200, 860));
     }
 
     #[test]
@@ -187,8 +297,87 @@ mod tests {
         let mut renderer = RendererMock::new(config.clone());
         let mut canvas = CanvasMock::new();
         let widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
-        //        widget.prepare_ui(&mut renderer); // skip load directory
         widget.render(&mut canvas, &mut renderer);
     }
-    /*let pwd = env::current_dir().unwrap().to_str().unwrap().to_string();*/
+
+    //#######################################################################
+    // scroll
+    //#######################################################################
+
+    #[test]
+    fn assert_scroll() {
+        let config = build_config();
+        let widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
+        let res = widget.scroll();
+        let expected = Point::new(0, 0);
+        assert_eq!(res, expected);
+    }
+
+    #[test]
+    fn assert_scroll_by() {
+        let config = build_config();
+        let mut widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
+        widget.scroll_by(10, 10);
+        let res = widget.scroll();
+        let expected = Point::new(0, -100);
+        assert_eq!(res, expected);
+    }
+
+    //#######################################################################
+    // on_left_click
+    //#######################################################################
+
+    #[test]
+    fn assert_on_left_click_with_nothing() {
+        let config = build_config();
+        let path = "/tmp/rider/test-open-file/open-directory";
+        let mut widget = ProjectTreeSidebar::new(path.to_owned(), config);
+        let p = Point::new(100, 100);
+        let context = UpdateContext::Nothing;
+        widget.on_left_click(&p, &context);
+    }
+
+    #[test]
+    fn assert_on_left_click_with_parent_position() {
+        let config = build_config();
+        let path = "/tmp/rider/test-open-file/open-directory";
+        let mut widget = ProjectTreeSidebar::new(path.to_owned(), config);
+        let p = Point::new(100, 100);
+        let context = UpdateContext::ParentPosition(Point::new(10, 10));
+        widget.on_left_click(&p, &context);
+    }
+
+    //#######################################################################
+    // is_left_click_target
+    //#######################################################################
+
+    #[test]
+    fn assert_is_left_click_target_with_nothing() {
+        let config = build_config();
+        let path = "/tmp/rider/test-open-file/open-directory";
+        let widget = ProjectTreeSidebar::new(path.to_owned(), config);
+        let p = Point::new(400, 400);
+        let context = UpdateContext::Nothing;
+        assert_eq!(widget.is_left_click_target(&p, &context), false);
+    }
+
+    #[test]
+    fn assert_is_left_click_target_with_parent_position() {
+        let config = build_config();
+        let path = "/tmp/rider/test-open-file/open-directory";
+        let widget = ProjectTreeSidebar::new(path.to_owned(), config);
+        let p = Point::new(800, 800);
+        let context = UpdateContext::ParentPosition(Point::new(10, 10));
+        assert_eq!(widget.is_left_click_target(&p, &context), false);
+    }
+
+    #[test]
+    fn assert_is_left_click_target_with_parent_position_in_box() {
+        let config = build_config();
+        let path = "/tmp/rider/test-open-file/open-directory";
+        let widget = ProjectTreeSidebar::new(path.to_owned(), config);
+        let p = Point::new(500, 400);
+        let context = UpdateContext::ParentPosition(Point::new(10, 10));
+        assert_eq!(widget.is_left_click_target(&p, &context), false);
+    }
 }
