@@ -70,8 +70,8 @@ impl ProjectTreeSidebar {
     }
 
     pub fn prepare_ui<R>(&mut self, renderer: &mut R)
-        where
-            R: Renderer + CharacterSizeManager,
+    where
+        R: Renderer + CharacterSizeManager,
     {
         let config = self.config.read().unwrap();
         let height = config.height();
@@ -85,9 +85,9 @@ impl ProjectTreeSidebar {
     }
 
     pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R)
-        where
-            R: Renderer + CharacterSizeManager,
-            C: CanvasAccess,
+    where
+        R: Renderer + CharacterSizeManager,
+        C: CanvasAccess,
     {
         canvas.set_clipping(self.dest.clone());
         canvas
@@ -113,8 +113,8 @@ impl ProjectTreeSidebar {
     }
 
     pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R)
-        where
-            R: Renderer + CharacterSizeManager,
+    where
+        R: Renderer + CharacterSizeManager,
     {
         self.dir_view.open_directory(dir_path, renderer);
         {
@@ -207,6 +207,7 @@ mod tests {
     use crate::renderer::renderer::Renderer;
     use crate::tests::support::build_config;
     use crate::tests::support::CanvasMock;
+    use crate::ui::file_editor::ScrollableView;
     use crate::ui::project_tree::ProjectTreeSidebar;
     use crate::ui::text_character::CharacterSizeManager;
     use crate::ui::ClickHandler;
@@ -218,7 +219,6 @@ mod tests {
     use sdl2::render::Texture;
     use sdl2::ttf::Font;
     use std::rc::Rc;
-    use crate::ui::file_editor::ScrollableView;
 
     #[cfg_attr(tarpaulin, skip)]
     struct RendererMock {
