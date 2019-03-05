@@ -335,7 +335,7 @@ impl DirectoryView {
                 dir.update(ticks, context);
             }
             for file in self.files.iter_mut() {
-                file.update(ticks, context);
+                file.update();
             }
         }
         UpdateResult::NoOp
@@ -391,7 +391,7 @@ impl ClickHandler for DirectoryView {
         for file in self.files.iter_mut() {
             let context = UpdateContext::ParentPosition(p.clone());
             if file.is_left_click_target(&point, &context) {
-                return file.on_left_click(&point, &context);
+                return file.on_left_click();
             }
             p = p + Point::new(0, file.height() as i32 + CHILD_MARGIN);
         }
