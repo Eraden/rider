@@ -261,70 +261,56 @@ impl Application {
                 } if mouse_btn == MouseButton::Left => self
                     .tasks
                     .push(UpdateResult::MouseDragStart(Point::new(x, y))),
-                Event::KeyDown { keycode, .. } => {
-                    let keycode = if keycode.is_some() {
-                        keycode.unwrap()
-                    } else {
-                        continue;
-                    };
-
-                    match keycode {
-                        Keycode::Backspace => {
-                            self.tasks.push(UpdateResult::DeleteFront);
-                        }
-                        Keycode::Delete => {
-                            self.tasks.push(UpdateResult::DeleteBack);
-                        }
-                        Keycode::KpEnter | Keycode::Return => {
-                            self.tasks.push(UpdateResult::InsertNewLine);
-                        }
-                        Keycode::Left => {
-                            self.tasks.push(UpdateResult::MoveCaretLeft);
-                        }
-                        Keycode::Right => {
-                            self.tasks.push(UpdateResult::MoveCaretRight);
-                        }
-                        Keycode::Up => {
-                            self.tasks.push(UpdateResult::MoveCaretUp);
-                        }
-                        Keycode::Down => {
-                            self.tasks.push(UpdateResult::MoveCaretDown);
-                        }
-                        Keycode::O => {
-                            if left_control_pressed && !shift_pressed {
-                                self.tasks.push(UpdateResult::OpenFileModal);
-                            }
-                        }
-                        _ => {}
-                    };
-                }
+                Event::KeyDown { keycode, .. } if keycode.is_some() => match keycode.unwrap() {
+                    Keycode::Backspace => {
+                        self.tasks.push(UpdateResult::DeleteFront);
+                    }
+                    Keycode::Delete => {
+                        self.tasks.push(UpdateResult::DeleteBack);
+                    }
+                    Keycode::KpEnter | Keycode::Return => {
+                        self.tasks.push(UpdateResult::InsertNewLine);
+                    }
+                    Keycode::Left => {
+                        self.tasks.push(UpdateResult::MoveCaretLeft);
+                    }
+                    Keycode::Right => {
+                        self.tasks.push(UpdateResult::MoveCaretRight);
+                    }
+                    Keycode::Up => {
+                        self.tasks.push(UpdateResult::MoveCaretUp);
+                    }
+                    Keycode::Down => {
+                        self.tasks.push(UpdateResult::MoveCaretDown);
+                    }
+                    Keycode::O if left_control_pressed && !shift_pressed => {
+                        self.tasks.push(UpdateResult::OpenFileModal)
+                    }
+                    _ => {}
+                },
                 Event::TextInput { text, .. } => {
                     self.tasks.push(UpdateResult::Input(text));
                 }
                 Event::MouseWheel {
                     direction, x, y, ..
-                } => {
-                    match direction {
-                        MouseWheelDirection::Normal => {
-                            self.tasks.push(UpdateResult::Scroll { x, y });
-                        }
-                        MouseWheelDirection::Flipped => {
-                            self.tasks.push(UpdateResult::Scroll { x, y: -y });
-                        }
-                        _ => {
-                            // ignore
-                        }
-                    };
-                }
+                } => match direction {
+                    MouseWheelDirection::Normal => {
+                        self.tasks.push(UpdateResult::Scroll { x, y });
+                    }
+                    MouseWheelDirection::Flipped => {
+                        self.tasks.push(UpdateResult::Scroll { x, y: -y });
+                    }
+                    _ => {
+                        // ignore
+                    }
+                },
                 Event::Window {
                     win_event: WindowEvent::Resized(w, h),
                     ..
-                } => {
-                    self.tasks.push(UpdateResult::WindowResize {
-                        width: w,
-                        height: h,
-                    });
-                }
+                } => self.tasks.push(UpdateResult::WindowResize {
+                    width: w,
+                    height: h,
+                }),
                 _ => {}
             }
         }

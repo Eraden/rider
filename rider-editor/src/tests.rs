@@ -19,6 +19,16 @@ pub mod support {
     use std::rc::Rc;
     use std::sync::*;
 
+    pub fn build_path(path: String) {
+        use std::fs;
+
+        fs::create_dir_all(path.as_str()).unwrap();
+        fs::write((path.clone() + &"/file1".to_owned()).as_str(), "foo").unwrap();
+        fs::write((path.clone() + &"/file2".to_owned()).as_str(), "bar").unwrap();
+        fs::create_dir_all((path.clone() + &"/dir1".to_owned()).as_str()).unwrap();
+        fs::create_dir_all((path.clone() + &"/dir2".to_owned()).as_str()).unwrap();
+    }
+
     pub fn build_config() -> Arc<RwLock<Config>> {
         let mut config = Config::new();
         config.set_theme(config.editor_config().current_theme().clone());

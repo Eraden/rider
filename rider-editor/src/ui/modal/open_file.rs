@@ -1,5 +1,4 @@
 use crate::renderer::renderer::Renderer;
-use crate::renderer::CanvasRenderer;
 use crate::ui::*;
 use crate::ui::{RenderContext as RC, UpdateContext as UC};
 use rider_config::ConfigAccess;
@@ -78,10 +77,8 @@ impl OpenFile {
     pub fn full_rect(&self) -> &Rect {
         &self.full_dest
     }
-}
 
-impl ScrollableView for OpenFile {
-    fn scroll_by(&mut self, x: i32, y: i32) {
+    pub fn scroll_by(&mut self, x: i32, y: i32) {
         let read_config = self.config.read().unwrap();
 
         let value_x = read_config.scroll().speed() * x;
@@ -103,16 +100,14 @@ impl ScrollableView for OpenFile {
         }
     }
 
-    fn scroll(&self) -> Point {
+    pub fn scroll(&self) -> Point {
         Point::new(
             -self.horizontal_scroll_bar.scroll_value(),
             -self.vertical_scroll_bar.scroll_value(),
         )
     }
-}
 
-impl Update for OpenFile {
-    fn update(&mut self, ticks: i32, context: &UC) -> UR {
+    pub fn update(&mut self, ticks: i32, context: &UC) -> UR {
         let (window_width, window_height, color, scroll_width, scroll_margin) = {
             let c = self.config.read().unwrap();
             (
@@ -128,6 +123,7 @@ impl Update for OpenFile {
             .set_x((window_width / 2) as i32 - (self.dest.width() / 2) as i32);
         self.dest
             .set_y((window_height / 2) as i32 - (self.dest.height() / 2) as i32);
+
         self.background_color = color;
 
         //        Scroll bars
@@ -148,10 +144,7 @@ impl Update for OpenFile {
         // End
         UR::NoOp
     }
-}
 
-#[cfg_attr(tarpaulin, skip)]
-impl OpenFile {
     pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RC)
     where
         C: CanvasAccess,
@@ -159,11 +152,11 @@ impl OpenFile {
     {
         let dest = match context {
             RC::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
-            _ => self.dest,
+            _ => self.dest.clone(),
         };
 
         // Background
-        //        canvas.set_clip_rect(dest.clone());
+        canvas.set_clipping(dest.clone());
         canvas
             .render_rect(dest, self.background_color)
             .unwrap_or_else(|_| panic!("Failed to render open file modal background!"));
@@ -189,23 +182,22 @@ impl OpenFile {
         );
     }
 
-    pub fn prepare_ui(&mut self, renderer: &mut CanvasRenderer) {
+    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
+    where
+        R: Renderer + CharacterSizeManager,
+    {
         self.directory_view.prepare_ui(renderer);
     }
-}
 
-impl RenderBox for OpenFile {
-    fn render_start_point(&self) -> Point {
+    pub fn render_start_point(&self) -> Point {
         self.dest.top_left()
     }
 
-    fn dest(&self) -> Rect {
+    pub fn dest(&self) -> Rect {
         self.dest.clone()
     }
-}
 
-impl ClickHandler for OpenFile {
-    fn on_left_click(&mut self, point: &Point, context: &UC) -> UR {
+    pub fn on_left_click(&mut self, point: &Point, context: &UC) -> UR {
         let dest = match context {
             UC::ParentPosition(p) => move_render_point(*p, &self.dest),
             _ => self.dest,
@@ -227,7 +219,7 @@ impl ClickHandler for OpenFile {
         res
     }
 
-    fn is_left_click_target(&self, point: &Point, context: &UC) -> bool {
+    pub fn is_left_click_target(&self, point: &Point, context: &UC) -> bool {
         let dest = match context {
             UC::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
             _ => self.dest.clone(),
@@ -246,9 +238,13 @@ impl ClickHandler for OpenFile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::support::build_config;
     use crate::tests::support::SimpleRendererMock;
+    use crate::tests::support::{build_config, CanvasMock};
     use std::fs;
+
+    //#######################################################################
+    // scroll
+    //#######################################################################
 
     #[test]
     fn assert_scroll() {
@@ -258,6 +254,10 @@ mod tests {
         assert_eq!(widget.scroll(), Point::new(0, -130));
     }
 
+    //#######################################################################
+    // dest
+    //#######################################################################
+
     #[test]
     fn assert_dest() {
         let config = build_config();
@@ -265,12 +265,20 @@ mod tests {
         assert_eq!(widget.dest(), Rect::new(452, 365, 120, 130));
     }
 
+    //#######################################################################
+    // full_rect
+    //#######################################################################
+
     #[test]
     fn assert_full_rect() {
         let config = build_config();
         let widget = OpenFile::new("/tmp".to_owned(), 120, 130, config);
         assert_eq!(widget.full_rect(), &Rect::new(0, 0, 16, 16));
     }
+
+    //#######################################################################
+    // open_directory
+    //#######################################################################
 
     #[test]
     fn assert_open_directory() {
@@ -282,12 +290,20 @@ mod tests {
         widget.open_directory(path.to_owned(), &mut renderer);
     }
 
+    //#######################################################################
+    // update
+    //#######################################################################
+
     #[test]
     fn assert_update() {
         let config = build_config();
         let mut widget = OpenFile::new("/tmp".to_owned(), 100, 100, config);
         widget.update(0, &UpdateContext::Nothing);
     }
+
+    //#######################################################################
+    // root_path
+    //#######################################################################
 
     #[test]
     fn assert_root_path() {
@@ -297,6 +313,10 @@ mod tests {
         widget.update(0, &UpdateContext::Nothing);
         assert_eq!(widget.root_path(), path.to_owned());
     }
+
+    //#######################################################################
+    // render_start_point
+    //#######################################################################
 
     #[test]
     fn assert_render_start_point() {
@@ -363,5 +383,34 @@ mod tests {
         let p = Point::new(500, 400);
         let context = UpdateContext::ParentPosition(Point::new(10, 10));
         assert_eq!(widget.is_left_click_target(&p, &context), false);
+    }
+
+    //#######################################################################
+    // render
+    //#######################################################################
+
+    #[test]
+    fn assert_render() {
+        let config = build_config();
+        let path = "/tmp/rider/test-open-file/open-directory";
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut canvas = CanvasMock::new();
+        let widget = OpenFile::new(path.to_owned(), 100, 100, config);
+        let p = Point::new(100, 100);
+        let context = RenderContext::RelativePosition(p);
+        widget.render(&mut canvas, &mut renderer, &context);
+    }
+
+    //#######################################################################
+    // prepare_ui
+    //#######################################################################
+
+    #[test]
+    fn assert_prepare_ui() {
+        let config = build_config();
+        let path = "/tmp/rider/test-open-file/open-directory";
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut widget = OpenFile::new(path.to_owned(), 100, 100, config);
+        widget.prepare_ui(&mut renderer);
     }
 }
