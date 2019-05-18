@@ -15,12 +15,10 @@ pub fn delete_front<R>(file_editor: &mut FileEditor, renderer: &mut R)
 where
     R: ConfigHolder + CharacterSizeManager + Renderer,
 {
-    let mut buffer: String = if let Some(file) = file_editor.file() {
-        file
-    } else {
-        return;
-    }
-    .buffer();
+    let mut buffer: String = match file_editor.file() {
+        Some(file) => file.buffer(),
+        _ => return,
+    };
     let position: CaretPosition = file_editor.caret().position().clone();
     if position.text_position() == 0 {
         return;
@@ -28,20 +26,16 @@ where
     let c: char = buffer.chars().collect::<Vec<char>>()[position.text_position() - 1];
     buffer.remove(position.text_position() - 1);
     let position = match c {
-        '\n' if position.text_position() > 0 && position.line_number() > 0 => {
-            position.moved(-1, -1, 0)
-        }
+        '\n' if !position.is_first() => position.moved(-1, -1, 0),
         '\n' => position.clone(),
         _ if position.text_position() > 0 => position.moved(-1, 0, 0),
         _ => position.moved(0, 0, 0),
     };
     let move_to = file_editor
         .file()
-        .and_then(|f| f.get_character_at(file_editor.caret().text_position()))
-        .and_then(|character| {
-            let dest: Rect = character.dest();
-            Some((position, Point::new(dest.x(), dest.y())))
-        });
+        .and_then(|f| f.get_character_at(position.text_position()))
+        .map(|character| character.dest())
+        .map(|dest| (position, Point::new(dest.x(), dest.y())));
     match move_to {
         Some((position, point)) => file_editor.caret_mut().move_caret(position, point),
         None => file_editor.caret_mut().reset_caret(),
@@ -60,10 +54,9 @@ pub fn delete_back<R>(file_editor: &mut FileEditor, renderer: &mut R)
 where
     R: ConfigHolder + CharacterSizeManager + Renderer,
 {
-    let file: &EditorFile = if let Some(file) = file_editor.file() {
-        file
-    } else {
-        return;
+    let file: &EditorFile = match file_editor.file() {
+        Some(file) => file,
+        None => return,
     };
     let mut buffer: String = file.buffer();
     let position: usize = file_editor.caret().text_position();
@@ -177,6 +170,11 @@ mod tests {
             _font_details: FontDetails,
         ) -> Result<Rc<Texture>, String> {
             Err("skip render character".to_owned())
+        }
+
+        #[cfg_attr(tarpaulin, skip)]
+        fn load_image(&mut self, _path: String) -> Result<Rc<Texture>, String> {
+            unimplemented!()
         }
     }
 

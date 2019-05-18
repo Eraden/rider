@@ -99,7 +99,7 @@ impl Caret {
 impl Caret {
     pub fn update(&mut self) -> UR {
         self.blink_delay += 1;
-        if self.blink_delay >= 30 {
+        if self.blink_delay >= 15 {
             self.blink_delay = 0;
             self.toggle_state();
         }

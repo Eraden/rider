@@ -10,7 +10,7 @@ impl ScrollConfig {
         Self {
             width: 4,
             margin_right: 5,
-            speed: 10,
+            speed: 30,
         }
     }
 
@@ -91,7 +91,7 @@ mod tests {
     fn assert_speed() {
         let config = ScrollConfig::new();
         let result = config.speed();
-        let expected = 10;
+        let expected = 30;
         assert_eq!(result, expected);
     }
 

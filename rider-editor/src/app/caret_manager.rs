@@ -26,16 +26,18 @@ pub fn move_caret_left(file_editor: &mut FileEditor) {
     if file_editor.caret().text_position() == 0 {
         return;
     }
-    let c: TextCharacter = match file.get_character_at(file_editor.caret().text_position() - 1) {
-        Some(text_character) => text_character,
-        None => return, // EOF
-    };
+    let text_character: TextCharacter =
+        match file.get_character_at(file_editor.caret().text_position() - 1) {
+            Some(text_character) => text_character,
+            None => return, // EOF
+        };
     let pos = file_editor.caret().position();
-    let d = c.dest().clone();
+    let character_destination = text_character.dest().clone();
     let p = pos.moved(-1, 0, 0);
-    file_editor
-        .caret_mut()
-        .move_caret(p, Point::new(d.x(), d.y()));
+    file_editor.caret_mut().move_caret(
+        p,
+        Point::new(character_destination.x(), character_destination.y()),
+    );
 }
 
 #[cfg(test)]
@@ -76,6 +78,11 @@ mod test_move_right {
             _font_details: FontDetails,
         ) -> Result<Rc<Texture>, String> {
             Err("skip render character".to_owned())
+        }
+
+        #[cfg_attr(tarpaulin, skip)]
+        fn load_image(&mut self, _path: String) -> Result<Rc<Texture>, String> {
+            unimplemented!()
         }
     }
 
@@ -160,6 +167,11 @@ mod test_move_left {
     impl Renderer for RendererMock {
         #[cfg_attr(tarpaulin, skip)]
         fn load_font(&mut self, _details: FontDetails) -> Rc<Font> {
+            unimplemented!()
+        }
+
+        #[cfg_attr(tarpaulin, skip)]
+        fn load_image(&mut self, _path: String) -> Result<Rc<Texture>, String> {
             unimplemented!()
         }
 

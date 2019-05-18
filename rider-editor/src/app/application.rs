@@ -16,6 +16,7 @@ use sdl2::surface::Surface;
 use sdl2::video::Window;
 use sdl2::EventPump;
 use sdl2::{Sdl, TimerSubsystem, VideoSubsystem};
+use std::env;
 use std::process::Command;
 use std::sync::{Arc, RwLock};
 use std::thread::sleep;
@@ -29,6 +30,8 @@ pub enum UpdateResult {
     Stop,
     RefreshPositions,
     MouseLeftClicked(Point),
+    MouseDragStart(Point),
+    MouseDragStop(Point),
     MoveCaret(Rect, CaretPosition),
     DeleteFront,
     DeleteBack,
@@ -44,6 +47,7 @@ pub enum UpdateResult {
     OpenFile(String),
     OpenDirectory(String),
     OpenFileModal,
+    FileDropped(String),
 }
 
 #[cfg_attr(tarpaulin, skip)]
@@ -187,14 +191,16 @@ impl Application {
                         app_state.open_directory(dir_path.clone(), &mut renderer);
                     }
                     UpdateResult::OpenFileModal => {
-                        use std::env;
-                        let pwd = env::current_dir().unwrap().to_str().unwrap().to_string();
+                        let pwd = Self::current_working_directory();
                         let mut modal =
                             OpenFile::new(pwd.clone(), 400, 800, Arc::clone(&self.config));
                         modal.prepare_ui(&mut renderer);
                         modal.open_directory(pwd.clone(), &mut renderer);
                         app_state.set_open_file_modal(Some(modal));
                     }
+                    UpdateResult::MouseDragStart(_point) => (),
+                    UpdateResult::MouseDragStop(_point) => (),
+                    UpdateResult::FileDropped(_path) => (),
                 }
             }
             self.tasks = new_tasks;
@@ -241,79 +247,77 @@ impl Application {
                 Event::Quit { .. } => self.tasks.push(UpdateResult::Stop),
                 Event::MouseButtonUp {
                     mouse_btn, x, y, ..
-                } => match mouse_btn {
-                    MouseButton::Left => self
-                        .tasks
-                        .push(UpdateResult::MouseLeftClicked(Point::new(x, y))),
-                    _ => (),
-                },
-                Event::KeyDown { keycode, .. } => {
-                    let keycode = if keycode.is_some() {
-                        keycode.unwrap()
-                    } else {
-                        continue;
-                    };
-
-                    match keycode {
-                        Keycode::Backspace => {
-                            self.tasks.push(UpdateResult::DeleteFront);
-                        }
-                        Keycode::Delete => {
-                            self.tasks.push(UpdateResult::DeleteBack);
-                        }
-                        Keycode::KpEnter | Keycode::Return => {
-                            self.tasks.push(UpdateResult::InsertNewLine);
-                        }
-                        Keycode::Left => {
-                            self.tasks.push(UpdateResult::MoveCaretLeft);
-                        }
-                        Keycode::Right => {
-                            self.tasks.push(UpdateResult::MoveCaretRight);
-                        }
-                        Keycode::Up => {
-                            self.tasks.push(UpdateResult::MoveCaretUp);
-                        }
-                        Keycode::Down => {
-                            self.tasks.push(UpdateResult::MoveCaretDown);
-                        }
-                        Keycode::O => {
-                            if left_control_pressed && !shift_pressed {
-                                self.tasks.push(UpdateResult::OpenFileModal);
-                            }
-                        }
-                        _ => {}
-                    };
+                } if mouse_btn == MouseButton::Left => {
+                    self.tasks
+                        .push(UpdateResult::MouseDragStart(Point::new(x, y)));
+                    self.tasks
+                        .push(UpdateResult::MouseLeftClicked(Point::new(x, y)));
                 }
+                Event::DropFile { filename, .. } => {
+                    self.tasks.push(UpdateResult::FileDropped(filename))
+                }
+                Event::MouseButtonDown {
+                    x, y, mouse_btn, ..
+                } if mouse_btn == MouseButton::Left => self
+                    .tasks
+                    .push(UpdateResult::MouseDragStart(Point::new(x, y))),
+                Event::KeyDown { keycode, .. } if keycode.is_some() => match keycode.unwrap() {
+                    Keycode::Backspace => {
+                        self.tasks.push(UpdateResult::DeleteFront);
+                    }
+                    Keycode::Delete => {
+                        self.tasks.push(UpdateResult::DeleteBack);
+                    }
+                    Keycode::KpEnter | Keycode::Return => {
+                        self.tasks.push(UpdateResult::InsertNewLine);
+                    }
+                    Keycode::Left => {
+                        self.tasks.push(UpdateResult::MoveCaretLeft);
+                    }
+                    Keycode::Right => {
+                        self.tasks.push(UpdateResult::MoveCaretRight);
+                    }
+                    Keycode::Up => {
+                        self.tasks.push(UpdateResult::MoveCaretUp);
+                    }
+                    Keycode::Down => {
+                        self.tasks.push(UpdateResult::MoveCaretDown);
+                    }
+                    Keycode::O if left_control_pressed && !shift_pressed => {
+                        self.tasks.push(UpdateResult::OpenFileModal)
+                    }
+                    _ => {}
+                },
                 Event::TextInput { text, .. } => {
                     self.tasks.push(UpdateResult::Input(text));
                 }
                 Event::MouseWheel {
                     direction, x, y, ..
-                } => {
-                    match direction {
-                        MouseWheelDirection::Normal => {
-                            self.tasks.push(UpdateResult::Scroll { x, y });
-                        }
-                        MouseWheelDirection::Flipped => {
-                            self.tasks.push(UpdateResult::Scroll { x, y: -y });
-                        }
-                        _ => {
-                            // ignore
-                        }
-                    };
-                }
+                } => match direction {
+                    MouseWheelDirection::Normal => {
+                        self.tasks.push(UpdateResult::Scroll { x, y });
+                    }
+                    MouseWheelDirection::Flipped => {
+                        self.tasks.push(UpdateResult::Scroll { x, y: -y });
+                    }
+                    _ => {
+                        // ignore
+                    }
+                },
                 Event::Window {
                     win_event: WindowEvent::Resized(w, h),
                     ..
-                } => {
-                    self.tasks.push(UpdateResult::WindowResize {
-                        width: w,
-                        height: h,
-                    });
-                }
+                } => self.tasks.push(UpdateResult::WindowResize {
+                    width: w,
+                    height: h,
+                }),
                 _ => {}
             }
         }
+    }
+
+    pub fn current_working_directory() -> String {
+        env::current_dir().unwrap().to_str().unwrap().to_string()
     }
 }
 

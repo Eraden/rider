@@ -6,6 +6,11 @@ use sdl2::rect::{Point, Rect};
 use std::collections::HashMap;
 use std::path;
 
+const ICON_DEST_WIDTH: u32 = 16;
+const ICON_DEST_HEIGHT: u32 = 16;
+const ICON_SRC_WIDTH: u32 = 64;
+const ICON_SRC_HEIGHT: u32 = 64;
+
 pub struct FileEntry {
     name_width: u32,
     icon_width: u32,
@@ -26,8 +31,8 @@ impl FileEntry {
             name_width: 0,
             icon_width: 0,
             height: 0,
-            dest: Rect::new(0, 0, 16, 16),
-            source: Rect::new(0, 0, 64, 64),
+            dest: Rect::new(0, 0, ICON_DEST_WIDTH, ICON_DEST_HEIGHT),
+            source: Rect::new(0, 0, ICON_SRC_WIDTH, ICON_SRC_HEIGHT),
             config,
             char_sizes: HashMap::new(),
         }
@@ -70,9 +75,10 @@ impl FileEntry {
         )
     }
 
-    fn render_icon<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, dest: &mut Rect)
+    fn render_icon<C, R>(&self, canvas: &mut C, renderer: &mut R, dest: &mut Rect)
     where
-        T: CanvasAccess,
+        C: CanvasAccess,
+        R: Renderer,
     {
         let dir_texture_path = {
             let c = self.config.read().unwrap();
@@ -81,27 +87,25 @@ impl FileEntry {
             themes_dir.push(path);
             themes_dir.to_str().unwrap().to_owned()
         };
-        let texture = renderer
-            .texture_manager()
-            .load(dir_texture_path.as_str())
-            .unwrap_or_else(|_| panic!("Failed to load directory entry texture"));
-        dest.set_width(16);
-        dest.set_height(16);
-        canvas
-            .render_image(texture, self.source.clone(), dest.clone())
-            .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
+        let maybe_tex = renderer.load_image(dir_texture_path.clone());
+        if let Ok(texture) = maybe_tex {
+            dest.set_width(ICON_DEST_WIDTH);
+            dest.set_height(ICON_DEST_HEIGHT);
+            canvas
+                .render_image(texture, self.source.clone(), dest.clone())
+                .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
+        }
     }
 
-    fn render_name<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, dest: &mut Rect)
+    fn render_name<C, R>(&self, canvas: &mut C, renderer: &mut R, dest: &mut Rect)
     where
-        T: CanvasAccess,
+        C: CanvasAccess,
+        R: Renderer,
     {
         let mut d = dest.clone();
         d.set_x(dest.x() + NAME_MARGIN);
 
         let font_details = build_font_details(self);
-        let font = renderer.font_manager().load(&font_details).unwrap();
-        let texture_manager = renderer.texture_manager();
         let name = self.name();
 
         for c in name.chars() {
@@ -115,31 +119,24 @@ impl FileEntry {
                 text: c.to_string(),
                 font: font_details.clone(),
             };
-            let text_texture = texture_manager
-                .load_text(&mut text_details, font.clone())
-                .unwrap();
-            d.set_width(size.width());
-            d.set_height(size.height());
+            let maybe_texture = renderer.load_text_tex(&mut text_details, font_details.clone());
 
-            canvas
-                .render_image(text_texture, self.source.clone(), d.clone())
-                .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
-            d.set_x(d.x() + size.width() as i32)
+            if let Ok(texture) = maybe_texture {
+                d.set_width(size.width());
+                d.set_height(size.height());
+
+                canvas
+                    .render_image(texture, self.source.clone(), d.clone())
+                    .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
+                d.set_x(d.x() + size.width() as i32)
+            }
         }
     }
-}
 
-impl ConfigHolder for FileEntry {
-    fn config(&self) -> &ConfigAccess {
-        &self.config
-    }
-}
-
-#[cfg_attr(tarpaulin, skip)]
-impl FileEntry {
-    pub fn render<T>(&self, canvas: &mut T, renderer: &mut CanvasRenderer, context: &RenderContext)
+    pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
-        T: CanvasAccess,
+        C: CanvasAccess,
+        R: Renderer,
     {
         let mut dest = match context {
             &RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
@@ -149,48 +146,41 @@ impl FileEntry {
         self.render_name(canvas, renderer, &mut dest.clone());
     }
 
-    pub fn prepare_ui(&mut self, renderer: &mut CanvasRenderer) {
-        let w_rect = get_text_character_rect('W', renderer).unwrap();
+    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
+    where
+        R: Renderer + CharacterSizeManager,
+    {
+        let w_rect = renderer.load_character_size('W');
         self.char_sizes.insert('W', w_rect.clone());
         self.height = w_rect.height();
         self.icon_width = w_rect.height();
         self.name_width = 0;
 
         for c in self.name().chars() {
-            let size = { get_text_character_rect(c.clone(), renderer).unwrap() };
+            let size = { renderer.load_character_size(c.clone()) };
             self.char_sizes.insert(c, size);
             self.name_width += size.width();
         }
         self.dest.set_width(w_rect.height());
         self.dest.set_height(w_rect.height());
     }
-}
 
-impl Update for FileEntry {
-    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UpdateResult {
+    pub fn update(&mut self) -> UpdateResult {
         if !path::Path::new(&self.path).exists() {
             return UpdateResult::RefreshFsTree;
         }
         UpdateResult::NoOp
     }
-}
 
-impl RenderBox for FileEntry {
-    fn render_start_point(&self) -> Point {
+    pub fn render_start_point(&self) -> Point {
         self.dest.top_left()
     }
 
-    fn dest(&self) -> Rect {
-        self.dest.clone()
-    }
-}
-
-impl ClickHandler for FileEntry {
-    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UpdateResult {
+    pub fn on_left_click(&mut self) -> UpdateResult {
         UpdateResult::OpenFile(self.path.clone())
     }
 
-    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
+    pub fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
         let dest = Rect::new(
             self.dest.x(),
             self.dest.y(),
@@ -202,5 +192,272 @@ impl ClickHandler for FileEntry {
             _ => dest,
         };
         rect.contains_point(point.clone())
+    }
+}
+
+impl ConfigHolder for FileEntry {
+    fn config(&self) -> &ConfigAccess {
+        &self.config
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tests::support::build_config;
+    use crate::tests::support::CanvasMock;
+    use crate::tests::support::SimpleRendererMock;
+
+    //##########################################################
+    // name_width
+    //##########################################################
+
+    #[test]
+    fn assert_initial_name_width() {
+        let config = build_config();
+        let widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        assert_eq!(widget.name_width(), 0);
+    }
+
+    #[test]
+    fn assert_prepared_name_width() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        assert_eq!(widget.name_width(), 91);
+    }
+
+    //##########################################################
+    // icon_width
+    //##########################################################
+
+    #[test]
+    fn assert_initial_icon_width() {
+        let config = build_config();
+        let widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        assert_eq!(widget.icon_width(), 0);
+    }
+
+    #[test]
+    fn assert_prepared_icon_width() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        assert_eq!(widget.icon_width(), 14);
+    }
+
+    //##########################################################
+    // height
+    //##########################################################
+
+    #[test]
+    fn assert_initial_height() {
+        let config = build_config();
+        let widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        assert_eq!(widget.height(), 0);
+    }
+
+    #[test]
+    fn assert_prepared_height() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        assert_eq!(widget.height(), 14);
+    }
+
+    //##########################################################
+    // name
+    //##########################################################
+
+    #[test]
+    fn assert_initial_name() {
+        let config = build_config();
+        let widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        assert_eq!(widget.name(), "bar.txt".to_owned());
+    }
+
+    #[test]
+    fn assert_prepared_name() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        assert_eq!(widget.name(), "bar.txt".to_owned());
+    }
+
+    //##########################################################
+    // path
+    //##########################################################
+
+    #[test]
+    fn assert_initial_path() {
+        let config = build_config();
+        let widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        assert_eq!(widget.path(), "/foo".to_owned());
+    }
+
+    #[test]
+    fn assert_prepared_path() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        assert_eq!(widget.path(), "/foo".to_owned());
+    }
+
+    //##########################################################
+    // source
+    //##########################################################
+
+    #[test]
+    fn assert_initial_source() {
+        let config = build_config();
+        let widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        assert_eq!(widget.source(), &Rect::new(0, 0, 64, 64));
+    }
+
+    #[test]
+    fn assert_prepared_source() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        assert_eq!(widget.source(), &Rect::new(0, 0, 64, 64));
+    }
+
+    //##########################################################
+    // dest
+    //##########################################################
+
+    #[test]
+    fn assert_initial_dest() {
+        let config = build_config();
+        let widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        assert_eq!(widget.dest(), &Rect::new(0, 0, 16, 16));
+    }
+
+    #[test]
+    fn assert_prepared_dest() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        assert_eq!(widget.dest(), &Rect::new(0, 0, 14, 14));
+    }
+
+    //##########################################################
+    // full_dest
+    //##########################################################
+
+    #[test]
+    fn assert_initial_full_dest() {
+        let config = build_config();
+        let widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        assert_eq!(widget.full_dest(), Rect::new(0, 0, 20, 1));
+    }
+
+    #[test]
+    fn assert_prepared_full_dest() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        assert_eq!(widget.full_dest(), Rect::new(0, 0, 125, 14));
+    }
+
+    //##########################################################
+    // update
+    //##########################################################
+
+    #[test]
+    fn assert_update_when_doesnt_exists() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        assert_eq!(widget.update(), UpdateResult::RefreshFsTree);
+    }
+
+    #[test]
+    fn assert_update_when_does_exists() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/tmp".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        assert_eq!(widget.update(), UpdateResult::NoOp);
+    }
+
+    //##########################################################
+    // render
+    //##########################################################
+
+    #[test]
+    fn assert_render() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut canvas = CanvasMock::new();
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
+        assert_eq!(widget.full_dest(), Rect::new(0, 0, 125, 14));
+    }
+
+    //##########################################################
+    // is_left_click_target
+    //##########################################################
+
+    #[test]
+    fn assert_is_left_click_target_when_target() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut canvas = CanvasMock::new();
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
+        let p = Point::new(0, 0);
+        let context = UpdateContext::Nothing;
+        assert_eq!(widget.is_left_click_target(&p, &context), true);
+    }
+
+    #[test]
+    fn assert_is_left_click_target_when_target_with_parent() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut canvas = CanvasMock::new();
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
+        let p = Point::new(0, 0);
+        let context = UpdateContext::ParentPosition(Point::new(0, 0));
+        assert_eq!(widget.is_left_click_target(&p, &context), true);
+    }
+
+    #[test]
+    fn refute_is_left_click_target_when_target() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut canvas = CanvasMock::new();
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
+        let p = Point::new(9000, 0);
+        let context = UpdateContext::Nothing;
+        assert_eq!(widget.is_left_click_target(&p, &context), false);
+    }
+
+    #[test]
+    fn refute_is_left_click_target_when_target_with_parent() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut canvas = CanvasMock::new();
+        let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
+        let p = Point::new(0, 9000);
+        let context = UpdateContext::ParentPosition(Point::new(0, 0));
+        assert_eq!(widget.is_left_click_target(&p, &context), false);
     }
 }

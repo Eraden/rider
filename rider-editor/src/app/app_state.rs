@@ -1,4 +1,6 @@
-use crate::app::{UpdateResult, WindowCanvas as WC};
+use crate::app::application::Application;
+use crate::app::UpdateResult;
+use crate::renderer::renderer::Renderer;
 use crate::renderer::CanvasRenderer;
 use crate::ui::*;
 use rider_config::*;
@@ -9,6 +11,7 @@ use std::sync::*;
 
 pub struct AppState {
     menu_bar: MenuBar,
+    project_tree: ProjectTreeSidebar,
     files: Vec<EditorFile>,
     config: Arc<RwLock<Config>>,
     file_editor: FileEditor,
@@ -19,6 +22,10 @@ impl AppState {
     pub fn new(config: Arc<RwLock<Config>>) -> Self {
         Self {
             menu_bar: MenuBar::new(Arc::clone(&config)),
+            project_tree: ProjectTreeSidebar::new(
+                Application::current_working_directory(),
+                config.clone(),
+            ),
             files: vec![],
             file_editor: FileEditor::new(Arc::clone(&config)),
             open_file_modal: None,
@@ -40,18 +47,22 @@ impl AppState {
         };
     }
 
-    #[cfg_attr(tarpaulin, skip)]
-    pub fn open_directory(&mut self, dir_path: String, renderer: &mut CanvasRenderer) {
+    pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R)
+    where
+        R: Renderer + CharacterSizeManager,
+    {
         match self.open_file_modal.as_mut() {
             Some(modal) => modal.open_directory(dir_path, renderer),
-            _ => (),
+            None => self.project_tree.open_directory(dir_path, renderer),
         };
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     pub fn file_editor(&self) -> &FileEditor {
         &self.file_editor
     }
 
+    #[cfg_attr(tarpaulin, skip)]
     pub fn file_editor_mut(&mut self) -> &mut FileEditor {
         &mut self.file_editor
     }
@@ -75,23 +86,38 @@ impl AppState {
 
 #[cfg_attr(tarpaulin, skip)]
 impl AppState {
-    pub fn render(&self, canvas: &mut WC, renderer: &mut CanvasRenderer, _context: &RenderContext) {
+    pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, _context: &RenderContext)
+    where
+        C: CanvasAccess,
+        R: Renderer + ConfigHolder + CharacterSizeManager,
+    {
+        // file editor
         self.file_editor.render(canvas, renderer);
+
+        // menu bar
         self.menu_bar.render(canvas, &RenderContext::Nothing);
+
+        // project tree
+        self.project_tree.render(canvas, renderer);
+
+        // open file modal
         match self.open_file_modal.as_ref() {
             Some(modal) => modal.render(canvas, renderer, &RenderContext::Nothing),
             _ => (),
         };
     }
 
-    pub fn prepare_ui(&mut self, renderer: &mut CanvasRenderer) {
+    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
+    where
+        R: Renderer + CharacterSizeManager,
+    {
         self.menu_bar.prepare_ui();
+        self.project_tree.prepare_ui(renderer);
         self.file_editor.prepare_ui(renderer);
     }
-}
 
-impl Update for AppState {
-    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
+    pub fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
+        // open file modal
         let res = match self.open_file_modal.as_mut() {
             Some(modal) => modal.update(ticks, &UpdateContext::Nothing),
             _ => UpdateResult::NoOp,
@@ -100,8 +126,17 @@ impl Update for AppState {
             return res;
         }
 
+        // menu bar
         self.menu_bar.update(ticks, context);
-        self.file_editor.update(ticks, context);
+
+        // sidebar
+        self.project_tree.update(ticks);
+
+        // file editor
+        let context = UpdateContext::ParentPosition(
+            self.project_tree.full_rect().top_right() + Point::new(10, 0),
+        );
+        self.file_editor.update(ticks, &context);
         UpdateResult::NoOp
     }
 }
@@ -109,6 +144,14 @@ impl Update for AppState {
 impl AppState {
     #[cfg_attr(tarpaulin, skip)]
     pub fn on_left_click(&mut self, point: &Point, video_subsystem: &mut VS) -> UpdateResult {
+        if self
+            .project_tree
+            .is_left_click_target(point, &UpdateContext::Nothing)
+        {
+            return self
+                .project_tree
+                .on_left_click(point, &UpdateContext::Nothing);
+        }
         match self.open_file_modal.as_mut() {
             Some(modal) => return modal.on_left_click(point, &UpdateContext::Nothing),
             _ => (),

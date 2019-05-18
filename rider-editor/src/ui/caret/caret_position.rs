@@ -14,32 +14,39 @@ impl CaretPosition {
         }
     }
 
+    #[inline]
     pub fn text_position(&self) -> usize {
         self.text_position
     }
 
+    #[inline]
     pub fn line_number(&self) -> usize {
         self.line_number
     }
 
+    #[inline]
     pub fn line_position(&self) -> usize {
         self.line_position
     }
 
+    #[inline]
     pub fn reset(&mut self) {
         self.text_position = 0;
         self.line_number = 0;
         self.line_position = 0;
     }
 
+    #[inline]
     pub fn set_text_position(&mut self, n: usize) {
         self.text_position = n;
     }
 
+    #[inline]
     pub fn set_line_number(&mut self, n: usize) {
         self.line_number = n;
     }
 
+    #[inline]
     pub fn set_line_position(&mut self, n: usize) {
         self.line_position = n;
     }
@@ -50,6 +57,11 @@ impl CaretPosition {
             line_number: (self.line_number as i32 + line_number) as usize,
             line_position: (self.line_position as i32 + line_position) as usize,
         }
+    }
+
+    #[inline]
+    pub fn is_first(&self) -> bool {
+        self.line_number == 0 && self.text_position == 0
     }
 }
 
