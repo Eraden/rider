@@ -26,16 +26,18 @@ pub fn move_caret_left(file_editor: &mut FileEditor) {
     if file_editor.caret().text_position() == 0 {
         return;
     }
-    let text_character: TextCharacter = match file.get_character_at(file_editor.caret().text_position() - 1) {
-        Some(text_character) => text_character,
-        None => return, // EOF
-    };
+    let text_character: TextCharacter =
+        match file.get_character_at(file_editor.caret().text_position() - 1) {
+            Some(text_character) => text_character,
+            None => return, // EOF
+        };
     let pos = file_editor.caret().position();
     let character_destination = text_character.dest().clone();
     let p = pos.moved(-1, 0, 0);
-    file_editor
-        .caret_mut()
-        .move_caret(p, Point::new(character_destination.x(), character_destination.y()));
+    file_editor.caret_mut().move_caret(
+        p,
+        Point::new(character_destination.x(), character_destination.y()),
+    );
 }
 
 #[cfg(test)]
