@@ -10,7 +10,7 @@ Text editor in rust
 curl https://sh.rustup.rs -sSf | sh
 sudo apt-get install -q -y libsdl2-dev libsdl2-2.0-0 libsdl2-gfx-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libsdl2-ttf-dev
 rustup run nightly cargo build --all -rr
-rustup 
+rustup run nightly cargo run -p rider-editor
 ```
 
 ## Road map
