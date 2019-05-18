@@ -10,6 +10,7 @@ Text editor in rust
 curl https://sh.rustup.rs -sSf | sh
 sudo apt-get install -q -y libsdl2-dev libsdl2-2.0-0 libsdl2-gfx-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libsdl2-ttf-dev
 rustup run nightly cargo build --all -rr
+rustup 
 ```
 
 ## Road map
@@ -21,14 +22,14 @@ rustup run nightly cargo build --all -rr
 * [x] Handle click based caret movement
 * [ ] Handle caret movement with arrow keys
 * [x] Add text content
-* [ ] Open file menu
+* [x] Open file menu
 * [ ] `Save file` with button
 * [ ] `Save file` with shortcut
 * [ ] `Save file as...` with shortcut
 * [x] Theme based menu UI
 * [x] Lock scroll when no available content
 * [ ] Config edit menu
-* [ ] Project tree
+* [x] Project tree
 * [x] Cover `rider` with tests at least 50%
 * [x] Handle resize window
 * [ ] Selection
