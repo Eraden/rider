@@ -251,7 +251,7 @@ mod tests {
         let config = build_config();
         let mut widget = OpenFile::new("/tmp".to_owned(), 100, 100, config);
         widget.scroll_by(12, 13);
-        assert_eq!(widget.scroll(), Point::new(0, -130));
+        assert_eq!(widget.scroll(), Point::new(0, -390));
     }
 
     //#######################################################################

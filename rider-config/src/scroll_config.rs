@@ -91,7 +91,7 @@ mod tests {
     fn assert_speed() {
         let config = ScrollConfig::new();
         let result = config.speed();
-        let expected = 10;
+        let expected = 30;
         assert_eq!(result, expected);
     }
 
