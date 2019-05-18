@@ -10,7 +10,7 @@ impl ScrollConfig {
         Self {
             width: 4,
             margin_right: 5,
-            speed: 10,
+            speed: 30,
         }
     }
 
