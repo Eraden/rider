@@ -40,6 +40,10 @@ impl EditorFileToken {
         }
     }
 
+    pub fn characters(&self) -> &Vec<TextCharacter> {
+        &self.characters
+    }
+
     fn token_to_color(&self, config: &Arc<RwLock<Config>>) -> Color {
         let config = config.read().unwrap();
         let ch = config.theme().code_highlighting();
@@ -53,6 +57,10 @@ impl EditorFileToken {
             &TokenType::Operator { .. } => ch.operator().color().into(),
             &TokenType::Separator { .. } => ch.separator().color().into(),
         }
+    }
+
+    fn iter_char(&self) -> EditorFileTokenIterator {
+        EditorFileTokenIterator::new(self)
     }
 }
 
@@ -196,6 +204,32 @@ impl ClickHandler for EditorFileToken {
     }
 }
 
+#[derive(Clone)]
+pub struct EditorFileTokenIterator<'a> {
+    editor_file_token: &'a EditorFileToken,
+    current_character: usize,
+}
+
+impl<'a> EditorFileTokenIterator<'a> {
+    pub fn new(editor_file_token: &'a EditorFileToken) -> Self {
+        Self {
+            editor_file_token,
+            current_character: 0,
+        }
+    }
+}
+
+impl<'a> std::iter::Iterator for EditorFileTokenIterator<'a> {
+    type Item = &'a TextCharacter;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.current_character += 1;
+        self.editor_file_token
+            .characters
+            .get(self.current_character)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -243,11 +277,6 @@ mod tests {
             unimplemented!("load_font")
         }
 
-        #[cfg_attr(tarpaulin, skip)]
-        fn load_image(&mut self, _path: String) -> Result<Rc<Texture>, String> {
-            unimplemented!()
-        }
-
         fn load_text_tex(
             &mut self,
             _details: &mut TextDetails,
@@ -265,6 +294,11 @@ mod tests {
             //            }, Ok)
             Err("".to_owned())
         }
+
+        #[cfg_attr(tarpaulin, skip)]
+        fn load_image(&mut self, _path: String) -> Result<Rc<Texture>, String> {
+            unimplemented!()
+        }
     }
 
     impl<'l> CharacterSizeManager for RendererMock<'l> {
@@ -276,6 +310,28 @@ mod tests {
     impl<'l> ConfigHolder for RendererMock<'l> {
         fn config(&self) -> &Arc<RwLock<Config>> {
             &self.config
+        }
+    }
+
+    //##################################################
+    // iterator
+    //##################################################
+
+    #[test]
+    fn assert_iterator() {
+        let config = build_config();
+        let token_type = TokenType::String {
+            token: Token::new("abcd".to_owned(), 0, 0, 0, 3),
+        };
+        let token = EditorFileToken::new(&token_type, true, config.clone());
+        for (i, c) in token.iter_char().enumerate() {
+            match i {
+                0 => assert_eq!(c.text_character(), 'a'),
+                1 => assert_eq!(c.text_character(), 'b'),
+                2 => assert_eq!(c.text_character(), 'c'),
+                3 => assert_eq!(c.text_character(), 'd'),
+                _ => assert_eq!("must have 4 characters", "have more than 4 characters"),
+            }
         }
     }
 

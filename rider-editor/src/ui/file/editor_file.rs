@@ -73,6 +73,10 @@ impl EditorFile {
             section.update_positions(&mut current);
         }
     }
+
+    pub fn iter_char(&self) -> EditorFileIterator {
+        EditorFileIterator::new(self)
+    }
 }
 
 impl TextCollection for EditorFile {
@@ -208,11 +212,93 @@ impl RenderBox for EditorFile {
     }
 }
 
+pub struct EditorFileIterator<'a> {
+    current_section: usize,
+    current_token: usize,
+    current_character: usize,
+    file: &'a EditorFile,
+}
+
+impl<'a> EditorFileIterator<'a> {
+    pub fn new(file: &'a EditorFile) -> Self {
+        Self {
+            file,
+            current_section: 0,
+            current_token: 0,
+            current_character: 0,
+        }
+    }
+
+    fn get_section(&self) -> Option<&'a EditorFileSection> {
+        self.file.sections().get(self.current_section)
+    }
+
+    fn get_token(&mut self, section: &'a EditorFileSection) -> Option<&'a EditorFileToken> {
+        section.tokens().get(self.current_token).or_else(|| {
+            self.current_section += 1;
+            self.current_token = 0;
+            self.current_character = 0;
+            self.get_token(self.get_section()?)
+        })
+    }
+
+    fn get_character(&mut self, token: &'a EditorFileToken) -> Option<&'a TextCharacter> {
+        token
+            .characters()
+            .get(self.current_character)
+            .or_else(|| {
+                self.current_character = 0;
+                self.current_token += 1;
+                let token = self.get_token(self.get_section()?)?;
+                self.get_character(token)
+            })
+            .and_then(|c| {
+                self.current_character += 1;
+                Some(c)
+            })
+    }
+}
+
+impl<'a> Iterator for EditorFileIterator<'a> {
+    type Item = &'a TextCharacter;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let token = self.get_token(self.get_section()?)?;
+        self.get_character(token)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::tests::support;
+    use crate::tests::support::SimpleRendererMock;
     use crate::ui::*;
     use sdl2::rect::{Point, Rect};
+
+    //##################################################
+    // iterator
+    //##################################################
+
+    #[test]
+    fn assert_simple_iterations() {
+        let config = support::build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut file =
+            EditorFile::new("./foo.txt".to_owned(), "a b c d".to_owned(), config.clone());
+        file.prepare_ui(&mut renderer);
+        for (index, c) in file.iter_char().enumerate() {
+            match index {
+                0 => assert_eq!(c.text_character(), 'a'),
+                1 => assert_eq!(c.text_character(), ' '),
+                2 => assert_eq!(c.text_character(), 'b'),
+                3 => assert_eq!(c.text_character(), ' '),
+                4 => assert_eq!(c.text_character(), 'c'),
+                5 => assert_eq!(c.text_character(), ' '),
+                6 => assert_eq!(c.text_character(), 'd'),
+                _ => assert_eq!("must have 7 entries", "have more than 7 entries"),
+            }
+        }
+    }
 
     //##################################################
     // path

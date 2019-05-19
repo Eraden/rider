@@ -13,9 +13,7 @@ pub fn move_caret_right(file_editor: &mut FileEditor) {
     let pos = file_editor.caret().position();
     let d = c.dest().clone();
     let p = pos.moved(1, 0, 0);
-    file_editor
-        .caret_mut()
-        .move_caret(p, Point::new(d.x(), d.y()));
+    file_editor.caret_mut().move_caret(p, d.top_left());
 }
 
 pub fn move_caret_left(file_editor: &mut FileEditor) {
@@ -34,9 +32,52 @@ pub fn move_caret_left(file_editor: &mut FileEditor) {
     let pos = file_editor.caret().position();
     let character_destination = text_character.dest().clone();
     let p = pos.moved(-1, 0, 0);
+    file_editor
+        .caret_mut()
+        .move_caret(p, character_destination.top_left());
+}
+
+pub fn move_caret_down(file_editor: &mut FileEditor) {
+    let file: &EditorFile = match file_editor.file() {
+        None => return,
+        Some(f) => f,
+    };
+    if file_editor.caret().text_position() == 0 {
+        return;
+    }
+    let current_line_number = file_editor.caret().line_number();
+    let mut next_line_position = 0;
+    let mut desired_line_position = 0;
+    let mut text_character: Option<&TextCharacter> = None;
+    for c in file.iter_char() {
+        match c.line() {
+            line if c.position() < file_editor.caret().text_position()
+                && current_line_number == line =>
+            {
+                desired_line_position += 1;
+            }
+            line if line == current_line_number + 1 => {
+                text_character = Some(c);
+                if next_line_position == desired_line_position {
+                    break;
+                }
+                next_line_position += 1;
+            }
+            line if line == current_line_number + 2 => {
+                break;
+            }
+            _ => {}
+        }
+    }
+    let text_character: &TextCharacter = match text_character {
+        Some(text_character) => text_character,
+        None => return, // EOF
+    };
+    let character_destination = text_character.dest().clone();
+    let pos = text_character.position().clone();
     file_editor.caret_mut().move_caret(
-        p,
-        Point::new(character_destination.x(), character_destination.y()),
+        CaretPosition::new(pos, current_line_number + 1, next_line_position),
+        character_destination.top_left(),
     );
 }
 

@@ -221,7 +221,7 @@ impl CaretAccess for FileEditor {
             MoveDirection::Left => caret_manager::move_caret_left(self),
             MoveDirection::Right => caret_manager::move_caret_right(self),
             MoveDirection::Up => {}
-            MoveDirection::Down => {}
+            MoveDirection::Down => caret_manager::move_caret_down(self),
         }
     }
 

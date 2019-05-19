@@ -111,7 +111,7 @@ impl<'l> Renderer for CanvasRenderer<'l> {
         details: &mut TextDetails,
         font_details: FontDetails,
     ) -> Result<Rc<Texture>, String> {
-        use crate::renderer::managers::TextTextureManager;
+        use crate::renderer::managers::*;
         let font = self
             .font_manager()
             .load(&font_details)

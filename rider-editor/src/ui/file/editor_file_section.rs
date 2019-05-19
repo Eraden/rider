@@ -79,6 +79,14 @@ impl EditorFileSection {
             token.prepare_ui(renderer);
         }
     }
+
+    fn iter_char(&self) -> EditorFileSectionIterator {
+        EditorFileSectionIterator::new(self)
+    }
+
+    pub fn tokens(&self) -> &Vec<EditorFileToken> {
+        &self.tokens
+    }
 }
 
 impl TextWidget for EditorFileSection {
@@ -188,16 +196,55 @@ impl ClickHandler for EditorFileSection {
     }
 }
 
+pub struct EditorFileSectionIterator<'a> {
+    section: &'a EditorFileSection,
+    current_token: usize,
+    current_character: usize,
+}
+
+impl<'a> EditorFileSectionIterator<'a> {
+    pub fn new(section: &'a EditorFileSection) -> Self {
+        Self {
+            section,
+            current_token: 0,
+            current_character: 0,
+        }
+    }
+
+    fn get_token(&self) -> Option<&'a EditorFileToken> {
+        self.section.tokens.get(self.current_token)
+    }
+
+    fn get_character(&mut self, token: &'a EditorFileToken) -> Option<&'a TextCharacter> {
+        token
+            .characters()
+            .get(self.current_character)
+            .or_else(|| {
+                self.current_character = 0;
+                self.current_token += 1;
+                self.get_character(self.get_token()?)
+            })
+            .and_then(|c| {
+                self.current_character += 1;
+                Some(c)
+            })
+    }
+}
+
+impl<'a> std::iter::Iterator for EditorFileSectionIterator<'a> {
+    type Item = &'a TextCharacter;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.get_character(self.get_token()?)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::support::build_config;
+    use crate::tests::support::{build_config, SimpleRendererMock};
 
     impl EditorFileSection {
-        pub fn tokens(&self) -> Vec<EditorFileToken> {
-            self.tokens.clone()
-        }
-
         pub fn tokens_count(&self) -> usize {
             self.tokens.len()
         }
@@ -217,5 +264,48 @@ mod tests {
         let widget = EditorFileSection::new("fn main() {}".to_owned(), "rs".to_owned(), config);
         assert_eq!(widget.language(), Language::Rust);
         assert_eq!(widget.tokens_count(), 8);
+    }
+
+    #[test]
+    fn assert_simple_char_iteration() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut section = EditorFileSection::new("a b c d".to_owned(), ".txt".to_owned(), config);
+        section.prepare_ui(&mut renderer);
+        for (index, c) in section.iter_char().enumerate() {
+            match index {
+                0 => assert_eq!(c.text_character(), 'a'),
+                1 => assert_eq!(c.text_character(), ' '),
+                2 => assert_eq!(c.text_character(), 'b'),
+                3 => assert_eq!(c.text_character(), ' '),
+                4 => assert_eq!(c.text_character(), 'c'),
+                5 => assert_eq!(c.text_character(), ' '),
+                6 => assert_eq!(c.text_character(), 'd'),
+                _ => assert_eq!("must have 7 entries", "have more than 7 entries"),
+            }
+        }
+    }
+
+    #[test]
+    fn assert_complex_char_iteration() {
+        let config = build_config();
+        let mut renderer = SimpleRendererMock::new(config.clone());
+        let mut section = EditorFileSection::new("let a = 1".to_owned(), ".rs".to_owned(), config);
+        section.prepare_ui(&mut renderer);
+        assert_eq!(section.tokens.len(), 7);
+        for (index, c) in section.iter_char().enumerate() {
+            match index {
+                0 => assert_eq!(c.text_character(), 'l'),
+                1 => assert_eq!(c.text_character(), 'e'),
+                2 => assert_eq!(c.text_character(), 't'),
+                3 => assert_eq!(c.text_character(), ' '),
+                4 => assert_eq!(c.text_character(), 'a'),
+                5 => assert_eq!(c.text_character(), ' '),
+                6 => assert_eq!(c.text_character(), '='),
+                7 => assert_eq!(c.text_character(), ' '),
+                8 => assert_eq!(c.text_character(), '1'),
+                _ => assert_eq!("must have 9 entries", "have more than 9 entries"),
+            }
+        }
     }
 }

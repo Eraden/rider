@@ -1,7 +1,7 @@
 use crate::app::*;
 use crate::renderer::renderer::Renderer;
 use crate::ui::*;
-use sdl2::rect::{Point, Rect};
+use sdl2::rect::Point;
 use std::sync::*;
 
 pub fn current_file_path(file_editor: &mut FileEditor) -> String {
@@ -142,6 +142,7 @@ mod tests {
     use crate::renderer::managers::FontDetails;
     use crate::renderer::managers::TextDetails;
     use crate::tests::support;
+    use sdl2::rect::Rect;
     use sdl2::render::Texture;
     use sdl2::ttf::Font;
     use std::rc::Rc;

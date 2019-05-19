@@ -24,7 +24,7 @@ pub mod ui;
 
 #[cfg_attr(tarpaulin, skip)]
 fn init_logger(directories: &Directories) {
-    use simplelog::SharedLogger;
+    //    use simplelog::SharedLogger;
 
     let mut log_file_path = directories.log_dir.clone();
     log_file_path.push("rider.log");
