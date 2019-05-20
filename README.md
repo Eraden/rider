@@ -20,7 +20,7 @@ rustup run nightly cargo run -p rider-editor
 * [x] Basic lexer based highlight
 * [x] Scrolling
 * [x] Handle click based caret movement
-* [ ] Handle caret movement with arrow keys
+* [x] Handle caret movement with arrow keys
 * [x] Add text content
 * [x] Open file menu
 * [ ] `Save file` with button

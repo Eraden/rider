@@ -42,20 +42,20 @@ jobs:
             export XDG_RUNTIME_DIR=$(pwd)
             export XDG_BIN_HOME=$HOME/.local/bin
             rustup run nightly cargo run -p rider-generator
-      - run:
-          name: Test and code coverage
-          command: |
-            RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin || echo 0
-            export XDG_RUNTIME_DIR=$(pwd)
-            export XDG_BIN_HOME=$HOME/.local/bin
-            rustup run nightly cargo tarpaulin --all --ciserver circle-ci --out Xml
-      - run:
-          name: Upload Coverage
-          command: |
-            wget -O - -q "https://codecov.io/bash" > .codecov
-            chmod +x .codecov
-            ./.codecov -t $CODECOV_TOKEN
-            echo "Uploaded code coverage"
+#      - run:
+#          name: Test and code coverage
+#          command: |
+#            RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install cargo-tarpaulin || echo 0
+#            export XDG_RUNTIME_DIR=$(pwd)
+#            export XDG_BIN_HOME=$HOME/.local/bin
+#            rustup run nightly cargo tarpaulin --all --ciserver circle-ci --out Xml
+#      - run:
+#          name: Upload Coverage
+#          command: |
+#            wget -O - -q "https://codecov.io/bash" > .codecov
+#            chmod +x .codecov
+#            ./.codecov -t $CODECOV_TOKEN
+#            echo "Uploaded code coverage"
       - save_cache:
           key: project-cache
           paths:
