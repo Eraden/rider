@@ -220,9 +220,9 @@ impl CaretAccess for FileEditor {
         match dir {
             MoveDirection::Left => caret_manager::move_caret_left(self),
             MoveDirection::Right => caret_manager::move_caret_right(self),
-            MoveDirection::Up => {}
+            MoveDirection::Up => caret_manager::move_caret_up(self),
             MoveDirection::Down => caret_manager::move_caret_down(self),
-        }
+        };
     }
 
     fn set_caret_to_end_of_line(&mut self, line: i32) {
