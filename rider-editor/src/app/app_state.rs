@@ -6,7 +6,8 @@ use crate::ui::*;
 use rider_config::*;
 use sdl2::rect::Point;
 use sdl2::VideoSubsystem as VS;
-use std::fs::read_to_string;
+use std::fs::{read_to_string, File};
+use std::io::Write;
 use std::sync::*;
 
 pub struct AppState {
@@ -45,6 +46,23 @@ impl AppState {
         } else {
             eprintln!("Failed to open file: {}", file_path);
         };
+    }
+
+    pub fn save_file(&self) -> Result<(), String> {
+        println!("Saving file...");
+        let editor_file = match self.file_editor.file() {
+            Some(f) => f,
+            _ => Err("No buffer found".to_string())?,
+        };
+        let mut f = File::create(editor_file.path())
+            .or_else(|_| Err("File can't be opened".to_string()))?;
+
+        f.write_all(editor_file.buffer().as_bytes())
+            .or_else(|_| Err("Failed to write to file".to_string()))?;
+
+        f.flush()
+            .or_else(|_| Err("Failed to write to file".to_string()))?;
+        Ok(())
     }
 
     pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R)

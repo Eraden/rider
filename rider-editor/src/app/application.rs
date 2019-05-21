@@ -48,6 +48,7 @@ pub enum UpdateResult {
     OpenDirectory(String),
     OpenFileModal,
     FileDropped(String),
+    SaveCurrentFile,
 }
 
 #[cfg_attr(tarpaulin, skip)]
@@ -201,6 +202,11 @@ impl Application {
                     UpdateResult::MouseDragStart(_point) => (),
                     UpdateResult::MouseDragStop(_point) => (),
                     UpdateResult::FileDropped(_path) => (),
+                    UpdateResult::SaveCurrentFile => {
+                        app_state
+                            .save_file()
+                            .unwrap_or_else(|e| eprintln!("Failed to save {:?}", e));
+                    }
                 }
             }
             self.tasks = new_tasks;
@@ -285,6 +291,9 @@ impl Application {
                     }
                     Keycode::O if left_control_pressed && !shift_pressed => {
                         self.tasks.push(UpdateResult::OpenFileModal)
+                    }
+                    Keycode::S if left_control_pressed => {
+                        self.tasks.push(UpdateResult::SaveCurrentFile)
                     }
                     _ => {}
                 },
