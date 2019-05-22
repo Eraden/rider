@@ -9,6 +9,7 @@ jobs:
       CODECOV_TOKEN: "e58da505-19f2-481c-8068-e845cb36fbe4"
       TZ: "/usr/share/zoneinfo/Europe/Paris"
       rider-config: "1"
+
     steps:
       - run:
           name: Install dependencies
