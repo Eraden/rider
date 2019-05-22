@@ -1,6 +1,7 @@
 version: 2.1
 
 jobs:
+  machine: true
   build:
     docker:
       - image: abronan/rust-circleci:latest
@@ -20,32 +21,17 @@ jobs:
               libsdl2-dev libsdl2-2.0-0 libsdl2-gfx-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libsdl2-ttf-dev \
               libelf-dev elfutils libdw-dev libbfd-dev cmake make binutils-dev clang python-pip \
               binutils-dev libcurl4-openssl-dev zlib1g-dev libdw-dev libiberty-dev && \
-            apt-get purge -y cmake && \
-            pip install cmake --upgrade && \
             cd /tmp/rider && \
             export PATH=$PATH:$HOME/.local/bin
-      - run:
-          name: Build kcov
-          command: |
-            export KCOV_VERSION=36
-            export PATH=$PATH:/usr/local/bin/
-            mkdir -p /tmp
-            cd /tmp
-            wget https://github.com/SimonKagstrom/kcov/archive/v$KCOV_VERSION.tar.gz
-            tar xzf v$KCOV_VERSION.tar.gz && rm v$KCOV_VERSION.tar.gz
-            cd kcov-$KCOV_VERSION
-            mkdir build && cd build && cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release .. && make && make install
-            cd /tmp/rider
       - checkout
       - run:
           name: Version information
           command: |
             rustup --version
-            rustup install nightly
             rustup default nightly
             rustup run nightly rustc --version
             rustup run nightly cargo --version
-            rustup run nightly cargo install rustfmt-nightly --force
+            rustup run nightly cargo install rustfmt || echo "OK"
       - run:
           name: Check formatting
           command: |
@@ -56,7 +42,7 @@ jobs:
             rustup run nightly rustc --version --verbose
             rustup run nightly cargo --version --verbose
             rustup run nightly cargo clean
-            rustup run nightly cargo build --all --verbose -j 10
+            rustup run nightly cargo build --all -j 10
             mkdir -p ~/.local/bin
             cp $(pwd)/target/debug/rider-* $HOME/.local/bin
             export XDG_BIN_HOME=$HOME/.local/bin
@@ -67,16 +53,20 @@ jobs:
             export XDG_BIN_HOME=$HOME/.local/bin
             rustup run nightly cargo run -p rider-generator
       - run:
-          name: Coverage
+          name: Install Tarpaulin
+          command: cargo install cargo-tarpaulin
+          environment:
+            RUSTFLAGS: --cfg procmacro2_semver_exempt
+      - run:
+          name: Test and code coverage
           command: |
-            here=$(pwd)
-            export KCOV_VERSION=36
-            export PATH=$PATH:/usr/local/bin/
-            # generate and upload code coverage
-            for file in $(find target/debug -maxdepth 1 -name '*-*' -a ! -name '*.d' ! -name '.*'); do
-              [ -x "${file}" ] || continue
-              mkdir -p "target/cov/$(basename $file)"
-              /usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"
-            done
-            bash <(curl -s https://codecov.io/bash)
+            export XDG_RUNTIME_DIR=$(pwd)
+            export XDG_BIN_HOME=$HOME/.local/bin
+            rustup run nightly cargo tarpaulin --out Xml --all-features
+      - run:
+          name: Upload Coverage
+          command: |
+            wget -O - -q "https://codecov.io/bash" > .codecov
+            chmod +x .codecov
+            ./.codecov -t $CODECOV_TOKEN
             echo "Uploaded code coverage"
