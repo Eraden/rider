@@ -14,13 +14,13 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            sudo apt-get update && \
-            sudo apt-get install -y -qq xvfb mesa-utils mesa-vdpau-drivers \
+            apt-get update && \
+            apt-get install -y -qq xvfb mesa-utils mesa-vdpau-drivers \
               libssl-dev pkg-config cmake zlib1g-dev \
               libsdl2-dev libsdl2-2.0-0 libsdl2-gfx-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libsdl2-ttf-dev \
               libelf-dev elfutils libdw-dev libbfd-dev cmake make binutils-dev clang python-pip \
               binutils-dev libcurl4-openssl-dev zlib1g-dev libdw-dev libiberty-dev && \
-            sudo apt-get purge cmake && \
+            apt-get purge cmake && \
             pip install cmake --upgrade && \
             cd /tmp/rider && \
             export PATH=$PATH:$HOME/.local/bin
@@ -34,7 +34,7 @@ jobs:
             wget https://github.com/SimonKagstrom/kcov/archive/v$KCOV_VERSION.tar.gz
             tar xzf v$KCOV_VERSION.tar.gz && rm v$KCOV_VERSION.tar.gz
             cd kcov-$KCOV_VERSION
-            mkdir build && cd build && cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release .. && make && sudo make install
+            mkdir build && cd build && cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release .. && make && make install
             cd /tmp/rider
       - checkout
       - run:
