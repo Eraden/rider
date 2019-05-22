@@ -1,8 +1,8 @@
 version: 2.1
 
 jobs:
-  machine: true
   build:
+    machine: true
     docker:
       - image: abronan/rust-circleci:latest
     working_directory: /tmp/rider
