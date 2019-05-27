@@ -1,11 +1,20 @@
 language: rust
 rust:
-  - stable
-  - beta
   - nightly
-matrix:
-  allow_failures:
-    - rust: nightly
 script:
   - cargo build --verbose --all
-  - cargo test --verbose --all
+  - |
+    export XDG_RUNTIME_DIR=$(pwd)
+    export XDG_BIN_HOME=$HOME/.local/bin
+    rustup run nightly cargo run -p rider-generator
+env:
+  - CODECOV_TOKEN: "e58da505-19f2-481c-8068-e845cb36fbe4"
+  - TZ: "/usr/share/zoneinfo/Europe/Paris"
+  - rider-config: "1"
+before_install:
+  - sudo apt-get install -y -qq xvfb mesa-utils mesa-vdpau-drivers
+  - sudo apt-get install -y libssl-dev pkg-config cmake zlib1g-dev
+  - sudo apt-get install -q -y libsdl2-dev libsdl2-2.0-0 libsdl2-gfx-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libsdl2-ttf-dev
+addons:
+  apt:
+    update: true
