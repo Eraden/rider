@@ -7,7 +7,7 @@ jobs:
       rider-config: "1"
     working_directory: ~/rider
     machine:
-      image: abronan/rust-circleci:latest
+      image: ubuntu-1604:201903-01
     steps:
       - checkout
       - restore_cache:
