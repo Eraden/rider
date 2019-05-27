@@ -1,17 +1,13 @@
 version: 2.1
-executors:
-  rust-runner:
-    docker:
-      - image: abronan/rust-circleci:latest
+jobs:
+  build:
     environment:
       CODECOV_TOKEN: "e58da505-19f2-481c-8068-e845cb36fbe4"
       TZ: "/usr/share/zoneinfo/Europe/Paris"
       rider-config: "1"
     working_directory: ~/rider
-jobs:
-  build:
-    executor: rust-runner
-    machine: true
+    machine:
+      image: abronan/rust-circleci:latest
     steps:
       - checkout
       - restore_cache:
