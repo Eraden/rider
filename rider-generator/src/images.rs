@@ -47,6 +47,12 @@ fn create_railscasts_file_icon(dir: &PathBuf) -> std::io::Result<()> {
     Ok(())
 }
 
+fn create_railscasts_save_icon(dir: &PathBuf) -> std::io::Result<()> {
+    let blob = include_bytes!("../assets/themes/railscasts/images/save-64x64.png");
+    write_bytes_to(dir, "save-64x64.png", blob)?;
+    Ok(())
+}
+
 fn railscasts_theme(directories: &Directories) -> std::io::Result<()> {
     let mut dir = PathBuf::new();
     dir.push(directories.themes_dir.clone());
@@ -55,6 +61,7 @@ fn railscasts_theme(directories: &Directories) -> std::io::Result<()> {
     create_dir_all(&dir)?;
     create_railscasts_directory_icon(&dir)?;
     create_railscasts_file_icon(&dir)?;
+    create_railscasts_save_icon(&dir)?;
     Ok(())
 }
 

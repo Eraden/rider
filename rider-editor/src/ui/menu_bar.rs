@@ -1,14 +1,19 @@
 use crate::app::UpdateResult as UR;
+use crate::renderer::Renderer;
 use crate::ui::*;
 use rider_config::ConfigAccess;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
+
+const SAVE_BUTTON_OFFSET_LEFT: i32 = 16;
+const SAVE_BUTTON_OFFSET_TOP: i32 = 16;
 
 pub struct MenuBar {
     border_color: Color,
     background_color: Color,
     dest: Rect,
     config: ConfigAccess,
+    save_button: SaveButton,
 }
 
 impl MenuBar {
@@ -26,6 +31,7 @@ impl MenuBar {
             border_color,
             background_color,
             dest: Rect::new(0, 0, w as u32, h as u32),
+            save_button: SaveButton::new(config.clone()),
             config,
         }
     }
@@ -34,19 +40,22 @@ impl MenuBar {
         &self.background_color
     }
 
-    pub fn render<C>(&self, canvas: &mut C, context: &RenderContext)
+    pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
         C: CanvasAccess,
+        R: Renderer,
     {
         use std::borrow::*;
+
+        let relative_position = match context.borrow() {
+            RenderContext::RelativePosition(p) => p.clone(),
+            _ => Point::new(0, 0),
+        };
 
         canvas.set_clipping(self.dest.clone());
         canvas
             .render_rect(
-                match context.borrow() {
-                    RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
-                    _ => self.dest(),
-                },
+                move_render_point(relative_position.clone(), &self.dest),
                 self.background_color.clone(),
             )
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
@@ -61,6 +70,11 @@ impl MenuBar {
                 self.border_color.clone(),
             )
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
+
+        let context = RenderContext::RelativePosition(
+            relative_position.offset(SAVE_BUTTON_OFFSET_LEFT, SAVE_BUTTON_OFFSET_TOP),
+        );
+        self.save_button.render(canvas, renderer, &context);
     }
 
     pub fn prepare_ui(&mut self) {
@@ -79,7 +93,19 @@ impl Update for MenuBar {
 }
 
 impl ClickHandler for MenuBar {
-    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UR {
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UR {
+        use std::borrow::*;
+
+        let relative_position = match context.borrow() {
+            UpdateContext::ParentPosition(p) => p.clone(),
+            _ => Point::new(0, 0),
+        };
+        let context = UpdateContext::ParentPosition(
+            relative_position.offset(SAVE_BUTTON_OFFSET_LEFT, SAVE_BUTTON_OFFSET_TOP),
+        );
+        if self.save_button.is_left_click_target(point, &context) {
+            return self.save_button.on_left_click(point, &context);
+        }
         UR::NoOp
     }
 
@@ -218,6 +244,7 @@ mod test_click_handler {
 
 #[cfg(test)]
 mod test_render {
+    use crate::tests::support::SimpleRendererMock;
     use crate::tests::*;
     use crate::ui::*;
     use sdl2::pixels::Color;
@@ -277,9 +304,10 @@ mod test_render {
             border_rect: Rect::new(0, 0, 0, 0),
             border_color: Color::RGB(0, 0, 0),
         };
+        let mut renderer = SimpleRendererMock::new(config.clone());
         let mut widget = MenuBar::new(Arc::clone(&config));
         widget.prepare_ui();
-        widget.render(&mut canvas, &context);
+        widget.render(&mut canvas, &mut renderer, &context);
         assert_eq!(widget.dest(), Rect::new(0, 0, 1024, 60));
         let expected = CanvasMock {
             clipping: Rect::new(0, 0, 1024, 60),

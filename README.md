@@ -23,8 +23,8 @@ rustup run nightly cargo run -p rider-editor
 * [x] Handle caret movement with arrow keys
 * [x] Add text content
 * [x] Open file menu
-* [ ] `Save file` with button
-* [ ] `Save file` with shortcut
+* [x] `Save file` with button
+* [x] `Save file` with shortcut
 * [ ] `Save file as...` with shortcut
 * [x] Theme based menu UI
 * [x] Lock scroll when no available content

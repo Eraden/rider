@@ -113,7 +113,8 @@ impl AppState {
         self.file_editor.render(canvas, renderer);
 
         // menu bar
-        self.menu_bar.render(canvas, &RenderContext::Nothing);
+        self.menu_bar
+            .render(canvas, renderer, &RenderContext::Nothing);
 
         // project tree
         self.project_tree.render(canvas, renderer);

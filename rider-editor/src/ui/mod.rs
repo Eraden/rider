@@ -15,6 +15,7 @@ pub mod filesystem;
 pub mod menu_bar;
 pub mod modal;
 pub mod project_tree;
+pub mod save_button;
 pub mod scroll_bar;
 pub mod text_character;
 
@@ -25,6 +26,7 @@ pub use crate::ui::filesystem::*;
 pub use crate::ui::menu_bar::*;
 pub use crate::ui::modal::*;
 pub use crate::ui::project_tree::*;
+pub use crate::ui::save_button::*;
 pub use crate::ui::scroll_bar::*;
 pub use crate::ui::text_character::*;
 
