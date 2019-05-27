@@ -10,15 +10,15 @@ jobs:
       image: ubuntu-1604:201903-01
     steps:
       - checkout
-      - restore_cache:
-          key: project-cache
+#      - restore_cache:
+#          key: project-cache
       - run:
           name: Install dependencies
           command: |
-            apt-get update
-            apt-get install -y -qq xvfb mesa-utils mesa-vdpau-drivers
-            apt-get install -y libssl-dev pkg-config cmake zlib1g-dev
-            apt-get install -q -y libsdl2-dev libsdl2-2.0-0 libsdl2-gfx-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libsdl2-ttf-dev
+            sudo apt-get update
+            sudo apt-get install -y -qq xvfb mesa-utils mesa-vdpau-drivers
+            sudo apt-get install -y libssl-dev pkg-config cmake zlib1g-dev
+            sudo apt-get install -q -y libsdl2-dev libsdl2-2.0-0 libsdl2-gfx-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-net-dev libsdl2-ttf-dev
       - run:
           name: Check formatting
           command: |
