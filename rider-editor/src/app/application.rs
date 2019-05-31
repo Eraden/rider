@@ -141,6 +141,7 @@ impl Application {
                                 new_tasks.push(res);
                                 app_state.set_open_file_modal(None);
                             }
+                            UpdateResult::SaveCurrentFile => new_tasks.push(res),
                             _ => {}
                         }
                     }
@@ -174,15 +175,18 @@ impl Application {
                         app_state.scroll_by(-x.clone(), -y.clone());
                     }
                     UpdateResult::WindowResize { width, height } => {
-                        let mut c = app_state.config().write().unwrap();
-                        let w = width.clone();
-                        let h = height.clone();
-                        if w > 0 {
-                            c.set_width(w as u32);
-                        }
-                        if h > 0 {
-                            c.set_height(h as u32);
-                        }
+                        app_state
+                            .config()
+                            .write()
+                            .map(|ref mut c| {
+                                if *width > 0 {
+                                    c.set_width(*width as u32);
+                                }
+                                if *height > 0 {
+                                    c.set_height(*height as u32);
+                                }
+                            })
+                            .unwrap_or_else(|_| println!("Failed to update window size"));
                     }
                     UpdateResult::RefreshFsTree => unimplemented!(),
                     UpdateResult::OpenFile(file_path) => {
