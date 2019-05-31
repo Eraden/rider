@@ -44,7 +44,8 @@ pub fn build_theme() -> Theme {
         ThemeImages::new(
             "railscasts/images/directory-64x64.png".to_owned(),
             "railscasts/images/file-64x64.png".to_owned(),
-            "railscasts/images/save-64x64.png".to_owned(),
+            "railscasts/images/save-32x32.png".to_owned(),
+            "railscasts/images/settings-16x16.png".to_owned(),
         ),
     )
 }

@@ -32,7 +32,7 @@ impl Config {
         Self {
             width: 1024,
             height: 860,
-            menu_height: 60,
+            menu_height: 40,
             theme: Theme::default(),
             editor_config,
             extensions_mapping,

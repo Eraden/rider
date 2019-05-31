@@ -151,11 +151,9 @@ impl Application {
                     UpdateResult::DeleteBack => {
                         app_state.file_editor_mut().delete_back(&mut renderer);
                     }
-                    UpdateResult::Input(text) => {
-                        app_state
-                            .file_editor_mut()
-                            .insert_text(text.clone(), &mut renderer);
-                    }
+                    UpdateResult::Input(text) => app_state
+                        .file_editor_mut()
+                        .insert_text(text.clone(), &mut renderer),
                     UpdateResult::InsertNewLine => {
                         app_state.file_editor_mut().insert_new_line(&mut renderer);
                     }
@@ -174,20 +172,18 @@ impl Application {
                     UpdateResult::Scroll { x, y } => {
                         app_state.scroll_by(-x.clone(), -y.clone());
                     }
-                    UpdateResult::WindowResize { width, height } => {
-                        app_state
-                            .config()
-                            .write()
-                            .map(|ref mut c| {
-                                if *width > 0 {
-                                    c.set_width(*width as u32);
-                                }
-                                if *height > 0 {
-                                    c.set_height(*height as u32);
-                                }
-                            })
-                            .unwrap_or_else(|_| println!("Failed to update window size"));
-                    }
+                    UpdateResult::WindowResize { width, height } => app_state
+                        .config()
+                        .write()
+                        .map(|ref mut c| {
+                            if *width > 0 {
+                                c.set_width(*width as u32);
+                            }
+                            if *height > 0 {
+                                c.set_height(*height as u32);
+                            }
+                        })
+                        .unwrap_or_else(|_| println!("Failed to update window size")),
                     UpdateResult::RefreshFsTree => unimplemented!(),
                     UpdateResult::OpenFile(file_path) => {
                         app_state.open_file(file_path.clone(), &mut renderer);
@@ -206,11 +202,9 @@ impl Application {
                     UpdateResult::MouseDragStart(_point) => (),
                     UpdateResult::MouseDragStop(_point) => (),
                     UpdateResult::FileDropped(_path) => (),
-                    UpdateResult::SaveCurrentFile => {
-                        app_state
-                            .save_file()
-                            .unwrap_or_else(|e| eprintln!("Failed to save {:?}", e));
-                    }
+                    UpdateResult::SaveCurrentFile => app_state
+                        .save_file()
+                        .unwrap_or_else(|e| eprintln!("Failed to save {:?}", e)),
                 }
             }
             self.tasks = new_tasks;

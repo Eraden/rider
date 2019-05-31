@@ -7,16 +7,16 @@ use sdl2::rect::{Point, Rect};
 
 const ICON_DEST_WIDTH: u32 = 16;
 const ICON_DEST_HEIGHT: u32 = 16;
-const ICON_SRC_WIDTH: u32 = 32;
-const ICON_SRC_HEIGHT: u32 = 32;
+const ICON_SRC_WIDTH: u32 = 16;
+const ICON_SRC_HEIGHT: u32 = 16;
 
-pub struct SaveButton {
+pub struct SettingsButton {
     source: Rect,
     dest: Rect,
     config: ConfigAccess,
 }
 
-impl SaveButton {
+impl SettingsButton {
     pub fn new(config: ConfigAccess) -> Self {
         Self {
             dest: Rect::new(0, 0, ICON_DEST_WIDTH, ICON_DEST_HEIGHT),
@@ -40,14 +40,14 @@ impl SaveButton {
         clipping.set_width(clipping.width() + ICON_DEST_WIDTH);
         clipping.set_height(clipping.height() + ICON_DEST_HEIGHT);
         canvas.set_clipping(clipping);
-        let save_texture_path = {
+        let settings_texture_path = {
             let c = self.config.read().unwrap();
             let mut themes_dir = c.directories().themes_dir.clone();
-            let path = c.theme().images().save_icon();
+            let path = c.theme().images().settings_icon();
             themes_dir.push(path);
             themes_dir.to_str().unwrap().to_owned()
         };
-        let maybe_tex = renderer.load_image(save_texture_path.clone());
+        let maybe_tex = renderer.load_image(settings_texture_path.clone());
         if let Ok(texture) = maybe_tex {
             dest.set_width(ICON_DEST_WIDTH);
             dest.set_height(ICON_DEST_HEIGHT);
@@ -76,7 +76,7 @@ impl SaveButton {
     }
 }
 
-impl Update for SaveButton {
+impl Update for SettingsButton {
     fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UR {
         let config = self.config.read().unwrap();
         self.dest.set_width(config.width());
@@ -84,9 +84,9 @@ impl Update for SaveButton {
     }
 }
 
-impl ClickHandler for SaveButton {
+impl ClickHandler for SettingsButton {
     fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UR {
-        UR::SaveCurrentFile
+        UR::NoOp
     }
 
     fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
@@ -98,7 +98,7 @@ impl ClickHandler for SaveButton {
     }
 }
 
-impl RenderBox for SaveButton {
+impl RenderBox for SettingsButton {
     fn render_start_point(&self) -> Point {
         self.dest.top_left()
     }

@@ -17,6 +17,7 @@ pub mod modal;
 pub mod project_tree;
 pub mod save_button;
 pub mod scroll_bar;
+pub mod settings_button;
 pub mod text_character;
 
 pub use crate::ui::caret::*;
@@ -28,6 +29,7 @@ pub use crate::ui::modal::*;
 pub use crate::ui::project_tree::*;
 pub use crate::ui::save_button::*;
 pub use crate::ui::scroll_bar::*;
+pub use crate::ui::settings_button::*;
 pub use crate::ui::text_character::*;
 
 #[derive(Debug)]

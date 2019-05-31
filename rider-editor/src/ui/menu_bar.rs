@@ -6,7 +6,7 @@ use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 
 const SAVE_BUTTON_OFFSET_LEFT: i32 = 16;
-const SAVE_BUTTON_OFFSET_TOP: i32 = 16;
+const SAVE_BUTTON_OFFSET_TOP: i32 = 10;
 
 pub struct MenuBar {
     border_color: Color,
@@ -14,6 +14,7 @@ pub struct MenuBar {
     dest: Rect,
     config: ConfigAccess,
     save_button: SaveButton,
+    settings_button: SettingsButton,
 }
 
 impl MenuBar {
@@ -32,6 +33,7 @@ impl MenuBar {
             background_color,
             dest: Rect::new(0, 0, w as u32, h as u32),
             save_button: SaveButton::new(config.clone()),
+            settings_button: SettingsButton::new(config.clone()),
             config,
         }
     }
@@ -75,6 +77,11 @@ impl MenuBar {
             relative_position.offset(SAVE_BUTTON_OFFSET_LEFT, SAVE_BUTTON_OFFSET_TOP),
         );
         self.save_button.render(canvas, renderer, &context);
+
+        let context = RenderContext::RelativePosition(
+            relative_position.offset(SAVE_BUTTON_OFFSET_LEFT * 2, SAVE_BUTTON_OFFSET_TOP),
+        );
+        self.settings_button.render(canvas, renderer, &context);
     }
 
     pub fn prepare_ui(&mut self) {
@@ -85,9 +92,12 @@ impl MenuBar {
 }
 
 impl Update for MenuBar {
-    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UR {
-        let config = self.config.read().unwrap();
-        self.dest.set_width(config.width());
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
+        if let Ok(config) = self.config.read() {
+            self.dest.set_width(config.width());
+            self.save_button.update(ticks, context);
+            self.settings_button.update(ticks, context);
+        }
         UR::NoOp
     }
 }
@@ -106,15 +116,21 @@ impl ClickHandler for MenuBar {
         if self.save_button.is_left_click_target(point, &context) {
             return self.save_button.on_left_click(point, &context);
         }
+        let context = UpdateContext::ParentPosition(
+            relative_position.offset(SAVE_BUTTON_OFFSET_LEFT * 2, SAVE_BUTTON_OFFSET_TOP),
+        );
+        if self.settings_button.is_left_click_target(point, &context) {
+            return self.settings_button.on_left_click(point, &context);
+        }
         UR::NoOp
     }
 
     fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
-        let rect = match *context {
+        match *context {
             UpdateContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
-            _ => self.dest(),
-        };
-        rect.contains_point(point.clone())
+            _ => self.dest,
+        }
+        .contains_point(point.clone())
     }
 }
 

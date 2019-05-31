@@ -21,6 +21,18 @@ fn create_default_file_icon(dir: &PathBuf) -> std::io::Result<()> {
     Ok(())
 }
 
+fn create_default_save_icon(dir: &PathBuf) -> std::io::Result<()> {
+    let blob = include_bytes!("../assets/themes/default/images/save-32x32.png");
+    write_bytes_to(dir, "save-32x32.png", blob)?;
+    Ok(())
+}
+
+fn create_default_settings_icon(dir: &PathBuf) -> std::io::Result<()> {
+    let blob = include_bytes!("../assets/themes/default/images/settings-16x16.png");
+    write_bytes_to(dir, "settings-16x16.png", blob)?;
+    Ok(())
+}
+
 fn default_theme(directories: &Directories) -> std::io::Result<()> {
     let mut dir = PathBuf::new();
     dir.push(directories.themes_dir.clone());
@@ -32,6 +44,8 @@ fn default_theme(directories: &Directories) -> std::io::Result<()> {
 
     create_default_directory_icon(&dir)?;
     create_default_file_icon(&dir)?;
+    create_default_save_icon(&dir)?;
+    create_default_settings_icon(&dir)?;
     Ok(())
 }
 
@@ -48,8 +62,14 @@ fn create_railscasts_file_icon(dir: &PathBuf) -> std::io::Result<()> {
 }
 
 fn create_railscasts_save_icon(dir: &PathBuf) -> std::io::Result<()> {
-    let blob = include_bytes!("../assets/themes/railscasts/images/save-64x64.png");
-    write_bytes_to(dir, "save-64x64.png", blob)?;
+    let blob = include_bytes!("../assets/themes/railscasts/images/save-32x32.png");
+    write_bytes_to(dir, "save-32x32.png", blob)?;
+    Ok(())
+}
+
+fn create_railscasts_settings_icon(dir: &PathBuf) -> std::io::Result<()> {
+    let blob = include_bytes!("../assets/themes/railscasts/images/settings-16x16.png");
+    write_bytes_to(dir, "settings-16x16.png", blob)?;
     Ok(())
 }
 
@@ -62,6 +82,7 @@ fn railscasts_theme(directories: &Directories) -> std::io::Result<()> {
     create_railscasts_directory_icon(&dir)?;
     create_railscasts_file_icon(&dir)?;
     create_railscasts_save_icon(&dir)?;
+    create_railscasts_settings_icon(&dir)?;
     Ok(())
 }
 
