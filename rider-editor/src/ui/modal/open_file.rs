@@ -1,3 +1,4 @@
+use crate::app::UpdateResult as UR;
 use crate::renderer::renderer::Renderer;
 use crate::ui::*;
 use crate::ui::{RenderContext as RC, UpdateContext as UC};
@@ -151,7 +152,7 @@ impl OpenFile {
         R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         let dest = match context {
-            RC::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
+            RC::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
             _ => self.dest.clone(),
         };
 
@@ -164,7 +165,7 @@ impl OpenFile {
             .render_border(dest, self.border_color)
             .unwrap_or_else(|_| panic!("Failed to render open file modal border!"));
 
-        let context = RC::RelativePosition(
+        let context = RC::ParentPosition(
             dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP) + self.scroll(),
         );
 
@@ -172,14 +173,10 @@ impl OpenFile {
         self.directory_view.render(canvas, renderer, &context);
 
         // Scroll bars
-        self.vertical_scroll_bar.render(
-            canvas,
-            &RenderContext::RelativePosition(self.dest.top_left()),
-        );
-        self.horizontal_scroll_bar.render(
-            canvas,
-            &RenderContext::RelativePosition(self.dest.top_left()),
-        );
+        self.vertical_scroll_bar
+            .render(canvas, &RenderContext::ParentPosition(self.dest.top_left()));
+        self.horizontal_scroll_bar
+            .render(canvas, &RenderContext::ParentPosition(self.dest.top_left()));
     }
 
     pub fn prepare_ui<R>(&mut self, renderer: &mut R)
@@ -397,7 +394,7 @@ mod tests {
         let mut canvas = CanvasMock::new();
         let widget = OpenFile::new(path.to_owned(), 100, 100, config);
         let p = Point::new(100, 100);
-        let context = RenderContext::RelativePosition(p);
+        let context = RenderContext::ParentPosition(p);
         widget.render(&mut canvas, &mut renderer, &context);
     }
 

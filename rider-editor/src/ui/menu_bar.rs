@@ -50,7 +50,7 @@ impl MenuBar {
         use std::borrow::*;
 
         let relative_position = match context.borrow() {
-            RenderContext::RelativePosition(p) => p.clone(),
+            RenderContext::ParentPosition(p) => p.clone(),
             _ => Point::new(0, 0),
         };
 
@@ -64,21 +64,19 @@ impl MenuBar {
         canvas
             .render_border(
                 match context.borrow() {
-                    RenderContext::RelativePosition(p) => {
-                        move_render_point((*p).clone(), &self.dest)
-                    }
+                    RenderContext::ParentPosition(p) => move_render_point((*p).clone(), &self.dest),
                     _ => self.dest(),
                 },
                 self.border_color.clone(),
             )
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
 
-        let context = RenderContext::RelativePosition(
+        let context = RenderContext::ParentPosition(
             relative_position.offset(SAVE_BUTTON_OFFSET_LEFT, SAVE_BUTTON_OFFSET_TOP),
         );
         self.save_button.render(canvas, renderer, &context);
 
-        let context = RenderContext::RelativePosition(
+        let context = RenderContext::ParentPosition(
             relative_position.offset(SAVE_BUTTON_OFFSET_LEFT * 2, SAVE_BUTTON_OFFSET_TOP),
         );
         self.settings_button.render(canvas, renderer, &context);
@@ -324,12 +322,12 @@ mod test_render {
         let mut widget = MenuBar::new(Arc::clone(&config));
         widget.prepare_ui();
         widget.render(&mut canvas, &mut renderer, &context);
-        assert_eq!(widget.dest(), Rect::new(0, 0, 1024, 60));
+        assert_eq!(widget.dest(), Rect::new(0, 0, 1024, 40));
         let expected = CanvasMock {
-            clipping: Rect::new(0, 0, 1024, 60),
-            background_rect: Rect::new(0, 0, 1024, 60),
+            clipping: Rect::new(32, 10, 32, 32),
+            background_rect: Rect::new(0, 0, 1024, 40),
             background_color: Color::RGBA(18, 18, 18, 0),
-            border_rect: Rect::new(0, 0, 1024, 60),
+            border_rect: Rect::new(0, 0, 1024, 40),
             border_color: Color::RGBA(200, 200, 200, 0),
         };
         assert_eq!(canvas, expected);
@@ -340,6 +338,6 @@ mod test_render {
         let config = support::build_config();
         let mut widget = MenuBar::new(Arc::clone(&config));
         widget.prepare_ui();
-        assert_eq!(widget.dest(), Rect::new(0, 0, 1024, 60));
+        assert_eq!(widget.dest(), Rect::new(0, 0, 1024, 40));
     }
 }

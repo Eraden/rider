@@ -139,7 +139,7 @@ impl FileEntry {
         R: Renderer,
     {
         let mut dest = match context {
-            &RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
+            &RenderContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
             _ => self.dest.clone(),
         };
         self.render_icon(canvas, renderer, &mut dest);

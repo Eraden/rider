@@ -16,7 +16,7 @@ pub struct AppState {
     files: Vec<EditorFile>,
     config: Arc<RwLock<Config>>,
     file_editor: FileEditor,
-    open_file_modal: Option<OpenFile>,
+    modal: Option<ModalType>,
 }
 
 impl AppState {
@@ -29,7 +29,7 @@ impl AppState {
             ),
             files: vec![],
             file_editor: FileEditor::new(Arc::clone(&config)),
-            open_file_modal: None,
+            modal: None,
             config,
         }
     }
@@ -65,13 +65,35 @@ impl AppState {
         Ok(())
     }
 
+    pub fn open_settings<R>(&mut self, renderer: &mut R) -> Result<(), String>
+    where
+        R: Renderer + CharacterSizeManager,
+    {
+        println!("Open Settings...");
+        match self.modal {
+            None => {
+                let mut settings = Settings::new(self.config.clone());
+                settings.prepare_ui(renderer);
+                self.modal = Some(ModalType::Settings(settings));
+            }
+            _ => return Ok(()),
+        }
+        Ok(())
+    }
+
+    pub fn close_modal(&mut self) -> Result<(), String> {
+        self.modal = None;
+        Ok(())
+    }
+
     pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R)
     where
         R: Renderer + CharacterSizeManager,
     {
-        match self.open_file_modal.as_mut() {
-            Some(modal) => modal.open_directory(dir_path, renderer),
+        match self.modal.as_mut() {
+            Some(ModalType::OpenFile(modal)) => modal.open_directory(dir_path, renderer),
             None => self.project_tree.open_directory(dir_path, renderer),
+            _ => (),
         };
     }
 
@@ -86,19 +108,33 @@ impl AppState {
     }
 
     pub fn set_open_file_modal(&mut self, modal: Option<OpenFile>) {
-        self.open_file_modal = modal;
+        self.modal = if let Some(modal) = modal {
+            Some(ModalType::OpenFile(modal))
+        } else {
+            None
+        };
     }
 
     pub fn scroll_by(&mut self, x: i32, y: i32) {
-        if let Some(modal) = self.open_file_modal.as_mut() {
-            modal.scroll_by(x, y);
-        } else {
-            self.file_editor_mut().scroll_by(x, y);
-        }
+        match self.modal.as_mut() {
+            Some(ModalType::OpenFile(modal)) => modal.scroll_by(x, y),
+            Some(ModalType::Settings(modal)) => modal.scroll_by(x, y),
+            _ => self.file_editor_mut().scroll_by(x, y),
+        };
     }
 
     pub fn open_file_modal(&self) -> Option<&OpenFile> {
-        self.open_file_modal.as_ref()
+        match self.modal {
+            Some(ModalType::OpenFile(ref m)) => Some(m),
+            _ => None,
+        }
+    }
+
+    pub fn settings_modal(&self) -> Option<&Settings> {
+        match self.modal {
+            Some(ModalType::Settings(ref m)) => Some(m),
+            _ => None,
+        }
     }
 }
 
@@ -119,9 +155,14 @@ impl AppState {
         // project tree
         self.project_tree.render(canvas, renderer);
 
-        // open file modal
-        match self.open_file_modal.as_ref() {
-            Some(modal) => modal.render(canvas, renderer, &RenderContext::Nothing),
+        // settings modal
+        match self.modal.as_ref() {
+            Some(ModalType::OpenFile(modal)) => {
+                return modal.render(canvas, renderer, &RenderContext::Nothing)
+            }
+            Some(ModalType::Settings(modal)) => {
+                return modal.render(canvas, renderer, &RenderContext::Nothing)
+            }
             _ => (),
         };
     }
@@ -136,10 +177,10 @@ impl AppState {
     }
 
     pub fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
-        // open file modal
-        let res = match self.open_file_modal.as_mut() {
-            Some(modal) => modal.update(ticks, &UpdateContext::Nothing),
-            _ => UpdateResult::NoOp,
+        let res = match self.modal.as_mut() {
+            Some(ModalType::OpenFile(modal)) => modal.update(ticks, context.clone()),
+            Some(ModalType::Settings(modal)) => modal.update(ticks, context.clone()),
+            None => UpdateResult::NoOp,
         };
         if res != UpdateResult::NoOp {
             return res;
@@ -171,8 +212,13 @@ impl AppState {
                 .project_tree
                 .on_left_click(point, &UpdateContext::Nothing);
         }
-        match self.open_file_modal.as_mut() {
-            Some(modal) => return modal.on_left_click(point, &UpdateContext::Nothing),
+        match self.modal.as_mut() {
+            Some(ModalType::OpenFile(modal)) => {
+                return modal.on_left_click(point, &UpdateContext::Nothing)
+            }
+            Some(ModalType::Settings(modal)) => {
+                return modal.on_left_click(point, &UpdateContext::Nothing)
+            }
             _ => (),
         };
         if self
@@ -188,10 +234,10 @@ impl AppState {
             return UpdateResult::NoOp;
         } else {
             video_subsystem.text_input().start();
-            self.file_editor
+            return self
+                .file_editor
                 .on_left_click(point, &UpdateContext::Nothing);
         }
-        UpdateResult::NoOp
     }
 
     pub fn is_left_click_target(&self, _point: &Point) -> bool {

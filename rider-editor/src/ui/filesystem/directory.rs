@@ -252,12 +252,12 @@ impl DirectoryView {
                 self.icon_height as i32 + CHILD_MARGIN,
             );
         for dir in self.directories.iter() {
-            let context = RenderContext::RelativePosition(point.clone());
+            let context = RenderContext::ParentPosition(point.clone());
             dir.render(canvas, renderer, &context);
             point = point + Point::new(0, dir.height() as i32 + CHILD_MARGIN as i32);
         }
         for file in self.files.iter() {
-            let context = RenderContext::RelativePosition(point.clone());
+            let context = RenderContext::ParentPosition(point.clone());
             file.render(canvas, renderer, &context);
             point = point + Point::new(0, file.height() as i32 + CHILD_MARGIN as i32);
         }
@@ -302,7 +302,7 @@ impl DirectoryView {
     {
         let dest = self.dest();
         let move_point = match context {
-            &RenderContext::RelativePosition(p) => p.clone(),
+            &RenderContext::ParentPosition(p) => p.clone(),
             _ => Point::new(0, 0),
         };
         let mut dest = move_render_point(move_point, &dest);

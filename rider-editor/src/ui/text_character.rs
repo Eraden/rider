@@ -124,7 +124,7 @@ impl TextCharacter {
             font: font_details.clone(),
         };
         let dest = match context {
-            RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
+            RenderContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
             _ => self.dest(),
         };
 

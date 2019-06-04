@@ -13,6 +13,15 @@ rustup run nightly cargo build --all -rr
 rustup run nightly cargo run -p rider-editor
 ```
 
+## Keyboard mapping
+
+* `DELETE` - delete next character
+* `BACKSPACE` - delete prev character
+* `SHIFT + DELETE` - delete line
+* `CTRL + O` - open file
+* `CTRL + S` - save current file
+* `ESCAPE` - close current modal
+
 ## Road map
 
 ### v1.0
@@ -25,10 +34,9 @@ rustup run nightly cargo run -p rider-editor
 * [x] Open file menu
 * [x] `Save file` with button
 * [x] `Save file` with shortcut
-* [ ] `Save file as...` with shortcut
 * [x] Theme based menu UI
 * [x] Lock scroll when no available content
-* [ ] Config edit menu
+* [x] Config edit menu
 * [x] Project tree
 * [x] Cover `rider` with tests at least 50%
 * [x] Handle resize window

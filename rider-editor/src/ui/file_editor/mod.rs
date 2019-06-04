@@ -106,11 +106,18 @@ impl FileEditor {
         file_content_manager::insert_text(self, text, renderer);
     }
 
-    pub fn insert_new_line<R>(&mut self, renderer: &mut R)
+    pub fn insert_new_line<R>(&mut self, renderer: &mut R) -> Result<(), String>
     where
         R: ConfigHolder + CharacterSizeManager + Renderer,
     {
-        file_content_manager::insert_new_line(self, renderer);
+        file_content_manager::insert_new_line(self, renderer)
+    }
+
+    pub fn delete_current_line<R>(&mut self, renderer: &mut R) -> Result<(), String>
+    where
+        R: ConfigHolder + CharacterSizeManager + Renderer,
+    {
+        file_content_manager::delete_current_line(self, renderer)
     }
 
     fn is_text_character_clicked(&self, point: &Point) -> bool {
@@ -264,22 +271,18 @@ impl FileEditor {
             Some(file) => file.render(
                 canvas,
                 renderer,
-                &RenderContext::RelativePosition(self.render_start_point()),
+                &RenderContext::ParentPosition(self.render_start_point()),
             ),
             _ => (),
         };
         self.caret.render(
             canvas,
-            &RenderContext::RelativePosition(self.render_start_point()),
+            &RenderContext::ParentPosition(self.render_start_point()),
         );
-        self.vertical_scroll_bar.render(
-            canvas,
-            &RenderContext::RelativePosition(self.dest.top_left()),
-        );
-        self.horizontal_scroll_bar.render(
-            canvas,
-            &RenderContext::RelativePosition(self.dest.top_left()),
-        );
+        self.vertical_scroll_bar
+            .render(canvas, &RenderContext::ParentPosition(self.dest.top_left()));
+        self.horizontal_scroll_bar
+            .render(canvas, &RenderContext::ParentPosition(self.dest.top_left()));
     }
 
     pub fn prepare_ui<T>(&mut self, renderer: &mut T)

@@ -8,29 +8,29 @@ use crate::app::UpdateResult as UR;
 use crate::renderer::managers::*;
 use rider_config::*;
 
+pub mod buttons;
 pub mod caret;
 pub mod file;
 pub mod file_editor;
 pub mod filesystem;
+pub mod label;
 pub mod menu_bar;
 pub mod modal;
 pub mod project_tree;
-pub mod save_button;
 pub mod scroll_bar;
-pub mod settings_button;
 pub mod text_character;
 
-pub use crate::ui::caret::*;
-pub use crate::ui::file::*;
-pub use crate::ui::file_editor::*;
-pub use crate::ui::filesystem::*;
-pub use crate::ui::menu_bar::*;
-pub use crate::ui::modal::*;
-pub use crate::ui::project_tree::*;
-pub use crate::ui::save_button::*;
-pub use crate::ui::scroll_bar::*;
-pub use crate::ui::settings_button::*;
-pub use crate::ui::text_character::*;
+pub use self::buttons::*;
+pub use self::caret::*;
+pub use self::file::*;
+pub use self::file_editor::*;
+pub use self::filesystem::*;
+pub use self::label::*;
+pub use self::menu_bar::*;
+pub use self::modal::*;
+pub use self::project_tree::*;
+pub use self::scroll_bar::*;
+pub use self::text_character::*;
 
 #[derive(Debug)]
 pub enum UpdateContext<'l> {
@@ -42,7 +42,7 @@ pub enum UpdateContext<'l> {
 #[derive(Clone, PartialEq, Debug)]
 pub enum RenderContext {
     Nothing,
-    RelativePosition(Point),
+    ParentPosition(Point),
 }
 
 pub trait CanvasAccess {

@@ -66,7 +66,7 @@ impl VerticalScrollBar {
         canvas
             .render_border(
                 match context {
-                    RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.rect),
+                    RenderContext::ParentPosition(p) => move_render_point(p.clone(), &self.rect),
                     _ => self.rect.clone(),
                 },
                 Color::RGBA(255, 255, 255, 0),

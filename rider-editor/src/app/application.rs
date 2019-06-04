@@ -3,6 +3,7 @@ pub use crate::renderer::CanvasRenderer;
 use crate::ui::caret::{CaretPosition, MoveDirection};
 use crate::ui::*;
 pub use rider_config::{Config, ConfigAccess, ConfigHolder};
+
 use sdl2::event::*;
 use sdl2::hint;
 use sdl2::keyboard::Keycode;
@@ -24,7 +25,7 @@ use std::time::Duration;
 
 pub type WindowCanvas = Canvas<Window>;
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Debug)]
 pub enum UpdateResult {
     NoOp,
     Stop,
@@ -35,6 +36,7 @@ pub enum UpdateResult {
     MoveCaret(Rect, CaretPosition),
     DeleteFront,
     DeleteBack,
+    DeleteLine,
     Input(String),
     InsertNewLine,
     MoveCaretLeft,
@@ -49,6 +51,8 @@ pub enum UpdateResult {
     OpenFileModal,
     FileDropped(String),
     SaveCurrentFile,
+    OpenSettings,
+    CloseModal,
 }
 
 #[cfg_attr(tarpaulin, skip)]
@@ -137,6 +141,7 @@ impl Application {
                         let res = app_state.on_left_click(&point, &mut self.video_subsystem);
                         match res {
                             UpdateResult::OpenDirectory(_) => new_tasks.push(res),
+                            UpdateResult::OpenSettings => new_tasks.push(res),
                             UpdateResult::OpenFile(_) => {
                                 new_tasks.push(res);
                                 app_state.set_open_file_modal(None);
@@ -154,9 +159,14 @@ impl Application {
                     UpdateResult::Input(text) => app_state
                         .file_editor_mut()
                         .insert_text(text.clone(), &mut renderer),
-                    UpdateResult::InsertNewLine => {
-                        app_state.file_editor_mut().insert_new_line(&mut renderer);
-                    }
+                    UpdateResult::InsertNewLine => app_state
+                        .file_editor_mut()
+                        .insert_new_line(&mut renderer)
+                        .unwrap_or_else(|e| eprintln!("Failed to delete line {:?}", e)),
+                    UpdateResult::DeleteLine => app_state
+                        .file_editor_mut()
+                        .delete_current_line(&mut renderer)
+                        .unwrap_or_else(|e| eprintln!("Failed to delete line {:?}", e)),
                     UpdateResult::MoveCaretLeft => {
                         app_state.file_editor_mut().move_caret(MoveDirection::Left);
                     }
@@ -205,6 +215,12 @@ impl Application {
                     UpdateResult::SaveCurrentFile => app_state
                         .save_file()
                         .unwrap_or_else(|e| eprintln!("Failed to save {:?}", e)),
+                    UpdateResult::OpenSettings => app_state
+                        .open_settings(&mut renderer)
+                        .unwrap_or_else(|e| eprintln!("Failed to open settings {:?}", e)),
+                    UpdateResult::CloseModal => app_state
+                        .close_modal()
+                        .unwrap_or_else(|e| eprintln!("Failed to close modal {:?}", e)),
                 }
             }
             self.tasks = new_tasks;
@@ -266,11 +282,17 @@ impl Application {
                     .tasks
                     .push(UpdateResult::MouseDragStart(Point::new(x, y))),
                 Event::KeyDown { keycode, .. } if keycode.is_some() => match keycode.unwrap() {
+                    Keycode::Escape => {
+                        self.tasks.push(UpdateResult::CloseModal);
+                    }
                     Keycode::Backspace => {
                         self.tasks.push(UpdateResult::DeleteFront);
                     }
-                    Keycode::Delete => {
+                    Keycode::Delete if !shift_pressed => {
                         self.tasks.push(UpdateResult::DeleteBack);
+                    }
+                    Keycode::Delete if shift_pressed => {
+                        self.tasks.push(UpdateResult::DeleteLine);
                     }
                     Keycode::KpEnter | Keycode::Return => {
                         self.tasks.push(UpdateResult::InsertNewLine);
@@ -307,9 +329,7 @@ impl Application {
                     MouseWheelDirection::Flipped => {
                         self.tasks.push(UpdateResult::Scroll { x, y: -y });
                     }
-                    _ => {
-                        // ignore
-                    }
+                    _ => (),
                 },
                 Event::Window {
                     win_event: WindowEvent::Resized(w, h),
@@ -318,7 +338,7 @@ impl Application {
                     width: w,
                     height: h,
                 }),
-                _ => {}
+                _ => (),
             }
         }
     }

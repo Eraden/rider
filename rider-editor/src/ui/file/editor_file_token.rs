@@ -40,6 +40,7 @@ impl EditorFileToken {
         }
     }
 
+    #[inline]
     pub fn characters(&self) -> &Vec<TextCharacter> {
         &self.characters
     }
@@ -59,7 +60,8 @@ impl EditorFileToken {
         }
     }
 
-    fn iter_char(&self) -> EditorFileTokenIterator {
+    #[inline]
+    pub fn iter_char(&self) -> EditorFileTokenIterator {
         EditorFileTokenIterator::new(self)
     }
 }
@@ -82,12 +84,10 @@ impl TextWidget for EditorFileToken {
 
 impl TextCollection for EditorFileToken {
     fn get_character_at(&self, index: usize) -> Option<TextCharacter> {
-        for character in self.characters.iter() {
-            if character.position() == index {
-                return Some(character.clone());
-            }
-        }
-        None
+        self.characters
+            .iter()
+            .find(|character| character.position() == index)
+            .cloned()
     }
 
     fn get_line(&self, line: &usize) -> Option<Vec<&TextCharacter>> {

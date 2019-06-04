@@ -47,6 +47,10 @@ impl EditorFile {
         self.buffer.clone()
     }
 
+    pub fn buffer_ref(&self) -> &String {
+        &self.buffer
+    }
+
     pub fn path(&self) -> String {
         self.path.clone()
     }

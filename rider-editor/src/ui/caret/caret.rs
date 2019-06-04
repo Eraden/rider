@@ -72,7 +72,7 @@ impl Caret {
         use std::borrow::*;
 
         let dest = match context.borrow() {
-            RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
+            RenderContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
             _ => self.dest().clone(),
         };
         let start = Point::new(dest.x(), dest.y());
@@ -368,7 +368,7 @@ mod test_render {
     #[test]
     fn assert_render_line() {
         let config = build_config();
-        let context = RenderContext::RelativePosition(Point::new(10, 14));
+        let context = RenderContext::ParentPosition(Point::new(10, 14));
         let mut canvas = CanvasMock {
             start: Point::new(0, 0),
             end: Point::new(0, 0),

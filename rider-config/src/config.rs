@@ -205,7 +205,7 @@ mod test_getters {
     fn assert_menu_height() {
         let config = Config::new();
         let result = config.menu_height();
-        let expected = 60;
+        let expected = 40;
         assert_eq!(result, expected);
     }
 

@@ -28,7 +28,7 @@ fn main() -> std::io::Result<()> {
 mod tests {
     use super::*;
     use std::env::set_var;
-    use std::fs::create_dir_all;
+    use std::fs::{create_dir_all, remove_dir_all};
     use std::path::Path;
     use uuid::Uuid;
 
@@ -48,73 +48,130 @@ mod tests {
         let uniq = Uuid::new_v4();
         let joined = join("/tmp/rider-tests".to_owned(), uniq.to_string());
         let test_path = joined.as_str();
+        remove_dir_all(joined.clone()).unwrap_or_else(|_| ());
         create_dir_all(test_path.to_owned()).unwrap();
 
         set_var("XDG_CONFIG_HOME", test_path);
         set_var("XDG_RUNTIME_DIR", test_path);
 
-        assert_eq!(exists(&test_path.to_owned(), ".rider"), false);
-        assert_eq!(main().is_ok(), true);
-        assert_eq!(exists(&test_path.to_owned(), ".rider"), true);
+        debug_assert!(
+            !exists(&test_path.to_owned(), ".rider"),
+            "rider config dir should not exists before generator run"
+        );
+        debug_assert!(main().is_ok(), "generator should not failed");
+        debug_assert!(
+            exists(&test_path.to_owned(), ".rider"),
+            "rider config dir should exists after generator run"
+        );
     }
 
     #[test]
     fn assert_fonts_dir() {
         let uniq = Uuid::new_v4();
         let joined = join("/tmp/rider-tests".to_owned(), uniq.to_string());
+
+        remove_dir_all(joined.clone()).unwrap_or_else(|_| ());
         create_dir_all(joined.clone()).unwrap();
+
         set_var("XDG_CONFIG_HOME", joined.as_str().clone());
         set_var("XDG_RUNTIME_HOME", joined.as_str().clone());
-        assert_eq!(exists(&joined, "rider/fonts"), false);
-        assert_eq!(main().is_ok(), true);
-        assert_eq!(exists(&joined, "rider/fonts"), true);
+
+        debug_assert!(
+            !exists(&joined, "rider/fonts"),
+            "fonts director should not exists before run generator"
+        );
+        debug_assert!(main().is_ok(), "generator should not failed");
+        debug_assert!(
+            exists(&joined, "rider/fonts"),
+            "fonts director should exists after run generator"
+        );
     }
 
     #[test]
     fn assert_log_dir() {
         let uniq = Uuid::new_v4();
         let joined = join("/tmp/rider-tests".to_owned(), uniq.to_string());
+
+        remove_dir_all(joined.clone()).unwrap_or_else(|_| ());
         create_dir_all(joined.clone()).unwrap();
+
         set_var("XDG_CONFIG_HOME", joined.as_str().clone());
         set_var("XDG_RUNTIME_HOME", joined.as_str().clone());
-        assert_eq!(exists(&joined, "rider/log"), false);
-        assert_eq!(main().is_ok(), true);
-        assert_eq!(exists(&joined, "rider/log"), true);
+
+        debug_assert!(
+            !exists(&joined, "rider/log"),
+            "log should not exists before run generator"
+        );
+        debug_assert!(main().is_ok(), "generator should not failed");
+        debug_assert!(
+            exists(&joined, "rider/log"),
+            "log should exists after run generator"
+        );
     }
 
     #[test]
     fn assert_themes_dir() {
         let uniq = Uuid::new_v4();
         let joined = join("/tmp/rider-tests".to_owned(), uniq.to_string());
+
+        remove_dir_all(joined.clone()).unwrap_or_else(|_| ());
         create_dir_all(joined.clone()).unwrap();
+
         set_var("XDG_CONFIG_HOME", joined.as_str().clone());
         set_var("XDG_RUNTIME_HOME", joined.as_str().clone());
-        assert_eq!(exists(&joined, "rider/themes"), false);
-        assert_eq!(main().is_ok(), true);
-        assert_eq!(exists(&joined, "rider/themes"), true);
+
+        debug_assert!(
+            !exists(&joined, "rider/themes"),
+            "themes should not exists before run generator"
+        );
+        debug_assert!(main().is_ok(), "generator should not failed");
+        debug_assert!(
+            exists(&joined, "rider/themes"),
+            "themes should exists after run generator"
+        );
     }
 
     #[test]
     fn assert_default_json() {
         let uniq = Uuid::new_v4();
         let joined = join("/tmp/rider-tests".to_owned(), uniq.to_string());
+
+        remove_dir_all(joined.clone()).unwrap_or_else(|_| ());
         create_dir_all(joined.clone()).unwrap();
+
         set_var("XDG_CONFIG_HOME", joined.as_str().clone());
         set_var("XDG_RUNTIME_HOME", joined.as_str().clone());
-        assert_eq!(exists(&joined, "rider/themes/default.json"), false);
-        assert_eq!(main().is_ok(), true);
-        assert_eq!(exists(&joined, "rider/themes/default.json"), true);
+
+        debug_assert!(
+            !exists(&joined, "rider/themes/default.json"),
+            "default theme should not exists before run generator"
+        );
+        debug_assert!(main().is_ok(), "generator should not failed");
+        debug_assert!(
+            exists(&joined, "rider/themes/default.json"),
+            "default theme should exists after run generator"
+        );
     }
 
     #[test]
     fn assert_railscasts_json() {
         let uniq = Uuid::new_v4();
         let joined = join("/tmp/rider-tests".to_owned(), uniq.to_string());
+
+        remove_dir_all(joined.clone()).unwrap_or_else(|_| ());
         create_dir_all(joined.clone()).unwrap();
+
         set_var("XDG_CONFIG_HOME", joined.as_str().clone());
         set_var("XDG_RUNTIME_HOME", joined.as_str().clone());
-        assert_eq!(exists(&joined, "rider/themes/railscasts.json"), false);
-        assert_eq!(main().is_ok(), true);
-        assert_eq!(exists(&joined, "rider/themes/railscasts.json"), true);
+
+        debug_assert!(
+            !exists(&joined, "rider/themes/railscasts.json"),
+            "railscasts theme should not exists before run generator"
+        );
+        debug_assert!(main().is_ok(), "generator should not failed");
+        debug_assert!(
+            exists(&joined, "rider/themes/railscasts.json"),
+            "railscasts theme should exists after run generator"
+        );
     }
 }

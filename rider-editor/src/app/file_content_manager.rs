@@ -104,14 +104,14 @@ where
     file_editor.replace_current_file(new_file);
 }
 
-pub fn insert_new_line<R>(file_editor: &mut FileEditor, renderer: &mut R)
+pub fn insert_new_line<R>(file_editor: &mut FileEditor, renderer: &mut R) -> Result<(), String>
 where
     R: ConfigHolder + CharacterSizeManager + Renderer,
 {
-    let mut buffer: String = match file_editor.file() {
-        Some(file) => file.buffer(),
-        None => return,
-    };
+    let mut buffer: String = file_editor
+        .file()
+        .map(|file| file.buffer())
+        .ok_or_else(|| "No file is open".to_string())?;
 
     let maybe_character = file_editor
         .file()
@@ -134,6 +134,36 @@ where
     );
     new_file.prepare_ui(renderer);
     file_editor.replace_current_file(new_file);
+    Ok(())
+}
+
+pub fn delete_current_line<R>(file_editor: &mut FileEditor, renderer: &mut R) -> Result<(), String>
+where
+    R: ConfigHolder + CharacterSizeManager + Renderer,
+{
+    let file: &EditorFile = file_editor
+        .file()
+        .ok_or_else(|| "No file is open".to_string())?;
+    let mut new_buffer = String::new();
+    let target_line = file_editor.caret().line_number();
+    let mut current_line = 0;
+    for c in file.buffer_ref().chars() {
+        match c {
+            '\n' if current_line == target_line => {
+                current_line += 1;
+            }
+            '\n' => {
+                current_line += 1;
+                new_buffer.push(c);
+            }
+            _ if current_line == target_line => (),
+            _ => new_buffer.push(c),
+        }
+    }
+    let mut new_file = EditorFile::new(file.path(), new_buffer, file_editor.config().clone());
+    new_file.prepare_ui(renderer);
+    file_editor.replace_current_file(new_file);
+    Ok(())
 }
 
 #[cfg(test)]
@@ -309,7 +339,8 @@ mod tests {
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = FileEditor::new(config.clone());
         widget.prepare_ui(&mut renderer);
-        widget.insert_new_line(&mut renderer);
+        let res: Result<(), String> = widget.insert_new_line(&mut renderer);
+        assert_eq!(res.is_ok(), false);
         let expected = CaretPosition::new(0, 0, 0);
         assert_eq!(widget.caret().position(), &expected);
         let expected = Rect::new(0, 0, 6, 15);
@@ -324,7 +355,8 @@ mod tests {
         let file = EditorFile::new("".to_owned(), "".to_owned(), config.clone());
         widget.open_file(file);
         widget.prepare_ui(&mut renderer);
-        widget.insert_new_line(&mut renderer);
+        let res: Result<(), String> = widget.insert_new_line(&mut renderer);
+        assert_eq!(res.is_ok(), true);
         let expected = CaretPosition::new(1, 1, 0);
         assert_eq!(widget.caret().position(), &expected);
         let expected = Rect::new(0, 13, 6, 15);
@@ -339,7 +371,8 @@ mod tests {
         let file = EditorFile::new("".to_owned(), "foo".to_owned(), config.clone());
         widget.open_file(file);
         widget.prepare_ui(&mut renderer);
-        widget.insert_new_line(&mut renderer);
+        let res: Result<(), String> = widget.insert_new_line(&mut renderer);
+        assert_eq!(res.is_ok(), true);
         let expected = CaretPosition::new(1, 1, 0);
         assert_eq!(widget.caret().position(), &expected);
         let expected = Rect::new(0, 13, 6, 15);
@@ -359,7 +392,8 @@ mod tests {
         widget.prepare_ui(&mut renderer);
         widget.move_caret(MoveDirection::Right);
         widget.move_caret(MoveDirection::Right);
-        widget.insert_new_line(&mut renderer);
+        let res: Result<(), String> = widget.insert_new_line(&mut renderer);
+        assert_eq!(res.is_ok(), true);
         let expected = CaretPosition::new(3, 1, 0);
         assert_eq!(widget.caret().position(), &expected);
         let expected = Rect::new(0, 13, 6, 15);

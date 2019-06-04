@@ -98,7 +98,7 @@ impl ProjectTreeSidebar {
             .unwrap();
 
         // dir view
-        let context = RenderContext::RelativePosition(
+        let context = RenderContext::ParentPosition(
             self.dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP),
         );
         self.dir_view.render(canvas, renderer, &context);
@@ -271,7 +271,7 @@ mod tests {
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
         widget.prepare_ui(&mut renderer);
-        assert_eq!(widget.full_rect(), Rect::new(0, 60, 200, 860));
+        assert_eq!(widget.full_rect(), Rect::new(0, 40, 200, 860));
     }
 
     #[test]
@@ -279,7 +279,7 @@ mod tests {
         let config = build_config();
         let mut widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
         widget.update(0);
-        assert_eq!(widget.full_rect(), Rect::new(0, 60, 200, 800));
+        assert_eq!(widget.full_rect(), Rect::new(0, 40, 200, 820));
     }
 
     #[test]
@@ -288,7 +288,7 @@ mod tests {
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
         widget.prepare_ui(&mut renderer);
-        assert_eq!(widget.full_rect(), Rect::new(0, 60, 200, 860));
+        assert_eq!(widget.full_rect(), Rect::new(0, 40, 200, 860));
     }
 
     #[test]

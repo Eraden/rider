@@ -80,7 +80,8 @@ impl EditorFileSection {
         }
     }
 
-    fn iter_char(&self) -> EditorFileSectionIterator {
+    #[inline]
+    pub fn iter_char(&self) -> EditorFileSectionIterator {
         EditorFileSectionIterator::new(self)
     }
 

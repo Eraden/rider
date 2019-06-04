@@ -7,16 +7,16 @@ use sdl2::rect::{Point, Rect};
 
 const ICON_DEST_WIDTH: u32 = 16;
 const ICON_DEST_HEIGHT: u32 = 16;
-const ICON_SRC_WIDTH: u32 = 16;
-const ICON_SRC_HEIGHT: u32 = 16;
+const ICON_SRC_WIDTH: u32 = 32;
+const ICON_SRC_HEIGHT: u32 = 32;
 
-pub struct SettingsButton {
+pub struct SaveButton {
     source: Rect,
     dest: Rect,
     config: ConfigAccess,
 }
 
-impl SettingsButton {
+impl SaveButton {
     pub fn new(config: ConfigAccess) -> Self {
         Self {
             dest: Rect::new(0, 0, ICON_DEST_WIDTH, ICON_DEST_HEIGHT),
@@ -32,7 +32,7 @@ impl SettingsButton {
     {
         use std::borrow::*;
         let mut dest = match context {
-            &RenderContext::RelativePosition(p) => move_render_point(p.clone(), &self.dest),
+            &RenderContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
             _ => self.dest.clone(),
         };
 
@@ -40,14 +40,14 @@ impl SettingsButton {
         clipping.set_width(clipping.width() + ICON_DEST_WIDTH);
         clipping.set_height(clipping.height() + ICON_DEST_HEIGHT);
         canvas.set_clipping(clipping);
-        let settings_texture_path = {
+        let save_texture_path = {
             let c = self.config.read().unwrap();
             let mut themes_dir = c.directories().themes_dir.clone();
-            let path = c.theme().images().settings_icon();
+            let path = c.theme().images().save_icon();
             themes_dir.push(path);
             themes_dir.to_str().unwrap().to_owned()
         };
-        let maybe_tex = renderer.load_image(settings_texture_path.clone());
+        let maybe_tex = renderer.load_image(save_texture_path.clone());
         if let Ok(texture) = maybe_tex {
             dest.set_width(ICON_DEST_WIDTH);
             dest.set_height(ICON_DEST_HEIGHT);
@@ -76,29 +76,27 @@ impl SettingsButton {
     }
 }
 
-impl Update for SettingsButton {
+impl Update for SaveButton {
     fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UR {
-        let config = self.config.read().unwrap();
-        self.dest.set_width(config.width());
         UR::NoOp
     }
 }
 
-impl ClickHandler for SettingsButton {
+impl ClickHandler for SaveButton {
     fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UR {
-        UR::NoOp
+        UR::SaveCurrentFile
     }
 
     fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
         match *context {
             UpdateContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
-            _ => self.dest(),
+            _ => self.dest,
         }
         .contains_point(point.clone())
     }
 }
 
-impl RenderBox for SettingsButton {
+impl RenderBox for SaveButton {
     fn render_start_point(&self) -> Point {
         self.dest.top_left()
     }
