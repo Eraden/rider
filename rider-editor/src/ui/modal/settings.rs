@@ -11,6 +11,7 @@ use std::sync::Arc;
 const CONTENT_MARGIN_LEFT: i32 = 16;
 const CONTENT_MARGIN_TOP: i32 = 24;
 const DEFAULT_ICON_SIZE: u32 = 16;
+const LABEL_WIDTH: i32 = CONTENT_MARGIN_LEFT * 20;
 
 pub struct Settings {
     vertical_scroll_bar: VerticalScrollBar,
@@ -22,11 +23,12 @@ pub struct Settings {
     config: ConfigAccess,
     font_label: Label,
     font_value: Label,
+    character_size_label: Label,
+    character_size_value: Label,
 }
 
 impl Settings {
     pub fn new(config: ConfigAccess) -> Self {
-        //        let (window_width, window_height, background_color, border_color) = {
         let c = config
             .read()
             .unwrap_or_else(|_| panic!("Failed to read config"));
@@ -35,7 +37,6 @@ impl Settings {
         let window_height = c.height();
         let background_color = theme.background().into();
         let border_color = theme.border_color().into();
-        //        };
         Self {
             vertical_scroll_bar: VerticalScrollBar::new(Arc::clone(&config)),
             horizontal_scroll_bar: HorizontalScrollBar::new(Arc::clone(&config)),
@@ -50,6 +51,11 @@ impl Settings {
             border_color,
             font_label: Label::new("Font path".into(), config.clone()),
             font_value: Label::new(c.editor_config().font_path().clone(), config.clone()),
+            character_size_label: Label::new("Character size".into(), config.clone()),
+            character_size_value: Label::new(
+                    format!("{}", c.editor_config().character_size()).to_owned(),
+                    config.clone()
+            ),
             config: config.clone(),
         }
     }
@@ -106,6 +112,7 @@ impl Settings {
             .render_border(dest, self.border_color)
             .unwrap_or_else(|_| panic!("Failed to render open file modal border!"));
 
+        // font path
         self.font_label.render(
             canvas,
             renderer,
@@ -121,8 +128,34 @@ impl Settings {
             &RC::ParentPosition(
                 self.render_start_point()
                     + Point::new(
-                        (CONTENT_MARGIN_LEFT * 2) + self.font_label.name_width() as i32,
-                        CONTENT_MARGIN_TOP,
+                    CONTENT_MARGIN_LEFT + LABEL_WIDTH,
+                    CONTENT_MARGIN_TOP,
+                    )
+                    + self.scroll(),
+            ),
+        );
+
+        // character size
+        self.character_size_label.render(
+            canvas,
+            renderer,
+            &RC::ParentPosition(
+                self.render_start_point()
+                    + Point::new(
+                    CONTENT_MARGIN_LEFT,
+                    CONTENT_MARGIN_TOP + self.font_label.dest().height() as i32
+                )
+                    + self.scroll(),
+            ),
+        );
+        self.character_size_value.render(
+            canvas,
+            renderer,
+            &RC::ParentPosition(
+                self.render_start_point()
+                    + Point::new(
+                    CONTENT_MARGIN_LEFT + LABEL_WIDTH,
+                    CONTENT_MARGIN_TOP + self.font_label.dest().height() as i32,
                     )
                     + self.scroll(),
             ),
@@ -141,46 +174,19 @@ impl Settings {
     {
         self.font_label.prepare_ui(renderer);
         self.font_value.prepare_ui(renderer);
+        self.character_size_label.prepare_ui(renderer);
+        self.character_size_value.prepare_ui(renderer);
     }
 }
 
 impl ClickHandler for Settings {
+    #[inline]
     fn on_left_click(&mut self, _point: &Point, context: &UpdateContext) -> UR {
-        let dest = match context {
-            UC::ParentPosition(p) => move_render_point(*p, &self.dest),
-            _ => self.dest,
-        };
-        let _context = UC::ParentPosition(
-            dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP) + self.scroll(),
-        );
-        //        let res = self.directory_view.on_left_click(point, &context);
-        //        {
-        //            let dest = self.directory_view.dest();
-        //            let full_dest = Rect::new(
-        //                dest.x(),
-        //                dest.y(),
-        //                dest.width() + (2 * CONTENT_MARGIN_LEFT as u32),
-        //                dest.height() + (2 * CONTENT_MARGIN_TOP as u32),
-        //            );
-        //            self.full_dest = full_dest;
-        //        }
-        //        res
         UR::NoOp
     }
 
+    #[inline]
     fn is_left_click_target(&self, _point: &Point, context: &UpdateContext) -> bool {
-        let dest = match *context {
-            UC::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
-            _ => self.dest.clone(),
-        };
-        let p =
-            dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP) + self.scroll();
-        let _context = UC::ParentPosition(p);
-        //        if self.directory_view.is_left_click_target(point, &context) {
-        //            true
-        //        } else {
-        //            Rect::new(p.x(), p.y(), dest.width(), dest.height()).contains_point(point.clone())
-        //        }
         false
     }
 }
