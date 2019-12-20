@@ -101,7 +101,7 @@ impl Config {
 impl Config {
     pub fn load_theme(&self, theme_name: String) -> Theme {
         let home_dir = dirs::config_dir().unwrap();
-        let mut config_dir = home_dir.clone();
+        let mut config_dir = home_dir;
         config_dir.push("rider");
         fs::create_dir_all(&config_dir)
             .unwrap_or_else(|_| panic!("Cannot create config directory"));
@@ -238,5 +238,4 @@ mod test_getters {
         expected.sort();
         assert_eq!(result, expected);
     }
-
 }

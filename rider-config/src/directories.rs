@@ -74,7 +74,7 @@ pub fn project_dir() -> PathBuf {
 #[cfg_attr(tarpaulin, skip)]
 pub fn binaries_directory() -> Result<PathBuf, String> {
     let mut exec_dir = PathBuf::new();
-    exec_dir.push(dirs::executable_dir().unwrap().clone());
+    exec_dir.push(dirs::executable_dir().unwrap());
     let mut rider_editor = exec_dir.clone();
     rider_editor.push("rider-editor");
     if rider_editor.exists() {

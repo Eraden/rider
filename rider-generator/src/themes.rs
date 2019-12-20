@@ -17,7 +17,7 @@ fn write_theme(theme: &Theme, directories: &Directories) -> std::io::Result<()> 
     theme_path.push(directories.themes_dir.clone());
     theme_path.push(format!("{}.json", theme.name()));
     let contents = serde_json::to_string_pretty(&theme).unwrap();
-    fs::write(&theme_path, contents.clone())?;
+    fs::write(&theme_path, contents)?;
     Ok(())
 }
 

@@ -29,7 +29,7 @@ fn init_logger(directories: &Directories) {
     let mut log_file_path = directories.log_dir.clone();
     log_file_path.push("rider.log");
 
-    let mut outputs: Vec<Box<SharedLogger>> = vec![WriteLogger::new(
+    let mut outputs: Vec<Box<dyn SharedLogger>> = vec![WriteLogger::new(
         LevelFilter::Info,
         Config::default(),
         File::create(log_file_path).unwrap(),

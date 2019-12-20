@@ -1,7 +1,7 @@
 use crate::app::UpdateResult as UR;
 use crate::renderer::renderer::Renderer;
+use crate::ui::RenderContext as RC;
 use crate::ui::*;
-use crate::ui::{RenderContext as RC, UpdateContext as UC};
 use rider_config::ConfigAccess;
 use rider_config::ConfigHolder;
 use sdl2::pixels::Color;
@@ -53,8 +53,8 @@ impl Settings {
             font_value: Label::new(c.editor_config().font_path().clone(), config.clone()),
             character_size_label: Label::new("Character size".into(), config.clone()),
             character_size_value: Label::new(
-                    format!("{}", c.editor_config().character_size()).to_owned(),
-                    config.clone()
+                format!("{}", c.editor_config().character_size()).to_owned(),
+                config.clone(),
             ),
             config: config.clone(),
         }
@@ -127,10 +127,7 @@ impl Settings {
             renderer,
             &RC::ParentPosition(
                 self.render_start_point()
-                    + Point::new(
-                    CONTENT_MARGIN_LEFT + LABEL_WIDTH,
-                    CONTENT_MARGIN_TOP,
-                    )
+                    + Point::new(CONTENT_MARGIN_LEFT + LABEL_WIDTH, CONTENT_MARGIN_TOP)
                     + self.scroll(),
             ),
         );
@@ -142,9 +139,9 @@ impl Settings {
             &RC::ParentPosition(
                 self.render_start_point()
                     + Point::new(
-                    CONTENT_MARGIN_LEFT,
-                    CONTENT_MARGIN_TOP + self.font_label.dest().height() as i32
-                )
+                        CONTENT_MARGIN_LEFT,
+                        CONTENT_MARGIN_TOP + self.font_label.dest().height() as i32,
+                    )
                     + self.scroll(),
             ),
         );
@@ -154,8 +151,8 @@ impl Settings {
             &RC::ParentPosition(
                 self.render_start_point()
                     + Point::new(
-                    CONTENT_MARGIN_LEFT + LABEL_WIDTH,
-                    CONTENT_MARGIN_TOP + self.font_label.dest().height() as i32,
+                        CONTENT_MARGIN_LEFT + LABEL_WIDTH,
+                        CONTENT_MARGIN_TOP + self.font_label.dest().height() as i32,
                     )
                     + self.scroll(),
             ),
@@ -181,12 +178,12 @@ impl Settings {
 
 impl ClickHandler for Settings {
     #[inline]
-    fn on_left_click(&mut self, _point: &Point, context: &UpdateContext) -> UR {
+    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UR {
         UR::NoOp
     }
 
     #[inline]
-    fn is_left_click_target(&self, _point: &Point, context: &UpdateContext) -> bool {
+    fn is_left_click_target(&self, _point: &Point, _context: &UpdateContext) -> bool {
         false
     }
 }
