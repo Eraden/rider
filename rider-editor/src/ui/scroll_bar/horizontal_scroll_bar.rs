@@ -2,51 +2,44 @@ use crate::app::UpdateResult as UR;
 use crate::ui::*;
 use rider_config::ConfigAccess;
 use sdl2::pixels::Color;
-use sdl2::rect::Rect;
+use std::ops::{Deref, DerefMut};
 
 pub struct HorizontalScrollBar {
-    scroll_value: i32,
-    viewport: u32,
-    full_width: u32,
-    rect: Rect,
+    inner: ScrollBar,
+}
+
+impl Deref for HorizontalScrollBar {
+    type Target = ScrollBar;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl DerefMut for HorizontalScrollBar {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
 }
 
 impl HorizontalScrollBar {
     pub fn new(config: ConfigAccess) -> Self {
-        let width = { config.read().unwrap().scroll().width() };
         Self {
-            scroll_value: 0,
-            viewport: 1,
-            full_width: 1,
-            rect: Rect::new(0, 0, width, 0),
+            inner: ScrollBar::new(config),
         }
-    }
-
-    #[inline]
-    pub fn viewport(&self) -> u32 {
-        self.viewport
-    }
-
-    #[inline]
-    pub fn full_width(&self) -> u32 {
-        self.full_width
-    }
-
-    #[inline]
-    pub fn rect(&self) -> &Rect {
-        &self.rect
     }
 }
 
 impl Update for HorizontalScrollBar {
     fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UR {
-        if self.full_width < self.viewport {
+        if self.full < self.viewport {
             return UR::NoOp;
         }
-        let ratio = self.full_width as f64 / self.viewport as f64;
-        self.rect.set_width((self.viewport as f64 / ratio) as u32);
+        let ratio = self.full as f64 / self.viewport as f64;
+        let width = (self.viewport as f64 / ratio) as u32;
+        self.rect.set_width(width);
         let x = (self.viewport - self.rect.width()) as f64
-            * (self.scroll_value().abs() as f64 / (self.full_width - self.viewport) as f64);
+            * (self.scroll_value().abs() as f64 / (self.full - self.viewport) as f64);
         self.rect.set_x(x as i32);
 
         UR::NoOp
@@ -59,7 +52,7 @@ impl HorizontalScrollBar {
     where
         T: CanvasAccess,
     {
-        if self.full_width < self.viewport {
+        if self.full < self.viewport {
             return;
         }
 
@@ -75,7 +68,7 @@ impl HorizontalScrollBar {
     }
 }
 
-impl Scrollable for HorizontalScrollBar {
+impl Scroll for HorizontalScrollBar {
     fn scroll_to(&mut self, n: i32) {
         self.scroll_value = n;
     }
@@ -89,7 +82,7 @@ impl Scrollable for HorizontalScrollBar {
     }
 
     fn set_full_size(&mut self, n: u32) {
-        self.full_width = n;
+        self.full = n;
     }
 
     fn set_location(&mut self, n: i32) {
@@ -97,10 +90,10 @@ impl Scrollable for HorizontalScrollBar {
     }
 
     fn scrolled_part(&self) -> f64 {
-        if self.full_width() < self.viewport() {
+        if self.full < self.viewport() {
             return 1.0;
         }
-        self.scroll_value().abs() as f64 / (self.full_width() - self.viewport()) as f64
+        self.scroll_value().abs() as f64 / (self.full - self.viewport()) as f64
     }
 }
 
@@ -184,9 +177,9 @@ mod test_scrollable {
     fn assert_set_full_size() {
         let config = support::build_config();
         let mut widget = HorizontalScrollBar::new(Arc::clone(&config));
-        let old = widget.full_width();
+        let old = widget.full;
         widget.set_full_size(157);
-        let current = widget.full_width();
+        let current = widget.full;
         let expected = 157;
         assert_ne!(old, current);
         assert_eq!(current, expected);

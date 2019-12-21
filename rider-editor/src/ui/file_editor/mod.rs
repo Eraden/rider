@@ -7,10 +7,9 @@ use crate::ui::caret::MoveDirection;
 use crate::ui::file::editor_file::EditorFile;
 use crate::ui::file::TextCollection;
 use crate::ui::file::TextWidget;
-use crate::ui::move_render_point;
 use crate::ui::scroll_bar::horizontal_scroll_bar::*;
 use crate::ui::scroll_bar::vertical_scroll_bar::*;
-use crate::ui::scroll_bar::Scrollable;
+use crate::ui::scroll_bar::Scroll;
 use crate::ui::text_character::CharacterSizeManager;
 use crate::ui::CanvasAccess;
 use crate::ui::ClickHandler;
@@ -18,6 +17,7 @@ use crate::ui::RenderBox;
 use crate::ui::RenderContext;
 use crate::ui::Update;
 use crate::ui::UpdateContext;
+use crate::ui::{move_render_point, ScrollView};
 use sdl2::rect::Point;
 use sdl2::rect::Rect;
 use std::mem;
@@ -45,12 +45,6 @@ pub trait CaretAccess {
     fn move_caret(&mut self, dir: MoveDirection);
 
     fn set_caret_to_end_of_line(&mut self, line: i32);
-}
-
-pub trait ScrollableView {
-    fn scroll_by(&mut self, x: i32, y: i32);
-
-    fn scroll(&self) -> Point;
 }
 
 pub struct FileEditor {
@@ -144,34 +138,21 @@ impl FileEditor {
     }
 }
 
-impl ScrollableView for FileEditor {
-    fn scroll_by(&mut self, x: i32, y: i32) {
-        let read_config = self.config.read().unwrap();
-
-        let value_x = read_config.scroll().speed() * x;
-        let value_y = read_config.scroll().speed() * y;
-        let old_x = self.horizontal_scroll_bar.scroll_value();
-        let old_y = self.vertical_scroll_bar.scroll_value();
-
-        if value_x + old_x >= 0 {
-            self.horizontal_scroll_bar.scroll_to(value_x + old_x);
-            if self.horizontal_scroll_bar.scrolled_part() > 1.0 {
-                self.horizontal_scroll_bar.scroll_to(old_x);
-            }
-        }
-        if value_y + old_y >= 0 {
-            self.vertical_scroll_bar.scroll_to(value_y + old_y);
-            if self.vertical_scroll_bar.scrolled_part() > 1.0 {
-                self.vertical_scroll_bar.scroll_to(old_y);
-            }
-        }
+impl ScrollView<VerticalScrollBar, HorizontalScrollBar> for FileEditor {
+    fn mut_horizontal_scroll_handler(&mut self) -> Option<&mut HorizontalScrollBar> {
+        Some(&mut self.horizontal_scroll_bar)
     }
 
-    fn scroll(&self) -> Point {
-        Point::new(
-            -self.horizontal_scroll_bar.scroll_value(),
-            -self.vertical_scroll_bar.scroll_value(),
-        )
+    fn horizontal_scroll_handler(&self) -> Option<&HorizontalScrollBar> {
+        Some(&self.horizontal_scroll_bar)
+    }
+
+    fn mut_vertical_scroll_handler(&mut self) -> Option<&mut VerticalScrollBar> {
+        Some(&mut self.vertical_scroll_bar)
+    }
+
+    fn vertical_scroll_handler(&self) -> Option<&VerticalScrollBar> {
+        Some(&self.vertical_scroll_bar)
     }
 }
 
