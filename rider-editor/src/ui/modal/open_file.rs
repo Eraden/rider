@@ -24,6 +24,30 @@ pub struct OpenFile {
     config: ConfigAccess,
 }
 
+impl ScrollView<VerticalScrollBar, HorizontalScrollBar> for OpenFile {
+    fn mut_horizontal_scroll_handler(&mut self) -> Option<&mut HorizontalScrollBar> {
+        Some(&mut self.horizontal_scroll_bar)
+    }
+
+    fn horizontal_scroll_handler(&self) -> Option<&HorizontalScrollBar> {
+        Some(&self.horizontal_scroll_bar)
+    }
+
+    fn mut_vertical_scroll_handler(&mut self) -> Option<&mut VerticalScrollBar> {
+        Some(&mut self.vertical_scroll_bar)
+    }
+
+    fn vertical_scroll_handler(&self) -> Option<&VerticalScrollBar> {
+        Some(&self.vertical_scroll_bar)
+    }
+}
+
+impl ConfigHolder for OpenFile {
+    fn config(&self) -> &ConfigAccess {
+        &self.config
+    }
+}
+
 impl OpenFile {
     pub fn new(root_path: String, width: u32, height: u32, config: ConfigAccess) -> Self {
         let (window_width, window_height, background_color, border_color) = {
@@ -77,35 +101,6 @@ impl OpenFile {
 
     pub fn full_rect(&self) -> &Rect {
         &self.full_dest
-    }
-
-    pub fn scroll_by(&mut self, x: i32, y: i32) {
-        let read_config = self.config.read().unwrap();
-
-        let value_x = read_config.scroll().speed() * x;
-        let value_y = read_config.scroll().speed() * y;
-        let old_x = self.horizontal_scroll_bar.scroll_value();
-        let old_y = self.vertical_scroll_bar.scroll_value();
-
-        if value_x + old_x >= 0 {
-            self.horizontal_scroll_bar.scroll_to(value_x + old_x);
-            if self.horizontal_scroll_bar.scrolled_part() > 1.0 {
-                self.horizontal_scroll_bar.scroll_to(old_x);
-            }
-        }
-        if value_y + old_y >= 0 {
-            self.vertical_scroll_bar.scroll_to(value_y + old_y);
-            if self.vertical_scroll_bar.scrolled_part() > 1.0 {
-                self.vertical_scroll_bar.scroll_to(old_y);
-            }
-        }
-    }
-
-    pub fn scroll(&self) -> Point {
-        Point::new(
-            -self.horizontal_scroll_bar.scroll_value(),
-            -self.vertical_scroll_bar.scroll_value(),
-        )
     }
 
     pub fn update(&mut self, ticks: i32, context: &UC) -> UR {
@@ -218,8 +213,8 @@ impl OpenFile {
 
     pub fn is_left_click_target(&self, point: &Point, context: &UC) -> bool {
         let dest = match context {
-            UC::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
-            _ => self.dest.clone(),
+            UC::ParentPosition(p) => move_render_point(p.clone(), &self.dest()),
+            _ => self.dest().clone(),
         };
         let p =
             dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP) + self.scroll();
@@ -248,7 +243,7 @@ mod tests {
         let config = build_config();
         let mut widget = OpenFile::new("/tmp".to_owned(), 100, 100, config);
         widget.scroll_by(12, 13);
-        assert_eq!(widget.scroll(), Point::new(0, -390));
+        assert_eq!(widget.scroll(), Point::new(-360, -390));
     }
 
     //#######################################################################

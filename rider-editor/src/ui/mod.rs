@@ -4,7 +4,7 @@ use sdl2::render::Texture;
 use std::rc::Rc;
 
 use crate::app::application::WindowCanvas;
-use crate::app::UpdateResult as UR;
+use crate::app::{UpdateResult as UR, UpdateResult};
 use crate::renderer::managers::*;
 use rider_config::*;
 
@@ -31,6 +31,7 @@ pub use self::modal::*;
 pub use self::project_tree::*;
 pub use self::scroll_bar::*;
 pub use self::text_character::*;
+use crate::renderer::Renderer;
 
 #[derive(Debug)]
 pub enum UpdateContext<'l> {
@@ -138,6 +139,100 @@ pub trait RenderBox {
     fn render_start_point(&self) -> Point;
 
     fn dest(&self) -> Rect;
+}
+
+pub struct WidgetInner {
+    source: Rect,
+    dest: Rect,
+    config: ConfigAccess,
+}
+
+impl WidgetInner {
+    pub fn new(config: ConfigAccess, source: Rect, dest: Rect) -> Self {
+        Self {
+            dest,
+            source,
+            config,
+        }
+    }
+}
+
+pub trait Widget {
+    fn texture_path(&self) -> Option<String>;
+
+    fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
+    where
+        C: CanvasAccess,
+        R: Renderer,
+    {
+        let mut dest = match context {
+            &RenderContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest()),
+            _ => self.dest().clone(),
+        };
+
+        canvas.set_clipping(self.clipping(&dest));
+        self.texture_path()
+            .and_then(|path| renderer.load_image(path).ok())
+            .and_then(|texture| {
+                dest.set_width(self.dest().width());
+                dest.set_height(self.dest().height());
+                canvas
+                    .render_image(texture.clone(), self.source().clone(), dest.clone())
+                    .unwrap_or_else(|_| panic!("Failed to draw widget texture"));
+                Some(())
+            });
+    }
+
+    fn prepare_ui<'l, T>(&mut self, _renderer: &mut T)
+    where
+        T: ConfigHolder + Renderer,
+    {
+    }
+
+    fn dest(&self) -> &Rect;
+
+    fn set_dest(&mut self, rect: &Rect);
+
+    fn source(&self) -> &Rect;
+
+    fn set_source(&mut self, rect: &Rect);
+
+    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UpdateResult {
+        UpdateResult::NoOp
+    }
+
+    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UpdateResult {
+        UpdateResult::NoOp
+    }
+
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
+        match *context {
+            UpdateContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest()),
+            _ => self.dest().clone(),
+        }
+        .contains_point(point.clone())
+    }
+
+    fn render_start_point(&self) -> Point {
+        self.dest().top_left()
+    }
+
+    fn clipping(&self, relative_dest: &Rect) -> Rect {
+        Rect::new(
+            relative_dest.x(),
+            relative_dest.y(),
+            relative_dest.width() + self.padding_width(),
+            relative_dest.height() + self.padding_height(),
+        )
+    }
+
+    fn padding_width(&self) -> u32 {
+        0
+    }
+
+    fn padding_height(&self) -> u32 {
+        0
+    }
 }
 
 #[cfg(test)]

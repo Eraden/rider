@@ -9,7 +9,7 @@ use crate::ui::file::TextCollection;
 use crate::ui::file::TextWidget;
 use crate::ui::scroll_bar::horizontal_scroll_bar::*;
 use crate::ui::scroll_bar::vertical_scroll_bar::*;
-use crate::ui::scroll_bar::Scroll;
+use crate::ui::scroll_bar::ScrollWidget;
 use crate::ui::text_character::CharacterSizeManager;
 use crate::ui::CanvasAccess;
 use crate::ui::ClickHandler;
@@ -175,8 +175,8 @@ impl FileAccess for FileEditor {
         if let Some(f) = self.file.as_ref() {
             self.full_rect = f.full_rect();
         }
-        self.vertical_scroll_bar.set_location(0);
-        self.horizontal_scroll_bar.set_location(0);
+        self.vertical_scroll_bar.reset();
+        self.horizontal_scroll_bar.reset();
         file
     }
 

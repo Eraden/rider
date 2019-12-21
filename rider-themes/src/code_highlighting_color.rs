@@ -269,5 +269,4 @@ mod tests {
         let expected = ThemeConfig::new(SerdeColor::new(0, 0, 0, 0), false, false);
         assert_eq!(result, expected);
     }
-
 }

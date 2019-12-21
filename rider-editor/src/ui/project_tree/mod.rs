@@ -311,7 +311,7 @@ mod tests {
         let mut widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
         widget.scroll_by(10, 10);
         let res = widget.scroll();
-        let expected = Point::new(0, -300);
+        let expected = Point::new(-300, -300);
         assert_eq!(res, expected);
     }
 

@@ -71,15 +71,21 @@ impl MenuBar {
             )
             .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
 
-        let context = RenderContext::ParentPosition(
-            relative_position.offset(SAVE_BUTTON_OFFSET_LEFT, SAVE_BUTTON_OFFSET_TOP),
+        self.save_button.render(
+            canvas,
+            renderer,
+            &RenderContext::ParentPosition(
+                relative_position.offset(SAVE_BUTTON_OFFSET_LEFT, SAVE_BUTTON_OFFSET_TOP),
+            ),
         );
-        self.save_button.render(canvas, renderer, &context);
 
-        let context = RenderContext::ParentPosition(
-            relative_position.offset(SAVE_BUTTON_OFFSET_LEFT * 2, SAVE_BUTTON_OFFSET_TOP),
+        self.settings_button.render(
+            canvas,
+            renderer,
+            &RenderContext::ParentPosition(
+                relative_position.offset(SAVE_BUTTON_OFFSET_LEFT * 2, SAVE_BUTTON_OFFSET_TOP),
+            ),
         );
-        self.settings_button.render(canvas, renderer, &context);
     }
 
     pub fn prepare_ui(&mut self) {

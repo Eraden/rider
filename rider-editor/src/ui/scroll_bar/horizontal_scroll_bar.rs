@@ -1,7 +1,5 @@
-use crate::app::UpdateResult as UR;
 use crate::ui::*;
 use rider_config::ConfigAccess;
-use sdl2::pixels::Color;
 use std::ops::{Deref, DerefMut};
 
 pub struct HorizontalScrollBar {
@@ -22,6 +20,7 @@ impl DerefMut for HorizontalScrollBar {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl HorizontalScrollBar {
     pub fn new(config: ConfigAccess) -> Self {
         Self {
@@ -30,70 +29,55 @@ impl HorizontalScrollBar {
     }
 }
 
-impl Update for HorizontalScrollBar {
-    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UR {
-        if self.full < self.viewport {
-            return UR::NoOp;
-        }
-        let ratio = self.full as f64 / self.viewport as f64;
-        let width = (self.viewport as f64 / ratio) as u32;
-        self.rect.set_width(width);
-        let x = (self.viewport - self.rect.width()) as f64
-            * (self.scroll_value().abs() as f64 / (self.full - self.viewport) as f64);
-        self.rect.set_x(x as i32);
-
-        UR::NoOp
+impl ScrollWidget for HorizontalScrollBar {
+    fn update_rect(&mut self, pos: i32, max: u32) {
+        self.mut_rect().set_width(max);
+        self.mut_rect().set_x(pos);
     }
-}
 
-#[cfg_attr(tarpaulin, skip)]
-impl HorizontalScrollBar {
-    pub fn render<T>(&self, canvas: &mut T, context: &RenderContext)
-    where
-        T: CanvasAccess,
-    {
-        if self.full < self.viewport {
-            return;
-        }
-
-        canvas
-            .render_rect(
-                match context {
-                    RenderContext::ParentPosition(p) => move_render_point(p.clone(), &self.rect),
-                    _ => self.rect.clone(),
-                },
-                Color::RGBA(255, 255, 255, 0),
-            )
-            .unwrap_or_else(|_| panic!("Failed to render vertical scroll back"));
-    }
-}
-
-impl Scroll for HorizontalScrollBar {
+    #[inline]
     fn scroll_to(&mut self, n: i32) {
         self.scroll_value = n;
     }
 
+    #[inline]
     fn scroll_value(&self) -> i32 {
         self.scroll_value
     }
 
+    #[inline]
     fn set_viewport(&mut self, n: u32) {
         self.viewport = n;
     }
 
+    #[inline]
     fn set_full_size(&mut self, n: u32) {
         self.full = n;
     }
 
+    #[inline]
     fn set_location(&mut self, n: i32) {
         self.rect.set_y(n);
     }
 
-    fn scrolled_part(&self) -> f64 {
-        if self.full < self.viewport() {
-            return 1.0;
-        }
-        self.scroll_value().abs() as f64 / (self.full - self.viewport()) as f64
+    #[inline]
+    fn viewport(&self) -> u32 {
+        self.viewport
+    }
+
+    #[inline]
+    fn full(&self) -> u32 {
+        self.full
+    }
+
+    #[inline]
+    fn rect(&self) -> &sdl2::rect::Rect {
+        &self.rect
+    }
+
+    #[inline]
+    fn mut_rect(&mut self) -> &mut sdl2::rect::Rect {
+        &mut self.rect
     }
 }
 
@@ -104,7 +88,7 @@ mod test_update {
     use std::sync::*;
 
     impl HorizontalScrollBar {
-        pub fn rect_mut(&mut self) -> &mut Rect {
+        pub fn rect_mut(&mut self) -> &mut sdl2::rect::Rect {
             &mut self.rect
         }
     }
