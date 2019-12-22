@@ -1,7 +1,7 @@
 use crate::app::*;
 use crate::renderer::*;
+use crate::ui::icon::Icon;
 use crate::ui::*;
-use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use std::fs;
 use std::path;
@@ -11,35 +11,234 @@ const CHILD_MARGIN: i32 = 4;
 const DEFAULT_ICON_SIZE: u32 = 16;
 
 pub struct DirectoryView {
+    inner: WidgetInner,
     opened: bool,
     expanded: bool,
-    name_width: u32,
-    icon_width: u32,
-    icon_height: u32,
     height: u32,
     path: String,
     files: Vec<FileEntry>,
     directories: Vec<DirectoryView>,
-    pos: Point,
-    source: Rect,
-    config: ConfigAccess,
+    name_label: Label,
+    icon: Icon,
+}
+
+impl std::ops::Deref for DirectoryView {
+    type Target = WidgetInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl std::ops::DerefMut for DirectoryView {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
+    }
+}
+
+impl Widget for DirectoryView {
+    fn texture_path(&self) -> Option<String> {
+        None
+    }
+
+    fn dest(&self) -> &Rect {
+        &self.dest
+    }
+
+    fn set_dest(&mut self, _rect: &Rect) {}
+
+    fn source(&self) -> &Rect {
+        &self.inner.source
+    }
+
+    fn set_source(&mut self, _rect: &Rect) {}
+
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
+        self.icon.update(ticks, context);
+        self.name_label.update(ticks, context);
+        if !path::Path::new(&self.path).exists() {
+            return UpdateResult::RefreshFsTree;
+        }
+        if self.opened {
+            for dir in self.directories.iter_mut() {
+                dir.update(ticks, context);
+            }
+            for file in self.files.iter_mut() {
+                file.update(ticks, context);
+            }
+        }
+        UpdateResult::NoOp
+    }
+
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UpdateResult {
+        let dest = self.dest();
+        let move_point = match context {
+            &UpdateContext::ParentPosition(p) => p.clone(),
+            _ => Point::new(0, 0),
+        };
+        let dest = move_render_point(move_point.clone(), &dest);
+
+        // icon or name is target of click
+        let icon_or_name = self.name_and_icon_rect();
+        if move_render_point(move_point, &icon_or_name).contains_point(point.clone()) {
+            return UpdateResult::OpenDirectory(self.path.clone());
+        }
+
+        if !self.expanded {
+            return UpdateResult::NoOp;
+        }
+
+        let mut p = dest.top_left()
+            + Point::new(
+                self.icon_width() as i32 + CHILD_MARGIN,
+                self.icon_height() as i32 + CHILD_MARGIN,
+            );
+        for dir in self.directories.iter_mut() {
+            let context = UpdateContext::ParentPosition(p.clone());
+            if dir.is_left_click_target(&point, &context) {
+                return dir.on_left_click(&point, &context);
+            }
+            p = p + Point::new(0, dir.height() as i32 + CHILD_MARGIN);
+        }
+        for file in self.files.iter_mut() {
+            let context = UpdateContext::ParentPosition(p.clone());
+            if file.is_left_click_target(&point, &context) {
+                return file.on_left_click();
+            }
+            p = p + Point::new(0, file.height() as i32 + CHILD_MARGIN);
+        }
+
+        UpdateResult::NoOp
+    }
+
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
+        let dest = self.dest();
+        let move_point = match context {
+            UpdateContext::ParentPosition(p) => p.clone(),
+            _ => Point::new(0, 0),
+        };
+        let dest = move_render_point(move_point.clone(), &dest);
+
+        // icon or name is target of click
+        let name_and_icon_rect = self.name_and_icon_rect();
+        if move_render_point(move_point.clone(), &name_and_icon_rect).contains_point(point.clone())
+        {
+            return true;
+        }
+        if !self.expanded {
+            return false;
+        }
+        let mut p = dest.top_left()
+            + Point::new(
+                self.icon_width() as i32 + CHILD_MARGIN,
+                self.icon_height() as i32 + CHILD_MARGIN,
+            );
+        // subdirectory is target of click
+        for dir in self.directories.iter() {
+            let context = UpdateContext::ParentPosition(p.clone());
+            if dir.is_left_click_target(&point, &context) {
+                return true;
+            }
+            p = p + Point::new(0, dir.height() as i32 + CHILD_MARGIN);
+        }
+        // file inside directory is target of click
+        for file in self.files.iter() {
+            let context = UpdateContext::ParentPosition(p.clone());
+            if file.is_left_click_target(&point, &context) {
+                return true;
+            }
+            p = p + Point::new(0, file.height() as i32 + CHILD_MARGIN);
+        }
+        false
+    }
+
+    fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
+    where
+        R: Renderer + CharacterSizeManager,
+        C: CanvasAccess,
+    {
+        let mut dest = move_render_point(
+            match context {
+                &RenderContext::ParentPosition(p) => p.clone(),
+                _ => Point::new(0, 0),
+            },
+            self.dest(),
+        );
+
+        self.icon.render(
+            canvas,
+            renderer,
+            &RenderContext::ParentPosition(Point::new(dest.x(), dest.y())),
+        );
+        self.name_label.render(
+            canvas,
+            renderer,
+            &RenderContext::ParentPosition(Point::new(
+                dest.x() + self.icon_width() as i32,
+                dest.y(),
+            )),
+        );
+
+        self.render_children::<C, R>(canvas, renderer, &mut dest);
+    }
+
+    fn prepare_ui<R>(&mut self, renderer: &mut R)
+    where
+        R: Renderer + CharacterSizeManager,
+    {
+        let size = renderer.load_character_size('W');
+        self.icon.prepare_ui(renderer);
+        self.icon.dest.set_height(size.height());
+        self.icon.dest.set_width(size.height());
+
+        self.name_label.prepare_ui(renderer);
+        if self.opened {
+            for dir in self.directories.iter_mut() {
+                dir.prepare_ui(renderer);
+            }
+            for file in self.files.iter_mut() {
+                file.prepare_ui(renderer);
+            }
+        }
+        self.calculate_size(renderer);
+    }
 }
 
 impl DirectoryView {
     pub fn new(path: String, config: ConfigAccess) -> Self {
+        let dir_texture_path = {
+            let c = config.read().unwrap();
+            let mut themes_dir = c.directories().themes_dir.clone();
+            let path = c.theme().images().directory_icon();
+            themes_dir.push(path);
+            themes_dir.to_str().unwrap().to_owned()
+        };
+
+        let name = std::path::Path::new(&path)
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned();
         Self {
             opened: false,
             expanded: false,
-            name_width: 0,
-            icon_width: DEFAULT_ICON_SIZE,
-            icon_height: DEFAULT_ICON_SIZE,
             height: 0,
             path,
             files: vec![],
             directories: vec![],
-            pos: Point::new(0, 0),
-            source: Rect::new(0, 0, 64, 64),
-            config,
+            inner: WidgetInner::new(
+                config.clone(),
+                Rect::new(0, 0, 64, 64),
+                Rect::new(0, 0, 0, 0),
+            ),
+            name_label: Label::new(name, config.clone()),
+            icon: Icon::new(
+                config,
+                dir_texture_path,
+                Rect::new(0, 0, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE),
+                Rect::new(0, 0, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE),
+            ),
         }
     }
 
@@ -47,34 +246,24 @@ impl DirectoryView {
         self.path.clone()
     }
 
-    pub fn dest(&self) -> Rect {
-        match self.expanded {
-            true => Rect::new(
-                self.pos.x(),
-                self.pos.y(),
-                self.icon_width + self.name_width + NAME_MARGIN as u32,
-                self.height,
-            ),
-            false => Rect::new(
-                self.pos.x(),
-                self.pos.y(),
-                self.icon_width + self.name_width + NAME_MARGIN as u32,
-                self.icon_height,
-            ),
-        }
+    fn expand_view(&mut self) {
+        self.expanded = true;
+        self.dest = Rect::new(
+            self.dest.x(),
+            self.dest.y(),
+            self.icon_width() + self.name_width() + NAME_MARGIN as u32,
+            self.height,
+        );
     }
 
-    //    pub fn dest(&self) -> Rect {
-    //        Rect::new(
-    //            self.pos.x(),
-    //            self.pos.y(),
-    //            self.icon_width,
-    //            self.icon_height,
-    //        )
-    //    }
-
-    pub fn source(&self) -> &Rect {
-        &self.source
+    fn collapse_view(&mut self) {
+        self.expanded = false;
+        self.dest = Rect::new(
+            self.dest.x(),
+            self.dest.y(),
+            self.icon_width() + self.name_width() + NAME_MARGIN as u32,
+            self.icon_height(),
+        );
     }
 
     pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R) -> bool
@@ -85,10 +274,12 @@ impl DirectoryView {
             _ if dir_path == self.path => {
                 if !self.opened {
                     self.opened = true;
-                    self.expanded = true;
+                    self.expand_view();
                     self.read_directory(renderer);
+                } else if self.expanded {
+                    self.collapse_view();
                 } else {
-                    self.expanded = !self.expanded;
+                    self.expand_view();
                 }
                 self.calculate_size(renderer);
                 true
@@ -96,7 +287,7 @@ impl DirectoryView {
             _ if dir_path.contains((self.path.clone() + "/").as_str()) => {
                 if !self.opened {
                     self.opened = true;
-                    self.expanded = true;
+                    self.expand_view();
                     self.read_directory(renderer);
                 }
                 for dir in self.directories.iter_mut() {
@@ -124,18 +315,26 @@ impl DirectoryView {
             .to_owned()
     }
 
+    #[inline]
     pub fn name_width(&self) -> u32 {
-        self.name_width
+        self.name_label.name_width()
     }
 
+    #[inline]
     pub fn icon_width(&self) -> u32 {
-        self.icon_width
+        self.icon.width()
     }
 
+    #[inline]
+    pub fn icon_height(&self) -> u32 {
+        self.icon.height()
+    }
+
+    #[inline]
     pub fn height(&self) -> u32 {
         match self.expanded {
             true => self.height,
-            false => self.icon_height,
+            false => self.icon.height(),
         }
     }
 
@@ -182,62 +381,6 @@ impl DirectoryView {
         self.directories.sort_by(|a, b| a.name().cmp(&b.name()));
     }
 
-    fn render_icon<C, R>(&self, canvas: &mut C, renderer: &mut R, dest: &mut Rect)
-    where
-        C: CanvasAccess,
-        R: Renderer,
-    {
-        let dir_texture_path = {
-            let c = self.config.read().unwrap();
-            let mut themes_dir = c.directories().themes_dir.clone();
-            let path = c.theme().images().directory_icon();
-            themes_dir.push(path);
-            themes_dir.to_str().unwrap().to_owned()
-        };
-        if let Ok(texture) = renderer.load_image(dir_texture_path.clone()) {
-            canvas
-                .render_image(
-                    texture,
-                    self.source.clone(),
-                    Rect::new(dest.x(), dest.y(), self.icon_width, self.icon_height),
-                )
-                .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
-        }
-    }
-
-    fn render_name<C, R>(&self, canvas: &mut C, renderer: &mut R, dest: &mut Rect)
-    where
-        C: CanvasAccess,
-        R: Renderer + CharacterSizeManager,
-    {
-        let mut d = dest.clone();
-        d.set_x(dest.x() + NAME_MARGIN);
-        let font_details = build_font_details(self);
-        let name = self.name();
-        let config = self.config.read().unwrap();
-        let text_color = config.theme().code_highlighting().title.color();
-
-        for c in name.chars() {
-            let size = renderer.load_character_size(c.clone());
-            let mut text_details = TextDetails {
-                color: Color::RGBA(text_color.r, text_color.g, text_color.b, text_color.a),
-                text: c.to_string(),
-                font: font_details.clone(),
-            };
-            let maybe_texture = renderer.load_text_tex(&mut text_details, font_details.clone());
-
-            if let Ok(texture) = maybe_texture {
-                d.set_width(size.width());
-                d.set_height(size.height());
-
-                canvas
-                    .render_image(texture, self.source.clone(), d.clone())
-                    .unwrap_or_else(|_| panic!("Failed to draw directory entry texture"));
-                d.set_x(d.x() + size.width() as i32);
-            }
-        }
-    }
-
     fn render_children<C, R>(&self, canvas: &mut C, renderer: &mut R, dest: &mut Rect)
     where
         C: CanvasAccess,
@@ -248,8 +391,8 @@ impl DirectoryView {
         }
         let mut point = dest.top_left()
             + Point::new(
-                self.icon_width as i32 + CHILD_MARGIN,
-                self.icon_height as i32 + CHILD_MARGIN,
+                self.icon_width() as i32 + CHILD_MARGIN,
+                self.icon_height() as i32 + CHILD_MARGIN,
             );
         for dir in self.directories.iter() {
             let context = RenderContext::ParentPosition(point.clone());
@@ -269,14 +412,6 @@ impl DirectoryView {
     {
         let size = renderer.load_character_size('W');
         self.height = size.height();
-        self.icon_height = size.height();
-        self.icon_width = size.height();
-        self.name_width = 0;
-
-        for c in self.name().chars() {
-            let size = renderer.load_character_size(c.clone());
-            self.name_width += size.width();
-        }
 
         for dir in self.directories.iter_mut() {
             self.height = self.height + dir.height() + CHILD_MARGIN as u32;
@@ -288,143 +423,11 @@ impl DirectoryView {
 
     fn name_and_icon_rect(&self) -> Rect {
         Rect::new(
-            self.pos.x(),
-            self.pos.y(),
-            self.icon_width + self.name_width + NAME_MARGIN as u32,
-            self.icon_height,
+            self.dest.x(),
+            self.dest.y(),
+            self.icon.width() + self.name_width() + NAME_MARGIN as u32,
+            self.icon.height(),
         )
-    }
-
-    pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
-    where
-        R: Renderer + CharacterSizeManager,
-        C: CanvasAccess,
-    {
-        let dest = self.dest();
-        let move_point = match context {
-            &RenderContext::ParentPosition(p) => p.clone(),
-            _ => Point::new(0, 0),
-        };
-        let mut dest = move_render_point(move_point, &dest);
-        self.render_icon::<C, R>(canvas, renderer, &mut dest);
-        self.render_name::<C, R>(canvas, renderer, &mut dest.clone());
-        self.render_children::<C, R>(canvas, renderer, &mut dest);
-    }
-
-    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
-    where
-        R: Renderer + CharacterSizeManager,
-    {
-        if self.opened {
-            for dir in self.directories.iter_mut() {
-                dir.prepare_ui(renderer);
-            }
-            for file in self.files.iter_mut() {
-                file.prepare_ui(renderer);
-            }
-        }
-        self.calculate_size(renderer);
-    }
-
-    pub fn update(&mut self, ticks: i32, context: &UpdateContext) -> UpdateResult {
-        if !path::Path::new(&self.path).exists() {
-            return UpdateResult::RefreshFsTree;
-        }
-        if self.opened {
-            for dir in self.directories.iter_mut() {
-                dir.update(ticks, context);
-            }
-            for file in self.files.iter_mut() {
-                file.update();
-            }
-        }
-        UpdateResult::NoOp
-    }
-
-    pub fn render_start_point(&self) -> Point {
-        self.pos.clone()
-    }
-
-    pub fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UpdateResult {
-        let dest = self.dest();
-        let move_point = match context {
-            &UpdateContext::ParentPosition(p) => p.clone(),
-            _ => Point::new(0, 0),
-        };
-        let dest = move_render_point(move_point.clone(), &dest);
-
-        // icon or name is target of click
-        let icon_or_name = self.name_and_icon_rect();
-        if move_render_point(move_point, &icon_or_name).contains_point(point.clone()) {
-            return UpdateResult::OpenDirectory(self.path.clone());
-        }
-
-        if !self.expanded {
-            return UpdateResult::NoOp;
-        }
-
-        let mut p = dest.top_left()
-            + Point::new(
-                self.icon_width as i32 + CHILD_MARGIN,
-                self.icon_height as i32 + CHILD_MARGIN,
-            );
-        for dir in self.directories.iter_mut() {
-            let context = UpdateContext::ParentPosition(p.clone());
-            if dir.is_left_click_target(&point, &context) {
-                return dir.on_left_click(&point, &context);
-            }
-            p = p + Point::new(0, dir.height() as i32 + CHILD_MARGIN);
-        }
-        for file in self.files.iter_mut() {
-            let context = UpdateContext::ParentPosition(p.clone());
-            if file.is_left_click_target(&point, &context) {
-                return file.on_left_click();
-            }
-            p = p + Point::new(0, file.height() as i32 + CHILD_MARGIN);
-        }
-
-        UpdateResult::NoOp
-    }
-
-    pub fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
-        let dest = self.dest();
-        let move_point = match context {
-            UpdateContext::ParentPosition(p) => p.clone(),
-            _ => Point::new(0, 0),
-        };
-        let dest = move_render_point(move_point.clone(), &dest);
-
-        // icon or name is target of click
-        let name_and_icon_rect = self.name_and_icon_rect();
-        if move_render_point(move_point.clone(), &name_and_icon_rect).contains_point(point.clone())
-        {
-            return true;
-        }
-        if !self.expanded {
-            return false;
-        }
-        let mut p = dest.top_left()
-            + Point::new(
-                self.icon_width as i32 + CHILD_MARGIN,
-                self.icon_height as i32 + CHILD_MARGIN,
-            );
-        // subdirectory is target of click
-        for dir in self.directories.iter() {
-            let context = UpdateContext::ParentPosition(p.clone());
-            if dir.is_left_click_target(&point, &context) {
-                return true;
-            }
-            p = p + Point::new(0, dir.height() as i32 + CHILD_MARGIN);
-        }
-        // file inside directory is target of click
-        for file in self.files.iter() {
-            let context = UpdateContext::ParentPosition(p.clone());
-            if file.is_left_click_target(&point, &context) {
-                return true;
-            }
-            p = p + Point::new(0, file.height() as i32 + CHILD_MARGIN);
-        }
-        false
     }
 }
 
@@ -569,7 +572,7 @@ mod tests {
     fn assert_initial_dest() {
         let config = build_config();
         let widget = DirectoryView::new("/foo".to_owned(), config);
-        assert_eq!(widget.dest(), Rect::new(0, 0, 36, 16));
+        assert_eq!(widget.dest(), &Rect::new(0, 0, 36, 16));
     }
 
     #[test]
@@ -578,7 +581,7 @@ mod tests {
         let mut renderer = SimpleRendererMock::new(config.clone());
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
-        assert_eq!(widget.dest(), Rect::new(0, 0, 73, 14));
+        assert_eq!(widget.dest(), &Rect::new(0, 0, 73, 14));
     }
 
     //##########################################################

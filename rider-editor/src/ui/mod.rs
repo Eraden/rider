@@ -13,6 +13,7 @@ pub mod caret;
 pub mod file;
 pub mod file_editor;
 pub mod filesystem;
+pub mod icon;
 pub mod label;
 pub mod menu_bar;
 pub mod modal;
@@ -160,35 +161,6 @@ impl WidgetInner {
 pub trait Widget {
     fn texture_path(&self) -> Option<String>;
 
-    fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
-    where
-        C: CanvasAccess,
-        R: Renderer,
-    {
-        let mut dest = match context {
-            &RenderContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest()),
-            _ => self.dest().clone(),
-        };
-
-        canvas.set_clipping(self.clipping(&dest));
-        self.texture_path()
-            .and_then(|path| renderer.load_image(path).ok())
-            .and_then(|texture| {
-                dest.set_width(self.dest().width());
-                dest.set_height(self.dest().height());
-                canvas
-                    .render_image(texture.clone(), self.source().clone(), dest.clone())
-                    .unwrap_or_else(|_| panic!("Failed to draw widget texture"));
-                Some(())
-            });
-    }
-
-    fn prepare_ui<'l, T>(&mut self, _renderer: &mut T)
-    where
-        T: ConfigHolder + Renderer,
-    {
-    }
-
     fn dest(&self) -> &Rect;
 
     fn set_dest(&mut self, rect: &Rect);
@@ -232,6 +204,35 @@ pub trait Widget {
 
     fn padding_height(&self) -> u32 {
         0
+    }
+
+    fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
+    where
+        C: CanvasAccess,
+        R: Renderer + CharacterSizeManager,
+    {
+        let mut dest = match context {
+            &RenderContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest()),
+            _ => self.dest().clone(),
+        };
+
+        canvas.set_clipping(self.clipping(&dest));
+        self.texture_path()
+            .and_then(|path| renderer.load_image(path).ok())
+            .and_then(|texture| {
+                dest.set_width(self.dest().width());
+                dest.set_height(self.dest().height());
+                canvas
+                    .render_image(texture.clone(), self.source().clone(), dest.clone())
+                    .unwrap_or_else(|_| panic!("Failed to draw widget texture"));
+                Some(())
+            });
+    }
+
+    fn prepare_ui<'l, T>(&mut self, _renderer: &mut T)
+    where
+        T: Renderer + CharacterSizeManager,
+    {
     }
 }
 
