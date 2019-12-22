@@ -1,15 +1,140 @@
 extern crate log;
+//#[macro_use]
+extern crate plex;
 extern crate simplelog;
 
 use std::ops::Deref;
 
 pub mod plain;
 pub mod rust_lang;
+pub mod toml;
+
+#[macro_export]
+macro_rules! lexer_whitespace {
+    ($provider: expr) => {{
+        let text = $provider.text();
+        let line = $provider.line();
+        let character = $provider.character();
+        let start = $provider.start();
+        let end = $provider.end(&text);
+
+        TokenType::Whitespace {
+            token: Token::new(text, line, character, start, end),
+        }
+    }};
+}
+#[macro_export]
+macro_rules! lexer_keyword {
+    ($provider: expr) => {{
+        let text = $provider.text();
+        let line = $provider.line();
+        let character = $provider.character();
+        let start = $provider.start();
+        let end = $provider.end(&text);
+
+        TokenType::Keyword {
+            token: Token::new(text, line, character, start, end),
+        }
+    }};
+}
+#[macro_export]
+macro_rules! lexer_string {
+    ($provider: expr) => {{
+        let text = $provider.text();
+        let line = $provider.line();
+        let character = $provider.character();
+        let start = $provider.start();
+        let end = $provider.end(&text);
+
+        TokenType::String {
+            token: Token::new(text, line, character, start, end),
+        }
+    }};
+}
+#[macro_export]
+macro_rules! lexer_identifier {
+    ($provider: expr) => {{
+        let text = $provider.text();
+        let line = $provider.line();
+        let character = $provider.character();
+        let start = $provider.start();
+        let end = $provider.end(&text);
+
+        TokenType::Identifier {
+            token: Token::new(text, line, character, start, end),
+        }
+    }};
+}
+#[macro_export]
+macro_rules! lexer_literal {
+    ($provider: expr) => {{
+        let text = $provider.text();
+        let line = $provider.line();
+        let character = $provider.character();
+        let start = $provider.start();
+        let end = $provider.end(&text);
+
+        TokenType::Literal {
+            token: Token::new(text, line, character, start, end),
+        }
+    }};
+}
+#[macro_export]
+macro_rules! lexer_comment {
+    ($provider: expr) => {{
+        let text = $provider.text();
+        let line = $provider.line();
+        let character = $provider.character();
+        let start = $provider.start();
+        let end = $provider.end(&text);
+
+        TokenType::Comment {
+            token: Token::new(text, line, character, start, end),
+        }
+    }};
+}
+#[macro_export]
+macro_rules! lexer_operator {
+    ($provider: expr) => {{
+        let text = $provider.text();
+        let line = $provider.line();
+        let character = $provider.character();
+        let start = $provider.start();
+        let end = $provider.end(&text);
+
+        TokenType::Operator {
+            token: Token::new(text, line, character, start, end),
+        }
+    }};
+}
+#[macro_export]
+macro_rules! lexer_separator {
+    ($provider: expr) => {{
+        let text = $provider.text();
+        let line = $provider.line();
+        let character = $provider.character();
+        let start = $provider.start();
+        let end = $provider.end(&text);
+
+        TokenType::Separator {
+            token: Token::new(text, line, character, start, end),
+        }
+    }};
+}
+
+pub trait TokenBuilder {
+    fn text(&self) -> String;
+    fn line(&self) -> usize;
+    fn character(&self) -> usize;
+    fn start(&self) -> usize;
+    fn end(&self, current_text: &String) -> usize;
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
 pub enum Language {
     PlainText,
     Rust,
+    Toml,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -92,13 +217,29 @@ pub struct Span {
     pub hi: usize,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Token {
     line: usize,
     character: usize,
     start: usize,
     end: usize,
     text: String,
+}
+
+impl std::fmt::Debug for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        self.text.fmt(f)?;
+        f.write_str(" { ")?;
+        f.write_str("line ")?;
+        self.line.fmt(f)?;
+        f.write_str(" character ")?;
+        self.character.fmt(f)?;
+        f.write_str(" start ")?;
+        self.start.fmt(f)?;
+        f.write_str(" end ")?;
+        self.end.fmt(f)?;
+        f.write_str(" }")
+    }
 }
 
 impl Token {
@@ -153,6 +294,7 @@ pub fn parse(text: String, language: Language) -> Vec<TokenType> {
             //            .inspect(|tok| warn!("tok: {:?}", tok))
             .map(|t| t.0)
             .collect(),
+        Language::Toml => toml::lexer::Lexer::new(text).tokenize(),
     }
 }
 

@@ -28,6 +28,7 @@ impl Config {
         extensions_mapping.insert(".".to_string(), Language::PlainText);
         extensions_mapping.insert("txt".to_string(), Language::PlainText);
         extensions_mapping.insert("rs".to_string(), Language::Rust);
+        extensions_mapping.insert("toml".to_string(), Language::Toml);
 
         Self {
             width: 1024,
@@ -130,16 +131,24 @@ mod tests {
         let mapping = config.extensions_mapping();
         {
             let mut keys: Vec<String> = mapping.keys().map(|s| s.to_string()).collect();
-            let mut expected: Vec<String> =
-                vec![".".to_string(), "txt".to_string(), "rs".to_string()];
+            let mut expected: Vec<String> = vec![
+                ".".to_string(),
+                "txt".to_string(),
+                "rs".to_string(),
+                "toml".to_string(),
+            ];
             keys.sort();
             expected.sort();
             assert_eq!(keys, expected);
         }
         {
             let mut keys: Vec<Language> = mapping.values().map(|s| s.clone()).collect();
-            let mut expected: Vec<Language> =
-                vec![Language::PlainText, Language::PlainText, Language::Rust];
+            let mut expected: Vec<Language> = vec![
+                Language::PlainText,
+                Language::PlainText,
+                Language::Rust,
+                Language::Toml,
+            ];
             keys.sort();
             expected.sort();
             assert_eq!(keys, expected);
@@ -234,7 +243,12 @@ mod test_getters {
             .map(|s| s.to_owned())
             .collect();
         result.sort();
-        let mut expected: Vec<String> = vec!["rs".to_string(), "txt".to_string(), ".".to_string()];
+        let mut expected: Vec<String> = vec![
+            "rs".to_string(),
+            "txt".to_string(),
+            ".".to_string(),
+            "toml".to_string(),
+        ];
         expected.sort();
         assert_eq!(result, expected);
     }

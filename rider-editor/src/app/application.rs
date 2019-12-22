@@ -117,10 +117,10 @@ impl Application {
         self.clear();
     }
 
-    pub fn run(&mut self) {
-        let mut timer: TimerSubsystem = self.sdl_context.timer().unwrap();
-        let mut event_pump = self.sdl_context.event_pump().unwrap();
-        let font_context = sdl2::ttf::init().unwrap();
+    pub fn run(&mut self) -> Result<(), String> {
+        let mut timer: TimerSubsystem = self.sdl_context.timer()?;
+        let mut event_pump = self.sdl_context.event_pump()?;
+        let font_context = sdl2::ttf::init().map_err(|e| format!("{:?}", e))?;
         let texture_creator = self.canvas.texture_creator();
         let sleep_time = Duration::new(0, 1_000_000_000u32 / 60);
         let mut app_state = AppState::new(Arc::clone(&self.config));
@@ -159,14 +159,12 @@ impl Application {
                     UpdateResult::Input(text) => app_state
                         .file_editor_mut()
                         .insert_text(text.clone(), &mut renderer),
-                    UpdateResult::InsertNewLine => app_state
-                        .file_editor_mut()
-                        .insert_new_line(&mut renderer)
-                        .unwrap_or_else(|e| eprintln!("Failed to delete line {:?}", e)),
+                    UpdateResult::InsertNewLine => {
+                        app_state.file_editor_mut().insert_new_line(&mut renderer)?
+                    }
                     UpdateResult::DeleteLine => app_state
                         .file_editor_mut()
-                        .delete_current_line(&mut renderer)
-                        .unwrap_or_else(|e| eprintln!("Failed to delete line {:?}", e)),
+                        .delete_current_line(&mut renderer)?,
                     UpdateResult::MoveCaretLeft => {
                         app_state.file_editor_mut().move_caret(MoveDirection::Left);
                     }
@@ -193,10 +191,10 @@ impl Application {
                                 c.set_height(*height as u32);
                             }
                         })
-                        .unwrap_or_else(|_| println!("Failed to update window size")),
+                        .map_err(|_| format!("Failed to update window size"))?,
                     UpdateResult::RefreshFsTree => unimplemented!(),
                     UpdateResult::OpenFile(file_path) => {
-                        app_state.open_file(file_path.clone(), &mut renderer);
+                        app_state.open_file(file_path.clone(), &mut renderer)?;
                     }
                     UpdateResult::OpenDirectory(dir_path) => {
                         app_state.open_directory(dir_path.clone(), &mut renderer);
@@ -212,15 +210,9 @@ impl Application {
                     UpdateResult::MouseDragStart(_point) => (),
                     UpdateResult::MouseDragStop(_point) => (),
                     UpdateResult::FileDropped(_path) => (),
-                    UpdateResult::SaveCurrentFile => app_state
-                        .save_file()
-                        .unwrap_or_else(|e| eprintln!("Failed to save {:?}", e)),
-                    UpdateResult::OpenSettings => app_state
-                        .open_settings(&mut renderer)
-                        .unwrap_or_else(|e| eprintln!("Failed to open settings {:?}", e)),
-                    UpdateResult::CloseModal => app_state
-                        .close_modal()
-                        .unwrap_or_else(|e| eprintln!("Failed to close modal {:?}", e)),
+                    UpdateResult::SaveCurrentFile => app_state.save_file()?,
+                    UpdateResult::OpenSettings => app_state.open_settings(&mut renderer)?,
+                    UpdateResult::CloseModal => app_state.close_modal()?,
                 }
             }
             self.tasks = new_tasks;
@@ -236,6 +228,8 @@ impl Application {
                 sleep(sleep_time);
             }
         }
+
+        Ok(())
     }
 
     pub fn open_file(&mut self, file_path: String) {

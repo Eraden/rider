@@ -47,11 +47,11 @@ fn init_logger(directories: &Directories) {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-fn main() {
+fn main() -> Result<(), String> {
     let directories = Directories::new(None, None);
     let mut app = Application::new();
     app.init();
     init_logger(&directories);
     app.open_file("./test_files/test.rs".to_string());
-    app.run();
+    app.run()
 }

@@ -97,8 +97,9 @@ pub mod lexer {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::{Token, TokenType};
+
+    use super::*;
 
     #[test]
     fn must_parse_simple_text() {

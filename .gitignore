@@ -6,3 +6,4 @@ log
 .codecov
 cobertura.xml
 cov
+tarpaulin-report.html
