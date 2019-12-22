@@ -111,13 +111,13 @@ impl TextCharacter {
         R: Renderer + ConfigHolder,
         C: CanvasAccess,
     {
-        if self.is_new_line() {
-            return;
-        }
-
         let font_details: FontDetails = renderer.config().read().unwrap().editor_config().into();
 
-        let c = self.text_character.clone();
+        let c = match self.text_character.clone() {
+            '\n' => '¬',
+            ' ' => '·',
+            c => c,
+        };
         let mut details = TextDetails {
             text: c.to_string(),
             color: self.color.clone(),
@@ -133,9 +133,6 @@ impl TextCharacter {
                 .render_image(texture, self.source.clone(), dest)
                 .unwrap();
         }
-        //        let c = Color::RGB(255, 0, 0);
-        //        canvas.set_draw_color(c);
-        //        canvas.draw_rect(dest.clone()).unwrap();
     }
 
     pub fn prepare_ui<'l, T>(&mut self, renderer: &mut T)

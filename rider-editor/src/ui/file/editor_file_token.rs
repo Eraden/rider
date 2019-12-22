@@ -142,9 +142,6 @@ impl EditorFileToken {
         R: Renderer + ConfigHolder,
         C: CanvasAccess,
     {
-        if self.token_type.is_new_line() {
-            return;
-        }
         for text_character in self.characters.iter() {
             text_character.render(canvas, renderer, context);
         }

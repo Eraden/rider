@@ -2,7 +2,7 @@ use crate::app::UpdateResult as UR;
 use crate::ui::*;
 use rider_config::ConfigAccess;
 use sdl2::rect::{Point, Rect};
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Caret {
@@ -59,7 +59,13 @@ impl Deref for Caret {
     type Target = CaretPosition;
 
     fn deref(&self) -> &<Self as Deref>::Target {
-        self.position()
+        &self.position
+    }
+}
+
+impl DerefMut for Caret {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.position
     }
 }
 
