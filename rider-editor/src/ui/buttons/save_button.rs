@@ -39,7 +39,7 @@ impl Widget for SaveButton {
     }
 
     fn set_dest(&mut self, rect: &Rect) {
-        self.inner.dest = rect.clone();
+        self.dest = rect.clone();
     }
 
     fn source(&self) -> &Rect {
@@ -47,7 +47,7 @@ impl Widget for SaveButton {
     }
 
     fn set_source(&mut self, rect: &Rect) {
-        self.inner.source = rect.clone();
+        self.source = rect.clone();
     }
 
     fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UR {
@@ -72,5 +72,50 @@ impl SaveButton {
                 Rect::new(0, 0, ICON_DEST_WIDTH, ICON_DEST_HEIGHT),
             ),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::app::UpdateResult;
+    use crate::tests::support;
+
+    #[test]
+    fn must_return_save_on_left_click() {
+        let config = support::build_config();
+        let mut widget = SaveButton::new(config);
+        assert_eq!(
+            widget.on_left_click(&Point::new(0, 0), &UpdateContext::Nothing),
+            UpdateResult::SaveCurrentFile
+        );
+    }
+
+    #[test]
+    fn must_use_inner() {
+        let config = support::build_config();
+        let mut widget = SaveButton::new(config);
+
+        assert_eq!(
+            widget.dest(),
+            &Rect::new(0, 0, ICON_DEST_WIDTH, ICON_DEST_HEIGHT)
+        );
+        widget.set_dest(&Rect::new(1, 2, 3, 4));
+        assert_eq!(widget.dest(), &Rect::new(1, 2, 3, 4));
+
+        assert_eq!(
+            widget.source(),
+            &Rect::new(0, 0, ICON_SRC_WIDTH, ICON_SRC_HEIGHT)
+        );
+        widget.set_source(&Rect::new(5, 6, 7, 8));
+        assert_eq!(widget.source(), &Rect::new(5, 6, 7, 8));
+    }
+
+    #[test]
+    fn must_have_padding() {
+        let config = support::build_config();
+        let widget = SaveButton::new(config);
+        assert_eq!(widget.padding_width(), ICON_DEST_WIDTH);
+        assert_eq!(widget.padding_height(), ICON_DEST_HEIGHT);
     }
 }

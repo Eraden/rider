@@ -142,3 +142,47 @@ impl ConfigHolder for Label {
         &self.config
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::app::UpdateResult;
+    use crate::tests::support;
+    use crate::ui::{UpdateContext, Widget};
+    use sdl2::rect::Point;
+
+    #[test]
+    fn must_return_noop_on_left_click() {
+        let config = support::build_config();
+        let name = "Hello world".to_owned();
+        let mut widget = Label::new(name, config);
+        assert_eq!(
+            widget.on_left_click(&Point::new(0, 0), &UpdateContext::Nothing),
+            UpdateResult::NoOp
+        );
+    }
+
+    #[test]
+    fn must_use_inner() {
+        let config = support::build_config();
+        let mut renderer = support::SimpleRendererMock::new(config.clone());
+        let name = "Hello world".to_owned();
+        let mut widget = Label::new(name.clone(), config);
+        let dest = Rect::new(0, 0, DEST_WIDTH, DEST_HEIGHT);
+        let src = Rect::new(0, 0, SRC_WIDTH, SRC_HEIGHT);
+
+        assert_eq!(widget.dest(), &dest);
+        widget.set_dest(&Rect::new(1, 2, 3, 4));
+        assert_eq!(widget.dest(), &Rect::new(1, 2, 3, 4));
+
+        assert_eq!(widget.source(), &src);
+        widget.set_source(&Rect::new(5, 6, 7, 8));
+        assert_eq!(widget.source(), &Rect::new(5, 6, 7, 8));
+
+        assert_eq!(widget.name_width(), widget.dest().width());
+
+        assert_eq!(widget.name(), name);
+
+        widget.prepare_ui(&mut renderer);
+    }
+}
