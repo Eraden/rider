@@ -382,4 +382,17 @@ mod tests {
         state.set_open_file_modal(Some(modal));
         assert_eq!(state.open_settings(&mut renderer), Ok(()));
     }
+
+    #[test]
+    fn must_open_directory() {
+        assert_eq!(
+            std::fs::create_dir_all("/tmp/must_open_directory").is_ok(),
+            true
+        );
+
+        let config = support::build_config();
+        let mut renderer = support::SimpleRendererMock::new(config.clone());
+        let mut state = AppState::new(Arc::clone(&config));
+        state.open_directory("/must_open_directory".to_owned(), &mut renderer);
+    }
 }

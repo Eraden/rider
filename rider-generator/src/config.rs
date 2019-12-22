@@ -59,8 +59,8 @@ mod tests {
 
     #[test]
     fn assert_create_fonts() {
-        let uniq = Uuid::new_v4();
-        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
+        let unique = Uuid::new_v4();
+        let test_path = join("/tmp/rider-tests".to_owned(), unique.to_string());
         create_dir_all(test_path.clone()).unwrap();
         let directories = Directories::new(Some(test_path.clone()), None);
         assert_eq!(create(&directories).is_ok(), true);
@@ -72,8 +72,8 @@ mod tests {
 
     #[test]
     fn assert_create_log() {
-        let uniq = Uuid::new_v4();
-        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
+        let unique = Uuid::new_v4();
+        let test_path = join("/tmp/rider-tests".to_owned(), unique.to_string());
         create_dir_all(test_path.clone()).unwrap();
         let directories = Directories::new(Some(test_path.clone()), None);
         assert_eq!(create(&directories).is_ok(), true);
@@ -85,8 +85,8 @@ mod tests {
 
     #[test]
     fn assert_create_themes() {
-        let uniq = Uuid::new_v4();
-        let test_path = join("/tmp/rider-tests".to_owned(), uniq.to_string());
+        let unique = Uuid::new_v4();
+        let test_path = join("/tmp/rider-tests".to_owned(), unique.to_string());
         create_dir_all(test_path.clone()).unwrap();
         let directories = Directories::new(Some(test_path.clone()), None);
         assert_eq!(
