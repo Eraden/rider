@@ -3,6 +3,7 @@ use crate::renderer::*;
 use crate::ui::icon::Icon;
 use crate::ui::*;
 use sdl2::rect::{Point, Rect};
+use std::ffi::OsStr;
 use std::fs;
 use std::path;
 use std::sync::Arc;
@@ -42,7 +43,7 @@ impl Widget for DirectoryView {
     }
 
     fn dest(&self) -> &Rect {
-        &self.dest
+        &self.inner.dest
     }
 
     fn set_dest(&mut self, _rect: &Rect) {}
@@ -207,7 +208,9 @@ impl Widget for DirectoryView {
 impl DirectoryView {
     pub fn new(path: String, config: ConfigAccess) -> Self {
         let dir_texture_path = {
-            let c = config.read().unwrap();
+            let c = config
+                .read()
+                .unwrap_or_else(|_| panic!("Failed to access config"));
             let mut themes_dir = c.directories().themes_dir.clone();
             let path = c.theme().images().directory_icon();
             themes_dir.push(path);
@@ -216,9 +219,9 @@ impl DirectoryView {
 
         let name = std::path::Path::new(&path)
             .file_name()
-            .unwrap()
+            .unwrap_or_else(|| OsStr::new(path.as_str()))
             .to_str()
-            .unwrap()
+            .unwrap_or_else(|| panic!("Failed to transform file name into text"))
             .to_owned();
         Self {
             opened: false,
@@ -230,7 +233,7 @@ impl DirectoryView {
             inner: WidgetInner::new(
                 config.clone(),
                 Rect::new(0, 0, 64, 64),
-                Rect::new(0, 0, 0, 0),
+                Rect::new(0, 0, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE),
             ),
             name_label: Label::new(name, config.clone()),
             icon: Icon::new(
@@ -252,7 +255,7 @@ impl DirectoryView {
             self.dest.x(),
             self.dest.y(),
             self.icon_width() + self.name_width() + NAME_MARGIN as u32,
-            self.height,
+            self.height(),
         );
     }
 
@@ -411,14 +414,18 @@ impl DirectoryView {
         R: CharacterSizeManager,
     {
         let size = renderer.load_character_size('W');
-        self.height = size.height();
+        let mut height = size.height();
 
         for dir in self.directories.iter_mut() {
-            self.height = self.height + dir.height() + CHILD_MARGIN as u32;
+            height = height + dir.height() + CHILD_MARGIN as u32;
         }
         for file in self.files.iter_mut() {
-            self.height = self.height + file.height() + CHILD_MARGIN as u32;
+            height = height + file.height() + CHILD_MARGIN as u32;
         }
+        let width = self.name_label.name_width() + self.icon_width();
+        self.dest.set_height(height);
+        self.dest.set_width(width);
+        self.height = height;
     }
 
     fn name_and_icon_rect(&self) -> Rect {
@@ -443,6 +450,7 @@ mod tests {
     use crate::tests::support::CanvasMock;
     use crate::tests::support::SimpleRendererMock;
     use crate::tests::support::{build_config, build_path};
+    use crate::ui::Widget;
 
     //##########################################################
     // name_width
@@ -452,7 +460,7 @@ mod tests {
     fn assert_initial_name_width() {
         let config = build_config();
         let widget = DirectoryView::new("/foo".to_owned(), config);
-        assert_eq!(widget.name_width(), 0);
+        assert_eq!(widget.name_width(), 16);
     }
 
     #[test]
@@ -572,7 +580,7 @@ mod tests {
     fn assert_initial_dest() {
         let config = build_config();
         let widget = DirectoryView::new("/foo".to_owned(), config);
-        assert_eq!(widget.dest(), &Rect::new(0, 0, 36, 16));
+        assert_eq!(widget.dest(), &Rect::new(0, 0, 16, 16));
     }
 
     #[test]
@@ -581,7 +589,7 @@ mod tests {
         let mut renderer = SimpleRendererMock::new(config.clone());
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
-        assert_eq!(widget.dest(), &Rect::new(0, 0, 73, 14));
+        assert_eq!(widget.dest(), &Rect::new(0, 0, 53, 14));
     }
 
     //##########################################################

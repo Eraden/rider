@@ -199,7 +199,7 @@ mod tests {
     fn assert_initial_name_width() {
         let config = build_config();
         let widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
-        assert_eq!(widget.name_width(), 0);
+        assert_eq!(widget.name_width(), 16);
     }
 
     #[test]
@@ -219,7 +219,7 @@ mod tests {
     fn assert_initial_icon_width() {
         let config = build_config();
         let widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
-        assert_eq!(widget.icon_width(), 0);
+        assert_eq!(widget.icon_width(), 16);
     }
 
     #[test]
@@ -239,7 +239,7 @@ mod tests {
     fn assert_initial_height() {
         let config = build_config();
         let widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
-        assert_eq!(widget.height(), 0);
+        assert_eq!(widget.height(), 16);
     }
 
     #[test]
@@ -248,7 +248,7 @@ mod tests {
         let mut renderer = SimpleRendererMock::new(config.clone());
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
-        assert_eq!(widget.height(), 14);
+        assert_eq!(widget.height(), 16);
     }
 
     //##########################################################
@@ -328,7 +328,7 @@ mod tests {
         let mut renderer = SimpleRendererMock::new(config.clone());
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
-        assert_eq!(widget.dest(), &Rect::new(0, 0, 14, 14));
+        assert_eq!(widget.dest(), &Rect::new(0, 0, 105, 16));
     }
 
     //##########################################################
@@ -339,7 +339,7 @@ mod tests {
     fn assert_initial_full_dest() {
         let config = build_config();
         let widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
-        assert_eq!(widget.full_dest(), Rect::new(0, 0, 20, 1));
+        assert_eq!(widget.full_dest(), Rect::new(0, 0, 52, 16));
     }
 
     #[test]
@@ -348,7 +348,7 @@ mod tests {
         let mut renderer = SimpleRendererMock::new(config.clone());
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
-        assert_eq!(widget.full_dest(), Rect::new(0, 0, 125, 14));
+        assert_eq!(widget.full_dest(), Rect::new(0, 0, 125, 16));
     }
 
     //##########################################################
@@ -391,7 +391,7 @@ mod tests {
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
-        assert_eq!(widget.full_dest(), Rect::new(0, 0, 125, 14));
+        assert_eq!(widget.full_dest(), Rect::new(0, 0, 125, 16));
     }
 
     //##########################################################

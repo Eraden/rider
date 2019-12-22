@@ -286,6 +286,12 @@ mod tests {
         state.set_open_file_modal(Some(modal));
         state.scroll_by(10, 10);
         assert_eq!(state.file_editor().scroll(), file_scroll);
-        assert_ne!(state.open_file_modal().unwrap().scroll(), old_scroll);
+        assert_ne!(
+            state
+                .open_file_modal()
+                .unwrap_or_else(|| panic!("Failed to open file modal"))
+                .scroll(),
+            old_scroll
+        );
     }
 }
