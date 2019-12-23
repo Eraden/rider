@@ -56,8 +56,6 @@ pub fn move_caret_down(file_editor: &mut FileEditor) -> Option<TextCharacter> {
             }
         }
         let text_character = text_character?;
-        //        let character_destination = text_character.dest().clone();
-        //        let pos = text_character.position().clone();
         Some(text_character.clone())
     })??;
 

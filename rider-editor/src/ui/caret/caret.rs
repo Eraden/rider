@@ -317,85 +317,38 @@ mod test_click_handler {
 
 #[cfg(test)]
 mod test_render {
+    use crate::tests::support;
     use crate::tests::support::build_config;
     use crate::ui::*;
-    use sdl2::pixels::Color;
     use sdl2::rect::{Point, Rect};
-    use sdl2::render::Texture;
-    use std::rc::Rc;
-
-    struct CanvasMock {
-        pub start: Point,
-        pub end: Point,
-        pub color: sdl2::pixels::Color,
-    }
-
-    impl CanvasAccess for CanvasMock {
-        fn render_rect(&mut self, _rect: Rect, _color: Color) -> Result<(), String> {
-            unimplemented!()
-        }
-
-        fn render_border(&mut self, _rect: Rect, _color: Color) -> Result<(), String> {
-            unimplemented!()
-        }
-
-        fn render_image(
-            &mut self,
-            _tex: Rc<Texture>,
-            _src: Rect,
-            _dest: Rect,
-        ) -> Result<(), String> {
-            unimplemented!()
-        }
-
-        fn render_line(
-            &mut self,
-            start: Point,
-            end: Point,
-            color: sdl2::pixels::Color,
-        ) -> Result<(), String> {
-            self.start = start;
-            self.end = end;
-            self.color = color;
-            Ok(())
-        }
-
-        fn set_clipping(&mut self, _rect: Rect) {
-            unimplemented!()
-        }
-    }
-
-    impl CharacterSizeManager for CanvasMock {
-        fn load_character_size(&mut self, _c: char) -> Rect {
-            Rect::new(0, 2, 12, 23)
-        }
-    }
 
     #[test]
     fn assert_render_line() {
         let config = build_config();
         let context = RenderContext::ParentPosition(Point::new(10, 14));
-        let mut canvas = CanvasMock {
-            start: Point::new(0, 0),
-            end: Point::new(0, 0),
-            color: sdl2::pixels::Color::RGB(0, 0, 0),
-        };
+        let mut canvas = support::CanvasMock::new();
         let mut widget = Caret::new(config);
+        canvas.set_character_rect('I', Rect::new(11, 12, 6, 23));
         widget.move_caret(CaretPosition::new(0, 0, 0), Point::new(23, 23));
         widget.render(&mut canvas, &context);
-        assert_eq!(canvas.start, Point::new(33, 37));
-        assert_eq!(canvas.end, Point::new(33, 38));
-        assert_eq!(canvas.color, sdl2::pixels::Color::RGBA(121, 121, 121, 0));
+        assert_eq!(
+            canvas.find_pixel_with_color(
+                Point::new(33, 37),
+                sdl2::pixels::Color::RGBA(121, 121, 121, 0)
+            ),
+            Some(&support::RendererRect::new(
+                Rect::new(33, 37, 33, 38),
+                sdl2::pixels::Color::RGBA(121, 121, 121, 0),
+                support::CanvasShape::Line
+            ))
+        );
     }
 
     #[test]
     fn assert_prepare_ui() {
         let config = build_config();
-        let mut canvas = CanvasMock {
-            start: Point::new(0, 0),
-            end: Point::new(0, 0),
-            color: sdl2::pixels::Color::RGB(0, 0, 0),
-        };
+        let mut canvas = support::CanvasMock::new();
+        canvas.set_character_rect('I', Rect::new(11, 12, 6, 23));
         let mut widget = Caret::new(config);
         widget.move_caret(CaretPosition::new(0, 0, 0), Point::new(11, 12));
         widget.prepare_ui(&mut canvas);

@@ -13,6 +13,7 @@ pub mod support {
     use sdl2::rect::Rect;
     use sdl2::render::Texture;
     use sdl2::ttf::Font;
+    use std::collections::HashMap;
     use std::fmt::Debug;
     use std::fmt::Error;
     use std::fmt::Formatter;
@@ -35,10 +36,27 @@ pub mod support {
         Arc::new(RwLock::new(config))
     }
 
+    #[cfg_attr(tarpaulin, skip)]
+    #[derive(Debug, PartialEq)]
+    pub enum CanvasShape {
+        Line,
+        Border,
+        Rectangle,
+        Image(Rect, Rect, String),
+    }
+
     #[derive(Debug, PartialEq)]
     pub struct RendererRect {
         pub rect: Rect,
         pub color: Color,
+        pub shape: CanvasShape,
+    }
+
+    #[cfg_attr(tarpaulin, skip)]
+    impl RendererRect {
+        pub fn new(rect: Rect, color: Color, shape: CanvasShape) -> Self {
+            Self { rect, color, shape }
+        }
     }
 
     #[cfg_attr(tarpaulin, skip)]
@@ -46,13 +64,18 @@ pub mod support {
         pub rects: Vec<RendererRect>,
         pub borders: Vec<RendererRect>,
         pub lines: Vec<RendererRect>,
-        pub clippings: Vec<Rect>,
+        pub clippings: Vec<Option<Rect>>,
+        pub character_sizes: HashMap<char, sdl2::rect::Rect>,
     }
 
     #[cfg_attr(tarpaulin, skip)]
     impl Debug for CanvasMock {
         fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-            write!(f, "CanvasMock {{}}")
+            write!(
+                f,
+                "CanvasMock {{ {:?} {:?} {:?} }}",
+                self.rects, self.lines, self.clippings
+            )
         }
     }
 
@@ -74,6 +97,7 @@ pub mod support {
                 borders: vec![],
                 lines: vec![],
                 clippings: vec![],
+                character_sizes: HashMap::new(),
             }
         }
     }
@@ -81,34 +105,131 @@ pub mod support {
     #[cfg_attr(tarpaulin, skip)]
     impl CanvasAccess for CanvasMock {
         fn render_rect(&mut self, rect: Rect, color: Color) -> Result<(), String> {
-            self.rects.push(RendererRect { rect, color });
+            self.rects.push(RendererRect {
+                rect,
+                color,
+                shape: CanvasShape::Rectangle,
+            });
             Ok(())
         }
 
         fn render_border(&mut self, rect: Rect, color: Color) -> Result<(), String> {
-            self.borders.push(RendererRect { rect, color });
+            self.borders.push(RendererRect {
+                rect,
+                color,
+                shape: CanvasShape::Border,
+            });
             Ok(())
         }
 
-        fn render_image(
-            &mut self,
-            _tex: Rc<Texture>,
-            _src: Rect,
-            _dest: Rect,
-        ) -> Result<(), String> {
-            unimplemented!()
+        fn render_image(&mut self, _tex: Rc<Texture>, src: Rect, dest: Rect) -> Result<(), String> {
+            self.rects.push(RendererRect::new(
+                dest.clone(),
+                Color::RGBA(0, 0, 0, 255),
+                CanvasShape::Image(src.clone(), dest.clone(), format!("_tex: Rc<Texture>")),
+            ));
+            Ok(())
         }
 
         fn render_line(&mut self, start: Point, end: Point, color: Color) -> Result<(), String> {
             self.lines.push(RendererRect {
                 rect: Rect::new(start.x(), start.y(), end.x() as u32, end.y() as u32),
                 color,
+                shape: CanvasShape::Line,
             });
             Ok(())
         }
 
         fn set_clipping(&mut self, rect: Rect) {
+            self.clippings.push(Some(rect));
+        }
+
+        fn set_clip_rect(&mut self, rect: Option<Rect>) {
             self.clippings.push(rect);
+        }
+
+        fn clip_rect(&self) -> Option<Rect> {
+            self.clippings.last().cloned().unwrap_or_else(|| None)
+        }
+    }
+
+    impl CharacterSizeManager for CanvasMock {
+        fn load_character_size(&mut self, c: char) -> Rect {
+            match self.character_sizes.get(&c) {
+                Some(r) => r.clone(),
+                None => {
+                    self.character_sizes.insert(c, Rect::new(0, 0, 1, 1));
+                    self.character_sizes.get(&c).cloned().unwrap()
+                }
+            }
+        }
+    }
+
+    impl CanvasMock {
+        pub fn set_character_rect(&mut self, c: char, rect: Rect) {
+            self.character_sizes.insert(c, rect);
+        }
+
+        pub fn find_pixel_with_color(
+            &self,
+            point: sdl2::rect::Point,
+            color: sdl2::pixels::Color,
+        ) -> Option<&RendererRect> {
+            for rect in self.rects.iter() {
+                if rect.rect.contains_point(point.clone()) && rect.color == color {
+                    return Some(rect.clone());
+                }
+            }
+            for rect in self.borders.iter() {
+                if rect.rect.contains_point(point.clone()) && rect.color == color {
+                    return Some(rect.clone());
+                }
+            }
+            for rect in self.lines.iter() {
+                if rect.rect.contains_point(point.clone()) && rect.color == color {
+                    return Some(rect.clone());
+                }
+            }
+            None
+        }
+
+        pub fn find_rect_with_color(
+            &self,
+            subject: sdl2::rect::Rect,
+            color: sdl2::pixels::Color,
+        ) -> Option<&RendererRect> {
+            for rect in self.rects.iter() {
+                if rect.rect == subject && rect.color == color {
+                    return Some(rect.clone());
+                }
+            }
+            None
+        }
+
+        pub fn find_line_with_color(
+            &self,
+            subject: sdl2::rect::Rect,
+            color: sdl2::pixels::Color,
+        ) -> Option<&RendererRect> {
+            for rect in self.lines.iter() {
+                if rect.rect == subject && rect.color == color {
+                    return Some(rect.clone());
+                }
+            }
+            None
+        }
+
+        pub fn find_border_with_color(
+            &self,
+            subject: sdl2::rect::Rect,
+            color: sdl2::pixels::Color,
+        ) -> Option<&RendererRect> {
+            for rect in self.borders.iter() {
+                if rect.rect == subject && rect.color == color {
+                    return Some(rect.clone());
+                }
+            }
+            None
         }
     }
 

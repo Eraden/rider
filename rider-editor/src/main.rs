@@ -1,3 +1,5 @@
+#![feature(clamp)]
+
 extern crate dirs;
 #[macro_use]
 extern crate log;

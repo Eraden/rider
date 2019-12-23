@@ -170,13 +170,20 @@ impl FileAccess for FileEditor {
     }
 
     fn open_file(&mut self, file: EditorFile) -> Option<EditorFile> {
+        let new_path = file.path();
         let mut file = Some(file);
+        let old_path = match self.file {
+            Some(ref f) => f.path(),
+            _ => format!(""),
+        };
         mem::swap(&mut self.file, &mut file);
-        if let Some(f) = self.file.as_ref() {
+        if let Some(ref f) = self.file {
             self.full_rect = f.full_rect();
         }
-        self.vertical_scroll_bar.reset();
-        self.horizontal_scroll_bar.reset();
+        if old_path != new_path {
+            self.vertical_scroll_bar.reset();
+            self.horizontal_scroll_bar.reset();
+        }
         file
     }
 
@@ -225,8 +232,12 @@ impl CaretAccess for FileEditor {
                     let rect = text_character.dest();
                     let position =
                         CaretPosition::new(text_character.position() + 1, line as usize, 0);
-                    let p = if text_character.is_last_in_line() && text_character.is_new_line() {
-                        rect.top_left()
+                    let p = if text_character.is_new_line() {
+                        file.get_character_at(text_character.position() + 1)
+                            .map_or_else(
+                                || text_character.dest().top_left(),
+                                |tc| tc.dest().top_left(),
+                            )
                     } else {
                         rect.top_right()
                     };

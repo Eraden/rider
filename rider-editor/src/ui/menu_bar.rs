@@ -267,83 +267,35 @@ mod test_render {
     use crate::tests::support::SimpleRendererMock;
     use crate::tests::*;
     use crate::ui::*;
-    use sdl2::pixels::Color;
-    use sdl2::rect::{Point, Rect};
-    use sdl2::render::Texture;
-    use std::rc::Rc;
-    use std::sync::*;
-
-    #[derive(Debug, PartialEq)]
-    struct CanvasMock {
-        pub clipping: Rect,
-        pub background_rect: Rect,
-        pub background_color: Color,
-        pub border_rect: Rect,
-        pub border_color: Color,
-    }
-
-    impl CanvasAccess for CanvasMock {
-        fn render_rect(&mut self, rect: Rect, color: Color) -> Result<(), String> {
-            self.background_color = color;
-            self.background_rect = rect;
-            Ok(())
-        }
-
-        fn render_border(&mut self, rect: Rect, color: Color) -> Result<(), String> {
-            self.border_color = color;
-            self.border_rect = rect;
-            Ok(())
-        }
-
-        fn render_image(
-            &mut self,
-            _tex: Rc<Texture>,
-            _src: Rect,
-            _dest: Rect,
-        ) -> Result<(), String> {
-            unimplemented!()
-        }
-
-        fn render_line(&mut self, _start: Point, _end: Point, _color: Color) -> Result<(), String> {
-            unimplemented!()
-        }
-
-        fn set_clipping(&mut self, rect: Rect) {
-            self.clipping = rect;
-        }
-    }
+    use sdl2::rect::Rect;
 
     #[test]
     fn assert_render() {
+        let rect_color = sdl2::pixels::Color::RGBA(18, 18, 18, 0);
+        let border_color = sdl2::pixels::Color::RGBA(200, 200, 200, 0);
         let context = RenderContext::Nothing;
         let config = support::build_config();
-        let mut canvas = CanvasMock {
-            clipping: Rect::new(0, 0, 0, 0),
-            background_rect: Rect::new(0, 0, 0, 0),
-            background_color: Color::RGB(0, 0, 0),
-            border_rect: Rect::new(0, 0, 0, 0),
-            border_color: Color::RGB(0, 0, 0),
-        };
+        let mut canvas = support::CanvasMock::new();
         let mut renderer = SimpleRendererMock::new(config.clone());
-        let mut widget = MenuBar::new(Arc::clone(&config));
+        let mut widget = MenuBar::new(config.clone());
         widget.prepare_ui();
         widget.render(&mut canvas, &mut renderer, &context);
         assert_eq!(widget.dest(), Rect::new(0, 0, 1024, 40));
-        let expected = CanvasMock {
-            clipping: Rect::new(32, 10, 32, 32),
-            background_rect: Rect::new(0, 0, 1024, 40),
-            background_color: Color::RGBA(18, 18, 18, 0),
-            border_rect: Rect::new(0, 0, 1024, 40),
-            border_color: Color::RGBA(200, 200, 200, 0),
-        };
-        assert_eq!(canvas, expected);
-    }
-
-    #[test]
-    fn assert_prepare_ui() {
-        let config = support::build_config();
-        let mut widget = MenuBar::new(Arc::clone(&config));
-        widget.prepare_ui();
-        assert_eq!(widget.dest(), Rect::new(0, 0, 1024, 40));
+        assert_eq!(
+            canvas.find_rect_with_color(Rect::new(0, 0, 1024, 40), rect_color.clone()),
+            Some(&support::RendererRect::new(
+                Rect::new(0, 0, 1024, 40),
+                rect_color,
+                support::CanvasShape::Rectangle
+            ))
+        );
+        assert_eq!(
+            canvas.find_border_with_color(Rect::new(0, 0, 1024, 40), border_color.clone()),
+            Some(&support::RendererRect::new(
+                Rect::new(0, 0, 1024, 40),
+                border_color,
+                support::CanvasShape::Border
+            ))
+        );
     }
 }

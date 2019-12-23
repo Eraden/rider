@@ -59,6 +59,8 @@ pub trait CanvasAccess {
     ) -> Result<(), String>;
 
     fn set_clipping(&mut self, rect: Rect);
+    fn set_clip_rect(&mut self, rect: Option<Rect>);
+    fn clip_rect(&self) -> Option<Rect>;
 }
 
 impl CanvasAccess for WindowCanvas {
@@ -88,6 +90,14 @@ impl CanvasAccess for WindowCanvas {
 
     fn set_clipping(&mut self, rect: Rect) {
         self.set_clip_rect(rect);
+    }
+
+    fn set_clip_rect(&mut self, rect: Option<Rect>) {
+        self.set_clip_rect(rect);
+    }
+
+    fn clip_rect(&self) -> Option<Rect> {
+        self.clip_rect()
     }
 }
 

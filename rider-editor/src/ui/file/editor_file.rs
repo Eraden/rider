@@ -111,14 +111,38 @@ impl TextCollection for EditorFile {
     }
 
     fn get_last_at_line(&self, line: usize) -> Option<TextCharacter> {
-        let mut current = None;
-        for section in self.sections.iter() {
-            let c = section.get_last_at_line(line);
-            if c.is_some() {
-                current = c;
+        let mut current: Option<TextCharacter> = None;
+        'scanning: for section in self.sections.iter().rev() {
+            for token in section.tokens().iter().rev() {
+                for text_character in token.characters().iter().rev() {
+                    match text_character.line() {
+                        l if l > line => continue,
+                        l if l < line => break 'scanning,
+                        _ => (),
+                    };
+                    match (
+                        current.clone().map(|ref c| c.is_new_line()),
+                        text_character.is_new_line(),
+                    ) {
+                        (None, true) => current = Some(text_character.clone()),
+                        (None, false) => current = Some(text_character.clone()),
+                        (Some(true), false) => current = Some(text_character.clone()),
+                        (Some(false), false) => break,
+                        _ => continue,
+                    };
+                }
             }
         }
-        current
+        match current {
+            Some(ref tc) => {
+                // Click on empty new line
+                if tc.is_new_line() && self.get_character_at(tc.position() - 1).is_some() {
+                    return self.get_character_at(tc.position() - 1);
+                }
+                return current;
+            }
+            None => None,
+        }
     }
 }
 
