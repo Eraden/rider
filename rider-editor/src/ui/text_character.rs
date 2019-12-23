@@ -174,11 +174,11 @@ impl ClickHandler for TextCharacter {
     }
 
     fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
-        let rect = match context {
+        match context {
             &UpdateContext::ParentPosition(p) => move_render_point(p, &self.dest),
             _ => self.dest(),
-        };
-        is_in_rect(point, &rect)
+        }
+        .contains_point(point.clone())
     }
 }
 

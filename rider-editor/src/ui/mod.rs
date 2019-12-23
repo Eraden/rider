@@ -47,6 +47,7 @@ pub enum RenderContext {
     ParentPosition(Point),
 }
 
+#[cfg_attr(tarpaulin, skip)]
 pub trait CanvasAccess {
     fn render_rect(&mut self, rect: Rect, color: sdl2::pixels::Color) -> Result<(), String>;
     fn render_border(&mut self, rect: Rect, color: sdl2::pixels::Color) -> Result<(), String>;
@@ -63,6 +64,7 @@ pub trait CanvasAccess {
     fn clip_rect(&self) -> Option<Rect>;
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl CanvasAccess for WindowCanvas {
     fn render_rect(&mut self, rect: Rect, color: sdl2::pixels::Color) -> Result<(), String> {
         self.set_draw_color(color);
@@ -99,11 +101,6 @@ impl CanvasAccess for WindowCanvas {
     fn clip_rect(&self) -> Option<Rect> {
         self.clip_rect()
     }
-}
-
-#[inline]
-pub fn is_in_rect(point: &Point, rect: &Rect) -> bool {
-    rect.contains_point(point.clone())
 }
 
 #[inline]
@@ -262,20 +259,6 @@ mod tests {
     }
 
     #[test]
-    fn must_return_true_if_inside_rect() {
-        let rect = Rect::new(10, 10, 30, 30);
-        let point = Point::new(20, 20);
-        assert_eq!(is_in_rect(&point, &rect), true);
-    }
-
-    #[test]
-    fn must_return_not_if_not_inside_rect() {
-        let rect = Rect::new(10, 10, 30, 30);
-        let point = Point::new(41, 41);
-        assert_eq!(is_in_rect(&point, &rect), false);
-    }
-
-    #[test]
     fn must_return_moved_rect() {
         let rect = Rect::new(10, 20, 30, 40);
         let point = Point::new(11, 11);
@@ -292,5 +275,13 @@ mod tests {
         let c = config.read().unwrap();
         assert_eq!(details.path, c.editor_config().font_path().to_string());
         assert_eq!(details.size, c.editor_config().character_size());
+    }
+
+    #[test]
+    fn mut_return_character_rectangle() {
+        let config = support::build_config();
+        let mut renderer = support::SimpleRendererMock::new(config);
+        let result = get_text_character_rect('a', &mut renderer);
+        assert_eq!(result, Some(Rect::new(0, 0, 10, 10)));
     }
 }
