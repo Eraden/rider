@@ -145,14 +145,16 @@ impl AppState {
         R: Renderer + ConfigHolder + CharacterSizeManager,
     {
         // file editor
-        self.file_editor.render(canvas, renderer);
+        self.file_editor
+            .render(canvas, renderer, &RenderContext::Nothing);
 
         // menu bar
         self.menu_bar
             .render(canvas, renderer, &RenderContext::Nothing);
 
         // project tree
-        self.project_tree.render(canvas, renderer);
+        self.project_tree
+            .render(canvas, renderer, &RenderContext::Nothing);
 
         // settings modal
         match self.modal.as_ref() {
@@ -189,7 +191,7 @@ impl AppState {
         self.menu_bar.update(ticks, context);
 
         // sidebar
-        self.project_tree.update(ticks);
+        self.project_tree.update(ticks, context);
 
         // file editor
         let context = UpdateContext::ParentPosition(

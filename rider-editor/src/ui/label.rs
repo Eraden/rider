@@ -54,7 +54,7 @@ impl Widget for Label {
     fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
         C: CanvasAccess,
-        R: Renderer,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         let dest = match context {
             &RenderContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
@@ -62,7 +62,9 @@ impl Widget for Label {
         };
         let mut d = dest.clone();
         d.set_x(dest.x() + NAME_MARGIN);
-        canvas.set_clipping(d.clone());
+        if self.use_clipping() {
+            canvas.set_clipping(d.clone());
+        }
 
         let font_details = build_font_details(self);
         for c in self.name.chars() {

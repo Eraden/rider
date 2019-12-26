@@ -62,7 +62,7 @@ impl Widget for FileEntry {
     fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
         C: CanvasAccess,
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         let dest = match context {
             &RenderContext::ParentPosition(p) => move_render_point(p.clone(), self.dest()),

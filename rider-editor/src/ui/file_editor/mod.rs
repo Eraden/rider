@@ -11,13 +11,13 @@ use crate::ui::scroll_bar::horizontal_scroll_bar::*;
 use crate::ui::scroll_bar::vertical_scroll_bar::*;
 use crate::ui::scroll_bar::ScrollWidget;
 use crate::ui::text_character::CharacterSizeManager;
-use crate::ui::CanvasAccess;
 use crate::ui::ClickHandler;
 use crate::ui::RenderBox;
 use crate::ui::RenderContext;
 use crate::ui::Update;
 use crate::ui::UpdateContext;
 use crate::ui::{move_render_point, ScrollView};
+use crate::ui::{CanvasAccess, Widget};
 use sdl2::rect::Point;
 use sdl2::rect::Rect;
 use std::mem;
@@ -55,6 +55,130 @@ pub struct FileEditor {
     config: ConfigAccess,
     vertical_scroll_bar: VerticalScrollBar,
     horizontal_scroll_bar: HorizontalScrollBar,
+}
+
+impl Widget for FileEditor {
+    fn texture_path(&self) -> Option<String> {
+        None
+    }
+
+    fn dest(&self) -> &Rect {
+        &self.dest
+    }
+
+    fn set_dest(&mut self, rect: &Rect) {
+        self.dest = rect.clone();
+    }
+
+    fn source(&self) -> &Rect {
+        &self.dest
+    }
+
+    fn set_source(&mut self, _rect: &Rect) {}
+
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
+        let (width, height, editor_left_margin, editor_top_margin, scroll_width, scroll_margin) = {
+            let config: RwLockReadGuard<Config> = self.config.read().unwrap();
+            (
+                config.width(),
+                config.height(),
+                config.editor_left_margin() as u32,
+                config.editor_top_margin() as u32,
+                config.scroll().width(),
+                config.scroll().margin_right(),
+            )
+        };
+        let editor_left_margin = match context {
+            UpdateContext::ParentPosition(p) => p.x() as u32,
+            _ => editor_left_margin as u32,
+        };
+        self.dest.set_x(editor_left_margin.clone() as i32);
+        self.dest.set_width(width - editor_left_margin);
+        self.dest.set_height(height - editor_top_margin);
+
+        self.vertical_scroll_bar
+            .set_full_size(self.full_rect.height());
+        self.vertical_scroll_bar.set_viewport(self.dest.height());
+        self.vertical_scroll_bar
+            .set_location(self.dest.width() as i32 - (scroll_width as i32 + scroll_margin));
+        self.vertical_scroll_bar.update(ticks, context);
+
+        self.horizontal_scroll_bar
+            .set_full_size(self.full_rect.width());
+        self.horizontal_scroll_bar.set_viewport(self.dest.width());
+        self.horizontal_scroll_bar
+            .set_location(self.dest.height() as i32 - (scroll_width as i32 + scroll_margin));
+        self.horizontal_scroll_bar.update(ticks, context);
+
+        self.caret.update();
+        match self.file_mut() {
+            Some(file) => file.update(ticks, context),
+            _ => UR::NoOp,
+        }
+    }
+
+    fn on_left_click(&mut self, point: &Point, _context: &UpdateContext) -> UR {
+        let context = UpdateContext::ParentPosition(self.render_start_point());
+
+        if self.is_text_character_clicked(point) {
+            let file = if let Some(file) = self.file_mut() {
+                file
+            } else {
+                return UR::NoOp;
+            };
+            match file.on_left_click(point, &context) {
+                UR::MoveCaret(rect, position) => {
+                    self.caret
+                        .move_caret(position, Point::new(rect.x(), rect.y()));
+                }
+                _ => {}
+            }
+        } else {
+            self.set_caret_to_end_of_line(self.resolve_line_from_point(point));
+        }
+        UR::NoOp
+    }
+
+    fn is_left_click_target(&self, point: &Point, _context: &UpdateContext) -> bool {
+        self.is_text_character_clicked(point) || self.is_editor_clicked(point)
+    }
+
+    fn use_clipping(&self) -> bool {
+        true
+    }
+
+    fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, _context: &RenderContext)
+    where
+        C: CanvasAccess,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
+    {
+        if self.use_clipping() {
+            canvas.set_clipping(self.dest.clone());
+        }
+        match self.file() {
+            Some(file) => file.render(
+                canvas,
+                renderer,
+                &RenderContext::ParentPosition(self.render_start_point() + self.scroll()),
+            ),
+            _ => (),
+        };
+        self.caret.render(
+            canvas,
+            &RenderContext::ParentPosition(self.render_start_point() + self.scroll()),
+        );
+        self.vertical_scroll_bar
+            .render(canvas, &RenderContext::ParentPosition(self.dest.top_left()));
+        self.horizontal_scroll_bar
+            .render(canvas, &RenderContext::ParentPosition(self.dest.top_left()));
+    }
+
+    fn prepare_ui<T>(&mut self, renderer: &mut T)
+    where
+        T: CharacterSizeManager,
+    {
+        self.caret.prepare_ui(renderer);
+    }
 }
 
 impl FileEditor {
@@ -252,120 +376,6 @@ impl CaretAccess for FileEditor {
     }
 }
 
-impl FileEditor {
-    pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R)
-    where
-        R: Renderer + ConfigHolder,
-        C: CanvasAccess,
-    {
-        canvas.set_clipping(self.dest.clone());
-        match self.file() {
-            Some(file) => file.render(
-                canvas,
-                renderer,
-                &RenderContext::ParentPosition(self.render_start_point()),
-            ),
-            _ => (),
-        };
-        self.caret.render(
-            canvas,
-            &RenderContext::ParentPosition(self.render_start_point()),
-        );
-        self.vertical_scroll_bar
-            .render(canvas, &RenderContext::ParentPosition(self.dest.top_left()));
-        self.horizontal_scroll_bar
-            .render(canvas, &RenderContext::ParentPosition(self.dest.top_left()));
-    }
-
-    pub fn prepare_ui<T>(&mut self, renderer: &mut T)
-    where
-        T: CharacterSizeManager,
-    {
-        self.caret.prepare_ui(renderer);
-    }
-}
-
-impl Update for FileEditor {
-    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
-        let (width, height, editor_left_margin, editor_top_margin, scroll_width, scroll_margin) = {
-            let config: RwLockReadGuard<Config> = self.config.read().unwrap();
-            (
-                config.width(),
-                config.height(),
-                config.editor_left_margin() as u32,
-                config.editor_top_margin() as u32,
-                config.scroll().width(),
-                config.scroll().margin_right(),
-            )
-        };
-        let editor_left_margin = match context {
-            UpdateContext::ParentPosition(p) => p.x() as u32,
-            _ => editor_left_margin as u32,
-        };
-        self.dest.set_x(editor_left_margin.clone() as i32);
-        self.dest.set_width(width - editor_left_margin);
-        self.dest.set_height(height - editor_top_margin);
-
-        self.vertical_scroll_bar
-            .set_full_size(self.full_rect.height());
-        self.vertical_scroll_bar.set_viewport(self.dest.height());
-        self.vertical_scroll_bar
-            .set_location(self.dest.width() as i32 - (scroll_width as i32 + scroll_margin));
-        self.vertical_scroll_bar.update(ticks, context);
-
-        self.horizontal_scroll_bar
-            .set_full_size(self.full_rect.width());
-        self.horizontal_scroll_bar.set_viewport(self.dest.width());
-        self.horizontal_scroll_bar
-            .set_location(self.dest.height() as i32 - (scroll_width as i32 + scroll_margin));
-        self.horizontal_scroll_bar.update(ticks, context);
-
-        self.caret.update();
-        match self.file_mut() {
-            Some(file) => file.update(ticks, context),
-            _ => UR::NoOp,
-        }
-    }
-}
-
-impl ClickHandler for FileEditor {
-    fn on_left_click(&mut self, point: &Point, _context: &UpdateContext) -> UR {
-        let context = UpdateContext::ParentPosition(self.render_start_point());
-
-        if self.is_text_character_clicked(point) {
-            let file = if let Some(file) = self.file_mut() {
-                file
-            } else {
-                return UR::NoOp;
-            };
-            match file.on_left_click(point, &context) {
-                UR::MoveCaret(rect, position) => {
-                    self.caret
-                        .move_caret(position, Point::new(rect.x(), rect.y()));
-                }
-                _ => {}
-            }
-        } else {
-            self.set_caret_to_end_of_line(self.resolve_line_from_point(point));
-        }
-        UR::NoOp
-    }
-
-    fn is_left_click_target(&self, point: &Point, _context: &UpdateContext) -> bool {
-        self.is_text_character_clicked(point) || self.is_editor_clicked(point)
-    }
-}
-
-impl RenderBox for FileEditor {
-    fn render_start_point(&self) -> Point {
-        self.dest.top_left() + self.scroll()
-    }
-
-    fn dest(&self) -> Rect {
-        self.dest.clone()
-    }
-}
-
 impl ConfigHolder for FileEditor {
     fn config(&self) -> &ConfigAccess {
         &self.config
@@ -374,6 +384,7 @@ impl ConfigHolder for FileEditor {
 
 #[cfg(test)]
 mod tests {
+    use crate::tests::support;
     use crate::ui::*;
     use rider_config::Config;
     use std::sync::*;
@@ -392,6 +403,13 @@ mod tests {
         let file = result.as_ref().unwrap();
         assert_eq!(file.path(), first_file.path());
         assert_eq!(file.buffer(), first_file.buffer());
+    }
+
+    #[test]
+    fn assert_has_file() {
+        let config = support::build_config();
+        let widget = FileEditor::new(config);
+        assert_eq!(widget.has_file(), false);
     }
 }
 
@@ -450,27 +468,6 @@ mod test_render_box {
         let widget = FileEditor::new(config);
         let result = widget.dest().clone();
         let expected = Rect::new(x, y, mw - x as u32, mh - y as u32);
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn assert_render_start_point() {
-        let config = support::build_config();
-        let (x, y, ss) = {
-            let c = config.read().unwrap();
-            (
-                c.editor_left_margin(),
-                c.editor_top_margin(),
-                c.scroll().speed(),
-            )
-        };
-        let mut widget = FileEditor::new(config);
-        widget.set_dest(Rect::new(x.clone(), y.clone(), 999, 999));
-        widget.set_full_rect(Rect::new(0, 0, 99999, 99999));
-        widget.update(1, &UpdateContext::Nothing);
-        widget.scroll_by(30, 40);
-        let result = widget.render_start_point().clone();
-        let expected = Point::new(x - (ss * 30), y - (ss * 40));
         assert_eq!(result, expected);
     }
 }

@@ -155,7 +155,7 @@ impl Widget for DirectoryView {
 
     fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
         C: CanvasAccess,
     {
         let mut dest = move_render_point(
@@ -387,7 +387,7 @@ impl DirectoryView {
     fn render_children<C, R>(&self, canvas: &mut C, renderer: &mut R, dest: &mut Rect)
     where
         C: CanvasAccess,
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         if !self.expanded {
             return;

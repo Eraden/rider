@@ -4,9 +4,6 @@ pub mod support {
     use crate::renderer::managers::FontDetails;
     use crate::renderer::managers::TextDetails;
     use crate::renderer::renderer::Renderer;
-    use crate::renderer::{
-        FontManager, ManagersHolder, ResourceLoader, ResourceManager, TextureManager,
-    };
     use crate::ui::text_character::CharacterSizeManager;
     use crate::ui::CanvasAccess;
     use rider_config::Config;
@@ -15,9 +12,8 @@ pub mod support {
     use sdl2::pixels::Color;
     use sdl2::rect::Point;
     use sdl2::rect::Rect;
-    use sdl2::render::{Texture, TextureCreator};
-    use sdl2::ttf::{Font, Sdl2TtfContext};
-    use sdl2::video::WindowContext;
+    use sdl2::render::Texture;
+    use sdl2::ttf::Font;
     use std::collections::HashMap;
     use std::fmt::Debug;
     use std::fmt::Error;
@@ -231,23 +227,31 @@ pub mod support {
         }
     }
 
-    //    struct TextureLoaderMock {}
-
-    //    impl<'l> ResourceLoader<'l> for  TextureLoaderMock {}
-
-    pub struct SimpleRendererMock<'l> {
+    pub struct SimpleRendererMock {
         config: ConfigAccess,
+        character_sizes: HashMap<char, Rect>,
         //        font_manager: FontManager<'l>,
         //        texture_manager: TextureManager<'l>,
     }
 
     impl SimpleRendererMock {
         pub fn new(config: ConfigAccess) -> Self {
-            Self { config }
+            //            let texture_loader: TextureCreator = ();
+            //            let font_loader = ();
+            Self {
+                config,
+                character_sizes: HashMap::new(),
+                //                texture_manager: TextureManager::new(texture_loader),
+                //                font_manager: FontManager::new(font_loader),
+            }
+        }
+
+        pub fn set_character_rect(&mut self, c: char, rect: Rect) {
+            self.character_sizes.insert(c, rect);
         }
     }
 
-    impl<'l> Renderer for SimpleRendererMock<'l> {
+    impl Renderer for SimpleRendererMock {
         fn load_font(&mut self, _details: FontDetails) -> Rc<Font> {
             unimplemented!()
         }
@@ -265,25 +269,32 @@ pub mod support {
         }
     }
 
-    impl<'l> CharacterSizeManager for SimpleRendererMock<'l> {
-        fn load_character_size(&mut self, _c: char) -> Rect {
-            Rect::new(0, 0, 13, 14)
+    impl CharacterSizeManager for SimpleRendererMock {
+        fn load_character_size(&mut self, c: char) -> Rect {
+            match self.character_sizes.get(&c) {
+                Some(r) => r.clone(),
+                _ => {
+                    let rect = Rect::new(0, 0, 13, 14);
+                    self.set_character_rect(c.clone(), rect.clone());
+                    rect
+                }
+            }
         }
     }
 
-    impl<'l> ConfigHolder for SimpleRendererMock<'l> {
+    impl ConfigHolder for SimpleRendererMock {
         fn config(&self) -> &Arc<RwLock<Config>> {
             &self.config
         }
     }
 
-    impl<'l> ManagersHolder<'l> for SimpleRendererMock<'l> {
-        fn font_manager(&mut self) -> &mut FontManager {
-            unimplemented!()
-        }
-
-        fn texture_manager(&mut self) -> &mut TextureManager<'l> {
-            unimplemented!()
-        }
-    }
+    //    impl<'l> ManagersHolder<'l> for SimpleRendererMock {
+    //        fn font_manager(&mut self) -> &mut FontManager {
+    //            &mut self.font_manager
+    //        }
+    //
+    //        fn texture_manager(&mut self) -> &mut TextureManager<'l> {
+    //            &mut self.texture_manager
+    //        }
+    //    }
 }

@@ -9,6 +9,7 @@ pub enum ModalType {
     Settings(Settings),
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl PartialEq for ModalType {
     fn eq(&self, other: &ModalType) -> bool {
         match (self, other) {
@@ -19,6 +20,7 @@ impl PartialEq for ModalType {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl std::fmt::Debug for ModalType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         let name = match self {

@@ -45,6 +45,12 @@ impl From<&EditorConfig> for FontDetails {
     }
 }
 
+impl From<(&str, u16)> for FontDetails {
+    fn from((path, size): (&str, u16)) -> Self {
+        FontDetails::new(path, size)
+    }
+}
+
 #[cfg_attr(tarpaulin, skip)]
 #[derive(Debug, Hash, Eq, PartialEq, Clone)]
 pub struct TextDetails {
@@ -103,13 +109,6 @@ pub type TextureManager<'l> =
 pub type FontManager<'l> = ResourceManager<'l, FontDetails, Font<'l, 'static>, Sdl2TtfContext>;
 
 #[cfg_attr(tarpaulin, skip)]
-pub trait ManagersHolder<'l> {
-    fn font_manager(&mut self) -> &mut FontManager<'l>;
-
-    fn texture_manager(&mut self) -> &mut TextureManager<'l>;
-}
-
-#[cfg_attr(tarpaulin, skip)]
 #[derive(Clone)]
 pub struct ResourceManager<'l, K, R, L>
 where
@@ -160,7 +159,7 @@ impl<'l, T> ResourceLoader<'l, Texture<'l>> for TextureCreator<T> {
     type Args = str;
 
     fn load(&'l self, path: &str) -> Result<Texture, String> {
-        println!("Loading {}...", path);
+        debug!("Loading {}...", path);
         self.load_texture(path)
     }
 }
@@ -170,7 +169,7 @@ impl<'l> ResourceLoader<'l, Font<'l, 'static>> for Sdl2TtfContext {
     type Args = FontDetails;
 
     fn load(&'l self, data: &FontDetails) -> Result<Font<'l, 'static>, String> {
-        info!("Loading font {}...", data.path);
+        debug!("Loading font {}...", data.path);
         self.load_font(&data.path, data.size)
     }
 }
@@ -203,9 +202,6 @@ impl<'l> TextTextureManager<'l> for TextureManager<'l> {
                 let texture = self.loader.create_texture_from_surface(&surface).unwrap();
                 let resource = Rc::new(texture);
                 self.cache.insert(key, resource.clone());
-                //                for c in details.text.chars() {
-                //                    info!("texture for '{:?}' created", c);
-                //                }
                 Ok(resource)
             },
             Ok,

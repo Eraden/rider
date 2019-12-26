@@ -27,73 +27,74 @@ pub struct Settings {
     character_size_value: Label,
 }
 
-impl Settings {
-    pub fn new(config: ConfigAccess) -> Self {
-        let c = config
-            .read()
-            .unwrap_or_else(|_| panic!("Failed to read config"));
-        let theme = c.theme();
-        let window_width = c.width();
-        let window_height = c.height();
-        let background_color = theme.background().into();
-        let border_color = theme.border_color().into();
-        Self {
-            vertical_scroll_bar: VerticalScrollBar::new(Arc::clone(&config)),
-            horizontal_scroll_bar: HorizontalScrollBar::new(Arc::clone(&config)),
-            dest: Rect::new(
-                CONTENT_MARGIN_LEFT,
-                CONTENT_MARGIN_TOP,
-                window_width - (CONTENT_MARGIN_LEFT * 2) as u32,
-                window_height - (CONTENT_MARGIN_TOP * 2) as u32,
-            ),
-            full_dest: Rect::new(0, 0, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE),
-            background_color,
-            border_color,
-            font_label: Label::new("Font path".into(), config.clone()),
-            font_value: Label::new(c.editor_config().font_path().clone(), config.clone()),
-            character_size_label: Label::new("Character size".into(), config.clone()),
-            character_size_value: Label::new(
-                format!("{}", c.editor_config().character_size()).to_owned(),
-                config.clone(),
-            ),
-            config: config.clone(),
-        }
+impl Widget for Settings {
+    fn texture_path(&self) -> Option<String> {
+        None
     }
 
-    pub fn full_rect(&self) -> &Rect {
-        &self.full_dest
+    fn dest(&self) -> &Rect {
+        &self.dest
     }
 
-    pub fn scroll_by(&mut self, x: i32, y: i32) {
-        let read_config = self.config.read().unwrap();
+    fn set_dest(&mut self, _rect: &Rect) {}
 
-        let value_x = read_config.scroll().speed() * x;
-        let value_y = read_config.scroll().speed() * y;
-        let old_x = self.horizontal_scroll_bar.scroll_value();
-        let old_y = self.vertical_scroll_bar.scroll_value();
-
-        if value_x + old_x >= 0 {
-            self.horizontal_scroll_bar.scroll_to(value_x + old_x);
-            if self.horizontal_scroll_bar.scrolled_part() > 1.0 {
-                self.horizontal_scroll_bar.scroll_to(old_x);
-            }
-        }
-        if value_y + old_y >= 0 {
-            self.vertical_scroll_bar.scroll_to(value_y + old_y);
-            if self.vertical_scroll_bar.scrolled_part() > 1.0 {
-                self.vertical_scroll_bar.scroll_to(old_y);
-            }
-        }
+    fn source(&self) -> &Rect {
+        &self.dest
     }
 
-    pub fn scroll(&self) -> Point {
-        Point::new(
-            -self.horizontal_scroll_bar.scroll_value(),
-            -self.vertical_scroll_bar.scroll_value(),
-        )
+    fn set_source(&mut self, _rect: &Rect) {}
+
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
+        let (window_width, window_height, color, scroll_width, scroll_margin) = {
+            let c = self.config.read().unwrap();
+            (
+                c.width(),
+                c.height(),
+                c.theme().background().into(),
+                c.scroll().width(),
+                c.scroll().margin_right(),
+            )
+        };
+
+        self.dest.set_x(CONTENT_MARGIN_LEFT);
+        self.dest
+            .set_width(window_width - (CONTENT_MARGIN_LEFT * 2) as u32);
+        self.dest.set_y(CONTENT_MARGIN_TOP);
+        self.dest
+            .set_height(window_height - (CONTENT_MARGIN_TOP * 2) as u32);
+
+        self.background_color = color;
+
+        //        Scroll bars
+        self.vertical_scroll_bar
+            .set_full_size(self.full_dest.height()); // full dest
+        self.vertical_scroll_bar.set_viewport(self.dest.height());
+        self.vertical_scroll_bar
+            .set_location(self.dest.width() as i32 - (scroll_width as i32 + scroll_margin));
+        self.vertical_scroll_bar.update(ticks, context);
+
+        self.horizontal_scroll_bar
+            .set_full_size(self.full_dest.width()); // full dest
+        self.horizontal_scroll_bar.set_viewport(self.dest.width());
+        self.horizontal_scroll_bar
+            .set_location(self.dest.height() as i32 - (scroll_width as i32 + scroll_margin));
+        self.horizontal_scroll_bar.update(ticks, context);
+
+        // End
+        UR::NoOp
     }
 
-    pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RC)
+    #[inline]
+    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UR {
+        UR::NoOp
+    }
+
+    #[inline]
+    fn is_left_click_target(&self, _point: &Point, _context: &UpdateContext) -> bool {
+        false
+    }
+
+    fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RC)
     where
         C: CanvasAccess,
         R: Renderer + CharacterSizeManager + ConfigHolder,
@@ -165,7 +166,7 @@ impl Settings {
             .render(canvas, &RenderContext::ParentPosition(self.dest.top_left()));
     }
 
-    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
+    fn prepare_ui<R>(&mut self, renderer: &mut R)
     where
         R: Renderer + CharacterSizeManager,
     {
@@ -176,66 +177,86 @@ impl Settings {
     }
 }
 
-impl ClickHandler for Settings {
-    #[inline]
-    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UR {
-        UR::NoOp
+impl ScrollView<VerticalScrollBar, HorizontalScrollBar> for Settings {
+    fn mut_horizontal_scroll_handler(&mut self) -> Option<&mut HorizontalScrollBar> {
+        Some(&mut self.horizontal_scroll_bar)
     }
 
-    #[inline]
-    fn is_left_click_target(&self, _point: &Point, _context: &UpdateContext) -> bool {
-        false
-    }
-}
-
-impl RenderBox for Settings {
-    fn render_start_point(&self) -> Point {
-        self.dest.top_left()
+    fn horizontal_scroll_handler(&self) -> Option<&HorizontalScrollBar> {
+        Some(&self.horizontal_scroll_bar)
     }
 
-    fn dest(&self) -> Rect {
-        self.dest.clone()
+    fn mut_vertical_scroll_handler(&mut self) -> Option<&mut VerticalScrollBar> {
+        Some(&mut self.vertical_scroll_bar)
+    }
+
+    fn vertical_scroll_handler(&self) -> Option<&VerticalScrollBar> {
+        Some(&self.vertical_scroll_bar)
     }
 }
 
-impl Update for Settings {
-    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
-        let (window_width, window_height, color, scroll_width, scroll_margin) = {
-            let c = self.config.read().unwrap();
-            (
-                c.width(),
-                c.height(),
-                c.theme().background().into(),
-                c.scroll().width(),
-                c.scroll().margin_right(),
-            )
-        };
+impl Settings {
+    pub fn new(config: ConfigAccess) -> Self {
+        let c = config
+            .read()
+            .unwrap_or_else(|_| panic!("Failed to read config"));
+        let theme = c.theme();
+        let window_width = c.width();
+        let window_height = c.height();
+        let background_color = theme.background().into();
+        let border_color = theme.border_color().into();
+        Self {
+            vertical_scroll_bar: VerticalScrollBar::new(Arc::clone(&config)),
+            horizontal_scroll_bar: HorizontalScrollBar::new(Arc::clone(&config)),
+            dest: Rect::new(
+                CONTENT_MARGIN_LEFT,
+                CONTENT_MARGIN_TOP,
+                window_width - (CONTENT_MARGIN_LEFT * 2) as u32,
+                window_height - (CONTENT_MARGIN_TOP * 2) as u32,
+            ),
+            full_dest: Rect::new(0, 0, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE),
+            background_color,
+            border_color,
+            font_label: Label::new("Font path".into(), config.clone()),
+            font_value: Label::new(c.editor_config().font_path().clone(), config.clone()),
+            character_size_label: Label::new("Character size".into(), config.clone()),
+            character_size_value: Label::new(
+                format!("{}", c.editor_config().character_size()).to_owned(),
+                config.clone(),
+            ),
+            config: config.clone(),
+        }
+    }
 
-        self.dest.set_x(CONTENT_MARGIN_LEFT);
-        self.dest
-            .set_width(window_width - (CONTENT_MARGIN_LEFT * 2) as u32);
-        self.dest.set_y(CONTENT_MARGIN_TOP);
-        self.dest
-            .set_height(window_height - (CONTENT_MARGIN_TOP * 2) as u32);
+    pub fn full_rect(&self) -> &Rect {
+        &self.full_dest
+    }
+}
 
-        self.background_color = color;
+impl ConfigHolder for Settings {
+    fn config(&self) -> &ConfigAccess {
+        &self.config
+    }
+}
 
-        //        Scroll bars
-        self.vertical_scroll_bar
-            .set_full_size(self.full_dest.height()); // full dest
-        self.vertical_scroll_bar.set_viewport(self.dest.height());
-        self.vertical_scroll_bar
-            .set_location(self.dest.width() as i32 - (scroll_width as i32 + scroll_margin));
-        self.vertical_scroll_bar.update(ticks, context);
+#[cfg(test)]
+mod tests {
+    use crate::tests::support;
+    use crate::ui::{ScrollView, Settings};
 
-        self.horizontal_scroll_bar
-            .set_full_size(self.full_dest.width()); // full dest
-        self.horizontal_scroll_bar.set_viewport(self.dest.width());
-        self.horizontal_scroll_bar
-            .set_location(self.dest.height() as i32 - (scroll_width as i32 + scroll_margin));
-        self.horizontal_scroll_bar.update(ticks, context);
+    #[test]
+    fn must_have_vertical_scrollbar() {
+        let config = support::build_config();
+        let mut widget = Settings::new(config);
+        assert_eq!(widget.mut_vertical_scroll_handler().is_some(), true);
+        assert_eq!(widget.vertical_scroll_handler().is_some(), true);
+    }
 
-        // End
-        UR::NoOp
+    #[test]
+    fn must_have_horizontal_scrollbar() {
+        let config = support::build_config();
+        let mut widget = Settings::new(config);
+        assert_eq!(widget.mut_horizontal_scroll_handler().is_some(), true);
+        assert_eq!(widget.horizontal_scroll_handler().is_some(), true);
     }
 }

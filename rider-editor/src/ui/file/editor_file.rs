@@ -149,8 +149,8 @@ impl TextCollection for EditorFile {
 impl EditorFile {
     pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
-        R: Renderer + ConfigHolder,
         C: CanvasAccess,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         for section in self.sections.iter() {
             section.render(canvas, renderer, context);

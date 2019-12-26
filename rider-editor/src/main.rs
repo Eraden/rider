@@ -3,6 +3,7 @@
 extern crate dirs;
 #[macro_use]
 extern crate log;
+extern crate lazy_static;
 extern crate rand;
 extern crate rider_config;
 extern crate rider_lexers;

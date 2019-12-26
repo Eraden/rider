@@ -1,9 +1,11 @@
-use std::ops::Deref;
-
-pub mod plain;
-pub mod rust_lang;
-
 #[cfg_attr(tarpaulin, skip)]
+mod test_files {
+    use std::ops::Deref;
+
+    pub mod plain;
+    pub mod rust_lang;
+
+    #[cfg_attr(tarpaulin, skip)]
 mod test_files {
     #[derive(Debug, Clone)]
     pub enum Language {

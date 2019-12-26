@@ -45,7 +45,7 @@ impl MenuBar {
     pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
         C: CanvasAccess,
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         use std::borrow::*;
 

@@ -119,10 +119,9 @@ impl ClickHandler for Caret {
     }
 
     fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
-        let dest = self.dest();
         match context {
-            &UpdateContext::ParentPosition(p) => move_render_point(p, &dest),
-            _ => dest,
+            &UpdateContext::ParentPosition(p) => move_render_point(p, &self.dest),
+            _ => self.dest().clone(),
         }
         .contains_point(point.clone())
     }
