@@ -185,7 +185,7 @@ impl Widget for DirectoryView {
 
     fn prepare_ui<R>(&mut self, renderer: &mut R)
     where
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         let size = renderer.load_character_size('W');
         self.icon.prepare_ui(renderer);
@@ -271,7 +271,7 @@ impl DirectoryView {
 
     pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R) -> bool
     where
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         match dir_path {
             _ if dir_path == self.path => {
@@ -343,7 +343,7 @@ impl DirectoryView {
 
     fn read_directory<R>(&mut self, renderer: &mut R)
     where
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         let entries: fs::ReadDir = match fs::read_dir(self.path.clone()) {
             Ok(d) => d,
@@ -447,10 +447,9 @@ impl ConfigHolder for DirectoryView {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::support::CanvasMock;
-    use crate::tests::support::SimpleRendererMock;
-    use crate::tests::support::{build_config, build_path};
+    use crate::tests::*;
     use crate::ui::Widget;
+    use rider_derive::*;
 
     //##########################################################
     // name_width
@@ -465,8 +464,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_name_width() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.name_width(), 39);
@@ -485,8 +483,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_icon_width() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.icon_width(), 14);
@@ -505,8 +502,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_height() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.height(), 14);
@@ -525,8 +521,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_name() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.name(), "foo".to_owned());
@@ -545,8 +540,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_path() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.path(), "/foo".to_owned());
@@ -565,8 +559,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_source() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.source(), &Rect::new(0, 0, 64, 64));
@@ -585,8 +578,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_dest() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.dest(), &Rect::new(0, 0, 53, 14));
@@ -598,8 +590,7 @@ mod tests {
 
     #[test]
     fn assert_update_when_doesnt_exists() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(
@@ -610,8 +601,7 @@ mod tests {
 
     #[test]
     fn assert_update_when_does_exists() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = DirectoryView::new("/tmp".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(
@@ -624,8 +614,7 @@ mod tests {
     fn assert_update_expanded() {
         build_path("/tmp/rider-editor/directory-view-test".to_owned());
 
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget =
             DirectoryView::new("/tmp/rider-editor/directory-view-test".to_owned(), config);
         widget.prepare_ui(&mut renderer);
@@ -648,8 +637,7 @@ mod tests {
     fn assert_render_no_expanded() {
         build_path("/tmp/rider-editor/directory-view-test".to_owned());
 
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget =
             DirectoryView::new("/tmp/rider-editor/directory-view-test".to_owned(), config);
@@ -661,8 +649,7 @@ mod tests {
     fn assert_render_expanded() {
         build_path("/tmp/rider-editor/directory-view-test".to_owned());
 
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget =
             DirectoryView::new("/tmp/rider-editor/directory-view-test".to_owned(), config);
@@ -683,8 +670,7 @@ mod tests {
     fn assert_is_left_click_target_when_target() {
         build_path("/tmp/rider-editor/directory-view-test".to_owned());
 
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
@@ -696,8 +682,7 @@ mod tests {
 
     #[test]
     fn assert_is_left_click_target_when_target_with_parent() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
@@ -711,8 +696,7 @@ mod tests {
     fn assert_is_left_click_target_expanded() {
         build_path("/tmp/rider-editor/directory-view-test".to_owned());
 
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget =
             DirectoryView::new("/tmp/rider-editor/directory-view-test".to_owned(), config);
@@ -730,8 +714,7 @@ mod tests {
 
     #[test]
     fn refute_is_left_click_target_when_target() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
@@ -743,8 +726,7 @@ mod tests {
 
     #[test]
     fn refute_is_left_click_target_when_target_with_parent() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget = DirectoryView::new("/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
@@ -762,8 +744,7 @@ mod tests {
     fn assert_on_left_click_when_target() {
         build_path("/tmp/rider-editor/directory-view-test".to_owned());
 
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget =
             DirectoryView::new("/tmp/rider-editor/directory-view-test".to_owned(), config);
@@ -781,8 +762,7 @@ mod tests {
     fn assert_on_left_click_when_target_with_parent() {
         build_path("/tmp/rider-editor/directory-view-test".to_owned());
 
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget =
             DirectoryView::new("/tmp/rider-editor/directory-view-test".to_owned(), config);
@@ -800,8 +780,7 @@ mod tests {
     fn assert_on_left_click_expanded() {
         build_path("/tmp/rider-editor/directory-view-test".to_owned());
 
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget =
             DirectoryView::new("/tmp/rider-editor/directory-view-test".to_owned(), config);

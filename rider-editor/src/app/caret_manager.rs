@@ -1,6 +1,9 @@
 use crate::ui::*;
 
-pub fn move_caret_right(file_editor: &mut FileEditor) -> Option<TextCharacter> {
+pub fn move_caret_right<C>(file_editor: &mut C) -> Option<TextCharacter>
+where
+    C: CaretAccess + FileAccess + ?Sized,
+{
     let text_character: TextCharacter = file_editor
         .file()
         .map(|file| file.get_character_at(file_editor.caret().text_position() + 1))??;
@@ -12,7 +15,10 @@ pub fn move_caret_right(file_editor: &mut FileEditor) -> Option<TextCharacter> {
     Some(text_character)
 }
 
-pub fn move_caret_left(file_editor: &mut FileEditor) -> Option<TextCharacter> {
+pub fn move_caret_left<C>(file_editor: &mut C) -> Option<TextCharacter>
+where
+    C: CaretAccess + FileAccess + ?Sized,
+{
     if file_editor.caret().text_position() == 0 {
         return None;
     }
@@ -28,7 +34,10 @@ pub fn move_caret_left(file_editor: &mut FileEditor) -> Option<TextCharacter> {
     Some(text_character)
 }
 
-pub fn move_caret_down(file_editor: &mut FileEditor) -> Option<TextCharacter> {
+pub fn move_caret_down<C>(file_editor: &mut C) -> Option<TextCharacter>
+where
+    C: CaretAccess + FileAccess + ?Sized,
+{
     if file_editor.caret().text_position() == 0 {
         return None;
     }
@@ -68,7 +77,10 @@ pub fn move_caret_down(file_editor: &mut FileEditor) -> Option<TextCharacter> {
     Some(text_character.clone())
 }
 
-pub fn move_caret_up(file_editor: &mut FileEditor) -> Option<TextCharacter> {
+pub fn move_caret_up<C>(file_editor: &mut C) -> Option<TextCharacter>
+where
+    C: CaretAccess + FileAccess + ?Sized,
+{
     if file_editor.caret().text_position() == 0 {
         return None;
     }
@@ -121,12 +133,12 @@ pub fn move_caret_up(file_editor: &mut FileEditor) -> Option<TextCharacter> {
 #[cfg(test)]
 mod test_move_right {
     use super::*;
-    use crate::tests::support;
-    use crate::tests::support::SimpleRendererMock;
+    use crate::tests::*;
+    use rider_derive::*;
 
     #[test]
     fn assert_move_with_no_file() {
-        let config = support::build_config();
+        let config = build_config();
         let mut editor = FileEditor::new(config);
 
         assert_eq!(move_caret_right(&mut editor).is_some(), false);
@@ -134,8 +146,7 @@ mod test_move_right {
 
     #[test]
     fn assert_move_caret_with_empty_file() {
-        let config = support::build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut editor = FileEditor::new(config.clone());
         let mut file = EditorFile::new("test.txt".to_owned(), "".to_owned(), config);
         file.prepare_ui(&mut renderer);
@@ -147,8 +158,7 @@ mod test_move_right {
 
     #[test]
     fn assert_move_caret_with_filled_file() {
-        let config = support::build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut editor = FileEditor::new(config.clone());
         let mut file = EditorFile::new("test.txt".to_owned(), "hello".to_owned(), config);
         file.prepare_ui(&mut renderer);
@@ -162,12 +172,12 @@ mod test_move_right {
 #[cfg(test)]
 mod test_move_left {
     use super::*;
-    use crate::tests::support;
-    use crate::tests::support::SimpleRendererMock;
+    use crate::tests::*;
+    use rider_derive::*;
 
     #[test]
     fn assert_move_caret_without_file() {
-        let config = support::build_config();
+        let config = build_config();
         let mut editor = FileEditor::new(config);
 
         assert_eq!(move_caret_left(&mut editor).is_some(), false);
@@ -175,8 +185,7 @@ mod test_move_left {
 
     #[test]
     fn assert_move_caret_with_empty_file() {
-        let config = support::build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut editor = FileEditor::new(config.clone());
         let mut file = EditorFile::new("test.txt".to_owned(), "".to_owned(), config);
         file.prepare_ui(&mut renderer);
@@ -188,8 +197,7 @@ mod test_move_left {
 
     #[test]
     fn assert_move_caret_with_filled_file() {
-        let config = support::build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut editor = FileEditor::new(config.clone());
         let mut file = EditorFile::new("test.txt".to_owned(), "hello".to_owned(), config);
         file.prepare_ui(&mut renderer);
@@ -209,13 +217,12 @@ mod test_move_left {
 #[cfg(test)]
 mod test_move_up {
     use super::*;
-    use crate::tests::support;
-    use crate::tests::support::SimpleRendererMock;
+    use crate::tests::*;
+    use rider_derive::*;
 
     #[test]
     fn assert_move_caret_with_top_of_filled_file() {
-        let config = support::build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut editor = FileEditor::new(config.clone());
         let mut file = EditorFile::new("test.txt".to_owned(), "he\nll\no".to_owned(), config);
         file.prepare_ui(&mut renderer);
@@ -227,8 +234,7 @@ mod test_move_up {
 
     #[test]
     fn assert_move_caret_with_filled_file() {
-        let config = support::build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut editor = FileEditor::new(config.clone());
         let mut file = EditorFile::new("test.txt".to_owned(), "he\nll\no".to_owned(), config);
         file.prepare_ui(&mut renderer);
@@ -249,13 +255,12 @@ mod test_move_up {
 #[cfg(test)]
 mod test_move_down {
     use super::*;
-    use crate::tests::support;
-    use crate::tests::support::SimpleRendererMock;
+    use crate::tests::*;
+    use rider_derive::*;
 
     #[test]
     fn assert_move_caret_with_bottom_of_filled_file() {
-        let config = support::build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut editor = FileEditor::new(config.clone());
         let mut file = EditorFile::new("test.txt".to_owned(), "he\nll\no".to_owned(), config);
         file.prepare_ui(&mut renderer);
@@ -270,8 +275,9 @@ mod test_move_down {
 
     #[test]
     fn assert_move_caret_with_filled_file() {
-        let config = support::build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        use crate::tests::*;
+
+        build_test_renderer!(renderer);
         let mut editor = FileEditor::new(config.clone());
         let mut file = EditorFile::new("test.txt".to_owned(), "he\nll\nod".to_owned(), config);
         file.prepare_ui(&mut renderer);

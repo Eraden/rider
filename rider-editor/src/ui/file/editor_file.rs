@@ -63,10 +63,6 @@ impl EditorFile {
         self.line_height
     }
 
-    pub fn render_position(&self) -> &Rect {
-        &self.dest
-    }
-
     pub fn get_section_at_mut(&mut self, index: usize) -> Option<&mut EditorFileSection> {
         self.sections.get_mut(index)
     }
@@ -146,32 +142,26 @@ impl TextCollection for EditorFile {
     }
 }
 
-impl EditorFile {
-    pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
-    where
-        C: CanvasAccess,
-        R: Renderer + CharacterSizeManager + ConfigHolder,
-    {
-        for section in self.sections.iter() {
-            section.render(canvas, renderer, context);
-        }
+impl Widget for EditorFile {
+    fn texture_path(&self) -> Option<String> {
+        None
     }
 
-    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
-    where
-        R: ConfigHolder + CharacterSizeManager + Renderer,
-    {
-        for section in self.sections.iter_mut() {
-            section.prepare_ui(renderer);
-        }
-
-        let r = renderer.load_character_size('W');
-        self.line_height = r.height();
-        self.refresh_characters_position();
+    fn dest(&self) -> &Rect {
+        &self.dest
     }
-}
 
-impl Update for EditorFile {
+    fn set_dest(&mut self, rect: &Rect) {
+        self.dest = rect.clone();
+    }
+    fn source(&self) -> &Rect {
+        self.dest()
+    }
+
+    fn set_source(&mut self, rect: &Rect) {
+        self.set_dest(rect);
+    }
+
     fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
         let mut result = UR::NoOp;
         for section in self.sections.iter_mut() {
@@ -179,9 +169,7 @@ impl Update for EditorFile {
         }
         result
     }
-}
 
-impl ClickHandler for EditorFile {
     fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UR {
         let mut index = -1;
         for (i, section) in self.sections.iter().enumerate() {
@@ -207,6 +195,29 @@ impl ClickHandler for EditorFile {
         }
         false
     }
+
+    fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
+    where
+        C: CanvasAccess,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
+    {
+        for section in self.sections.iter() {
+            section.render(canvas, renderer, context);
+        }
+    }
+
+    fn prepare_ui<'l, T>(&mut self, renderer: &mut T)
+    where
+        T: Renderer + CharacterSizeManager + ConfigHolder,
+    {
+        for section in self.sections.iter_mut() {
+            section.prepare_ui(renderer);
+        }
+
+        let r = renderer.load_character_size('W');
+        self.line_height = r.height();
+        self.refresh_characters_position();
+    }
 }
 
 impl TextWidget for EditorFile {
@@ -227,16 +238,6 @@ impl TextWidget for EditorFile {
             }
         }
         Rect::new(0, 0, max_line_width, height)
-    }
-}
-
-impl RenderBox for EditorFile {
-    fn render_start_point(&self) -> Point {
-        self.dest.top_left()
-    }
-
-    fn dest(&self) -> Rect {
-        self.dest.clone()
     }
 }
 
@@ -298,9 +299,10 @@ impl<'a> Iterator for EditorFileIterator<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::tests::support;
-    use crate::tests::support::SimpleRendererMock;
+    use crate::tests::*;
+
     use crate::ui::*;
+    use rider_derive::*;
     use sdl2::rect::{Point, Rect};
 
     //##################################################
@@ -309,8 +311,7 @@ mod tests {
 
     #[test]
     fn assert_simple_iterations() {
-        let config = support::build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut file =
             EditorFile::new("./foo.txt".to_owned(), "a b c d".to_owned(), config.clone());
         file.prepare_ui(&mut renderer);
@@ -334,7 +335,7 @@ mod tests {
 
     #[test]
     fn assert_path_txt() {
-        let config = support::build_config();
+        let config = build_config();
         let buffer = "".to_owned();
         let path = "/example.txt".to_owned();
         let widget = EditorFile::new(path, buffer, config);
@@ -343,7 +344,7 @@ mod tests {
 
     #[test]
     fn assert_path_rs() {
-        let config = support::build_config();
+        let config = build_config();
         let buffer = "".to_owned();
         let path = "/example.rs".to_owned();
         let widget = EditorFile::new(path, buffer, config);
@@ -356,7 +357,7 @@ mod tests {
 
     #[test]
     fn assert_empty_buffer() {
-        let config = support::build_config();
+        let config = build_config();
         let buffer = "".to_owned();
         let path = "/example.txt".to_owned();
         let widget = EditorFile::new(path, buffer, config);
@@ -365,7 +366,7 @@ mod tests {
 
     #[test]
     fn assert_some_buffer() {
-        let config = support::build_config();
+        let config = build_config();
         let buffer = "fn main(){}".to_owned();
         let path = "some.rs".to_owned();
         let widget = EditorFile::new(path, buffer, config);
@@ -378,7 +379,7 @@ mod tests {
 
     #[test]
     fn assert_initial_line_height() {
-        let config = support::build_config();
+        let config = build_config();
         let buffer = "".to_owned();
         let path = "/example.txt".to_owned();
         let widget = EditorFile::new(path, buffer, config);
@@ -391,7 +392,7 @@ mod tests {
 
     #[test]
     fn assert_dest() {
-        let config = support::build_config();
+        let config = build_config();
         let buffer = "".to_owned();
         let path = "/example.txt".to_owned();
         let widget = EditorFile::new(path, buffer, config);
@@ -402,7 +403,7 @@ mod tests {
 
     #[test]
     fn assert_render_start_point() {
-        let config = support::build_config();
+        let config = build_config();
         let buffer = "".to_owned();
         let path = "/example.txt".to_owned();
         let widget = EditorFile::new(path, buffer, config);

@@ -51,18 +51,6 @@ impl TextCharacter {
         self.last_in_line
     }
 
-    pub fn source(&self) -> &Rect {
-        &self.source
-    }
-
-    pub fn set_dest(&mut self, rect: &Rect) {
-        self.dest = rect.clone();
-    }
-
-    pub fn set_source(&mut self, rect: &Rect) {
-        self.source = rect.clone();
-    }
-
     pub fn color(&self) -> &Color {
         &self.color
     }
@@ -101,15 +89,42 @@ impl TextCharacter {
     }
 }
 
-impl TextCharacter {
+impl Widget for TextCharacter {
+    fn texture_path(&self) -> Option<String> {
+        None
+    }
+
+    fn dest(&self) -> &Rect {
+        &self.dest
+    }
+
+    fn set_dest(&mut self, rect: &Rect) {
+        self.dest = rect.clone()
+    }
+
+    fn source(&self) -> &Rect {
+        &self.source
+    }
+
+    fn set_source(&mut self, rect: &Rect) {
+        self.source = rect.clone();
+    }
+
+    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UR {
+        UR::MoveCaret(
+            self.dest.clone(),
+            CaretPosition::new(self.position(), self.line(), 0),
+        )
+    }
+
     /**
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
+    fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
-        R: Renderer + ConfigHolder,
         C: CanvasAccess,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         let font_details: FontDetails = renderer.config().read().unwrap().editor_config().into();
 
@@ -125,7 +140,7 @@ impl TextCharacter {
         };
         let dest = match context {
             RenderContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
-            _ => self.dest(),
+            _ => self.dest().clone(),
         };
 
         if let Ok(texture) = renderer.load_text_tex(&mut details, font_details) {
@@ -135,9 +150,9 @@ impl TextCharacter {
         }
     }
 
-    pub fn prepare_ui<'l, T>(&mut self, renderer: &mut T)
+    fn prepare_ui<'l, T>(&mut self, renderer: &mut T)
     where
-        T: ConfigHolder + CharacterSizeManager + Renderer,
+        T: Renderer + CharacterSizeManager + ConfigHolder,
     {
         let font_details: FontDetails = renderer.config().read().unwrap().editor_config().into();
         let rect = renderer.load_character_size(self.text_character);
@@ -156,39 +171,6 @@ impl TextCharacter {
                 self.text_character, error_message
             )
         }
-    }
-}
-
-impl Update for TextCharacter {
-    fn update(&mut self, _ticks: i32, _context: &UpdateContext) -> UR {
-        UR::NoOp
-    }
-}
-
-impl ClickHandler for TextCharacter {
-    fn on_left_click(&mut self, _point: &Point, _context: &UpdateContext) -> UR {
-        UR::MoveCaret(
-            self.dest().clone(),
-            CaretPosition::new(self.position(), self.line(), 0),
-        )
-    }
-
-    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
-        match context {
-            &UpdateContext::ParentPosition(p) => move_render_point(p, &self.dest),
-            _ => self.dest(),
-        }
-        .contains_point(point.clone())
-    }
-}
-
-impl RenderBox for TextCharacter {
-    fn render_start_point(&self) -> Point {
-        self.dest.top_left()
-    }
-
-    fn dest(&self) -> Rect {
-        self.dest
     }
 }
 
@@ -229,7 +211,7 @@ mod test_getters {
 
     #[test]
     fn must_return_valid_is_last_in_line() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = TextCharacter::new(
             '\n',
             0,
@@ -243,7 +225,7 @@ mod test_getters {
 
     #[test]
     fn must_return_true_for_is_new_line_if_new_line() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = TextCharacter::new(
             '\n',
             0,
@@ -257,7 +239,7 @@ mod test_getters {
 
     #[test]
     fn must_return_false_for_is_new_line_if_new_line() {
-        let config = support::build_config();
+        let config = build_config();
         let widget =
             TextCharacter::new('W', 0, 0, true, Color::RGB(1, 12, 123), Arc::clone(&config));
         assert_eq!(widget.is_new_line(), false);
@@ -265,7 +247,7 @@ mod test_getters {
 
     #[test]
     fn must_return_valid_position() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = TextCharacter::new(
             '\n',
             1,
@@ -279,7 +261,7 @@ mod test_getters {
 
     #[test]
     fn must_return_valid_line() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = TextCharacter::new(
             '\n',
             1,
@@ -293,7 +275,7 @@ mod test_getters {
 
     #[test]
     fn must_return_valid_text_character() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = TextCharacter::new(
             '\n',
             87,
@@ -307,7 +289,7 @@ mod test_getters {
 
     #[test]
     fn must_return_valid_source() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = TextCharacter::new(
             '\n',
             0,
@@ -321,7 +303,7 @@ mod test_getters {
 
     #[test]
     fn must_return_valid_dest() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = TextCharacter::new(
             '\n',
             0,
@@ -330,12 +312,12 @@ mod test_getters {
             Color::RGB(1, 12, 123),
             Arc::clone(&config),
         );
-        assert_eq!(widget.dest(), Rect::new(0, 0, 0, 0));
+        assert_eq!(widget.dest(), &Rect::new(0, 0, 0, 0));
     }
 
     #[test]
     fn must_return_valid_color() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = TextCharacter::new(
             '\n',
             0,
@@ -357,7 +339,7 @@ mod test_own_methods {
 
     #[test]
     fn must_update_position_of_new_line() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = TextCharacter::new(
             '\n',
             0,
@@ -371,13 +353,13 @@ mod test_own_methods {
         let mut current = Rect::new(10, 23, 0, 0);
         widget.update_position(&mut current);
         assert_eq!(current, Rect::new(0, 103, 1, 1));
-        assert_eq!(widget.dest(), Rect::new(10, 23, 30, 40));
+        assert_eq!(widget.dest(), &Rect::new(10, 23, 30, 40));
         assert_eq!(widget.source(), &Rect::new(50, 60, 70, 80));
     }
 
     #[test]
     fn must_update_position_of_non_new_line() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = TextCharacter::new(
             'W',
             0,
@@ -391,7 +373,7 @@ mod test_own_methods {
         let mut current = Rect::new(10, 23, 0, 0);
         widget.update_position(&mut current);
         assert_eq!(current, Rect::new(80, 23, 1, 1));
-        assert_eq!(widget.dest(), Rect::new(10, 23, 70, 80));
+        assert_eq!(widget.dest(), &Rect::new(10, 23, 70, 80));
         assert_eq!(widget.source(), &Rect::new(50, 60, 70, 80));
     }
 }
@@ -406,7 +388,7 @@ mod test_click_handler {
 
     #[test]
     fn refute_when_not_click_target() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = TextCharacter::new(
             '\n',
             0,
@@ -425,7 +407,7 @@ mod test_click_handler {
 
     #[test]
     fn assert_when_click_target() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = TextCharacter::new(
             '\n',
             0,
@@ -444,7 +426,7 @@ mod test_click_handler {
 
     #[test]
     fn refute_when_not_click_target_because_parent() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = TextCharacter::new(
             '\n',
             0,
@@ -463,7 +445,7 @@ mod test_click_handler {
 
     #[test]
     fn assert_when_click_target_because_parent() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = TextCharacter::new(
             '\n',
             0,
@@ -482,7 +464,7 @@ mod test_click_handler {
 
     #[test]
     fn assert_on_click_return_move_caret() {
-        let config = support::build_config();
+        let config = build_config();
         let position = 1233;
         let line = 2893;
         let mut widget = TextCharacter::new(
@@ -514,7 +496,7 @@ mod test_render_box {
 
     #[test]
     fn must_return_top_left_point() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = TextCharacter::new(
             '\n',
             0,
@@ -541,7 +523,7 @@ mod test_update {
 
     #[test]
     fn assert_do_nothing() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = TextCharacter::new(
             '\n',
             0,

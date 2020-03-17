@@ -149,13 +149,14 @@ impl ConfigHolder for Label {
 mod test {
     use super::*;
     use crate::app::UpdateResult;
-    use crate::tests::support;
+    use crate::tests::*;
     use crate::ui::{UpdateContext, Widget};
+    use rider_derive::*;
     use sdl2::rect::Point;
 
     #[test]
     fn must_return_noop_on_left_click() {
-        let config = support::build_config();
+        let config = build_config();
         let name = "Hello world".to_owned();
         let mut widget = Label::new(name, config);
         assert_eq!(
@@ -166,8 +167,7 @@ mod test {
 
     #[test]
     fn must_use_inner() {
-        let config = support::build_config();
-        let mut renderer = support::SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let name = "Hello world".to_owned();
         let mut widget = Label::new(name.clone(), config);
         let dest = Rect::new(0, 0, DEST_WIDTH, DEST_HEIGHT);

@@ -126,7 +126,7 @@ impl Widget for ProjectTreeSidebar {
 
     fn prepare_ui<R>(&mut self, renderer: &mut R)
     where
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         let config = self.config.read().unwrap();
         let height = config.height();
@@ -174,18 +174,16 @@ impl ProjectTreeSidebar {
 
     pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R)
     where
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         self.dir_view.open_directory(dir_path, renderer);
         {
-            let dest = self.dir_view.dest();
-            let full_dest = Rect::new(
-                dest.x(),
-                dest.y(),
-                dest.width() + (2 * CONTENT_MARGIN_LEFT as u32),
-                dest.height() + (2 * CONTENT_MARGIN_TOP as u32),
+            self.full_dest = Rect::new(
+                self.dir_view.dest().x(),
+                self.dir_view.dest().y(),
+                self.dir_view.dest().width() + (2 * CONTENT_MARGIN_LEFT as u32),
+                self.dir_view.dest().height() + (2 * CONTENT_MARGIN_TOP as u32),
             );
-            self.full_dest = full_dest;
         }
     }
 }
@@ -219,8 +217,7 @@ mod tests {
     use crate::renderer::managers::FontDetails;
     use crate::renderer::managers::TextDetails;
     use crate::renderer::renderer::Renderer;
-    use crate::tests::support::build_config;
-    use crate::tests::support::CanvasMock;
+    use crate::tests::*;
     use crate::ui::project_tree::ProjectTreeSidebar;
     use crate::ui::scroll_bar::ScrollView;
     use crate::ui::text_character::CharacterSizeManager;

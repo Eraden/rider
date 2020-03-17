@@ -82,7 +82,7 @@ impl Widget for FileEntry {
 
     fn prepare_ui<R>(&mut self, renderer: &mut R)
     where
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         let rect = renderer.load_character_size('W');
         self.icon.prepare_ui(renderer);
@@ -186,9 +186,9 @@ impl ConfigHolder for FileEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::support::build_config;
-    use crate::tests::support::CanvasMock;
-    use crate::tests::support::SimpleRendererMock;
+    use crate::tests::*;
+    use rider_derive::*;
+
     use crate::ui::{UpdateContext, Widget};
 
     //##########################################################
@@ -204,8 +204,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_name_width() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.name_width(), 91);
@@ -224,8 +223,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_icon_width() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.icon_width(), 14);
@@ -244,8 +242,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_height() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.height(), 16);
@@ -264,8 +261,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_name() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.name(), "bar.txt".to_owned());
@@ -284,8 +280,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_path() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.path(), "/foo".to_owned());
@@ -304,8 +299,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_source() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.source(), &Rect::new(0, 0, 64, 64));
@@ -324,8 +318,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_dest() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.dest(), &Rect::new(0, 0, 105, 16));
@@ -344,8 +337,7 @@ mod tests {
 
     #[test]
     fn assert_prepared_full_dest() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(widget.full_dest(), Rect::new(0, 0, 125, 16));
@@ -357,8 +349,7 @@ mod tests {
 
     #[test]
     fn assert_update_when_doesnt_exists() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(
@@ -369,8 +360,7 @@ mod tests {
 
     #[test]
     fn assert_update_when_does_exists() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/tmp".to_owned(), config);
         widget.prepare_ui(&mut renderer);
         assert_eq!(
@@ -385,8 +375,7 @@ mod tests {
 
     #[test]
     fn assert_render() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
@@ -400,8 +389,7 @@ mod tests {
 
     #[test]
     fn assert_is_left_click_target_when_target() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
@@ -413,8 +401,7 @@ mod tests {
 
     #[test]
     fn assert_is_left_click_target_when_target_with_parent() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
@@ -426,8 +413,7 @@ mod tests {
 
     #[test]
     fn refute_is_left_click_target_when_target() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);
@@ -439,8 +425,7 @@ mod tests {
 
     #[test]
     fn refute_is_left_click_target_when_target_with_parent() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let mut widget = FileEntry::new("bar.txt".to_owned(), "/foo".to_owned(), config);
         widget.prepare_ui(&mut renderer);

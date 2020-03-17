@@ -1,7 +1,7 @@
 use crate::app::UpdateResult as UR;
 use crate::renderer::Renderer;
 use crate::ui::*;
-use rider_config::ConfigAccess;
+use rider_config::{ConfigAccess, ConfigHolder};
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 
@@ -158,7 +158,7 @@ mod test_getters {
 
     #[test]
     fn assert_background_color() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = MenuBar::new(Arc::clone(&config));
         let result = widget.background_color().clone();
         let expected = Color::RGBA(18, 18, 18, 0);
@@ -167,7 +167,7 @@ mod test_getters {
 
     #[test]
     fn assert_dest() {
-        let config = support::build_config();
+        let config = build_config();
         let (w, h) = {
             let c = config.read().unwrap();
             (c.width() as u32, c.menu_height() as u32)
@@ -188,7 +188,7 @@ mod test_render_box {
 
     #[test]
     fn must_return_top_left_point() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = MenuBar::new(Arc::clone(&config));
         let result = widget.render_start_point();
         let expected = Point::new(0, 0);
@@ -206,7 +206,7 @@ mod test_click_handler {
 
     #[test]
     fn refute_when_not_click_target() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = MenuBar::new(Arc::clone(&config));
         let point = Point::new(9999, 9999);
         let context = UpdateContext::Nothing;
@@ -216,7 +216,7 @@ mod test_click_handler {
 
     #[test]
     fn assert_when_click_target() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = MenuBar::new(Arc::clone(&config));
         let point = Point::new(20, 30);
         let context = UpdateContext::Nothing;
@@ -226,7 +226,7 @@ mod test_click_handler {
 
     #[test]
     fn refute_when_not_click_target_because_parent() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = MenuBar::new(Arc::clone(&config));
         let point = Point::new(20, 30);
         let context = UpdateContext::ParentPosition(Point::new(9999, 9999));
@@ -236,7 +236,7 @@ mod test_click_handler {
 
     #[test]
     fn assert_when_click_target_because_parent() {
-        let config = support::build_config();
+        let config = build_config();
         let (w, h) = {
             (
                 config.read().unwrap().width(),
@@ -252,7 +252,7 @@ mod test_click_handler {
 
     #[test]
     fn assert_on_click_do_nothing() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = MenuBar::new(Arc::clone(&config));
         let point = Point::new(12, 34);
         let context = UpdateContext::ParentPosition(Point::new(678, 293));
@@ -264,9 +264,9 @@ mod test_click_handler {
 
 #[cfg(test)]
 mod test_render {
-    use crate::tests::support::SimpleRendererMock;
     use crate::tests::*;
     use crate::ui::*;
+    use rider_derive::*;
     use sdl2::rect::Rect;
 
     #[test]
@@ -274,27 +274,26 @@ mod test_render {
         let rect_color = sdl2::pixels::Color::RGBA(18, 18, 18, 0);
         let border_color = sdl2::pixels::Color::RGBA(200, 200, 200, 0);
         let context = RenderContext::Nothing;
-        let config = support::build_config();
-        let mut canvas = support::CanvasMock::new();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
+        let mut canvas = CanvasMock::new();
         let mut widget = MenuBar::new(config.clone());
         widget.prepare_ui();
         widget.render(&mut canvas, &mut renderer, &context);
         assert_eq!(widget.dest(), Rect::new(0, 0, 1024, 40));
         assert_eq!(
             canvas.find_rect_with_color(Rect::new(0, 0, 1024, 40), rect_color.clone()),
-            Some(&support::RendererRect::new(
+            Some(&RendererRect::new(
                 Rect::new(0, 0, 1024, 40),
                 rect_color,
-                support::CanvasShape::Rectangle
+                CanvasShape::Rectangle
             ))
         );
         assert_eq!(
             canvas.find_border_with_color(Rect::new(0, 0, 1024, 40), border_color.clone()),
-            Some(&support::RendererRect::new(
+            Some(&RendererRect::new(
                 Rect::new(0, 0, 1024, 40),
                 border_color,
-                support::CanvasShape::Border
+                CanvasShape::Border
             ))
         );
     }

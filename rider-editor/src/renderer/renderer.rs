@@ -26,7 +26,7 @@ pub trait Renderer {
 pub struct CanvasRenderer<'l> {
     config: ConfigAccess,
     font_manager: FontManager<'l>,
-    texture_manager: TextureManager<'l>,
+    texture_manager: TextureManager<'l, sdl2::video::WindowContext>,
     character_sizes: HashMap<TextCharacterDetails, Rect>,
 }
 

@@ -103,8 +103,7 @@ impl<'a> From<&'a FontDetails> for FontDetails {
 
 #[cfg_attr(tarpaulin, skip)]
 //noinspection RsWrongLifetimeParametersNumber
-pub type TextureManager<'l> =
-    ResourceManager<'l, String, Texture<'l>, TextureCreator<sdl2::video::WindowContext>>;
+pub type TextureManager<'l, T> = ResourceManager<'l, String, Texture<'l>, TextureCreator<T>>;
 #[cfg_attr(tarpaulin, skip)]
 pub type FontManager<'l> = ResourceManager<'l, FontDetails, Font<'l, 'static>, Sdl2TtfContext>;
 
@@ -185,7 +184,7 @@ pub trait TextTextureManager<'l> {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-impl<'l> TextTextureManager<'l> for TextureManager<'l> {
+impl<'l, T> TextTextureManager<'l> for TextureManager<'l, T> {
     //noinspection RsWrongLifetimeParametersNumber
     fn load_text(
         &mut self,

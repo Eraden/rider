@@ -70,13 +70,13 @@ impl Widget for Icon {
 mod test {
     use super::*;
     use crate::app::UpdateResult;
-    use crate::tests::support;
+    use crate::tests::*;
     use crate::ui::UpdateContext;
     use sdl2::rect::Point;
 
     #[test]
     fn must_return_noop_on_left_click() {
-        let config = support::build_config();
+        let config = build_config();
         let dest = Rect::new(0, 10, 20, 30);
         let src = Rect::new(40, 50, 60, 70);
         let path = "/foo/bar.png".to_owned();
@@ -89,7 +89,7 @@ mod test {
 
     #[test]
     fn must_use_inner() {
-        let config = support::build_config();
+        let config = build_config();
         let dest = Rect::new(0, 10, 20, 30);
         let src = Rect::new(40, 50, 60, 70);
         let path = "/foo/bar.png".to_owned();

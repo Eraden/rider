@@ -168,7 +168,7 @@ impl Widget for Settings {
 
     fn prepare_ui<R>(&mut self, renderer: &mut R)
     where
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         self.font_label.prepare_ui(renderer);
         self.font_value.prepare_ui(renderer);
@@ -241,12 +241,15 @@ impl ConfigHolder for Settings {
 
 #[cfg(test)]
 mod tests {
-    use crate::tests::support;
-    use crate::ui::{ScrollView, Settings};
+    use crate::app::UpdateResult;
+    use crate::tests::*;
+    use crate::ui::{RenderContext, ScrollView, Settings, UpdateContext, Widget};
+    use rider_derive::*;
+    use sdl2::rect::{Point, Rect};
 
     #[test]
     fn must_have_vertical_scrollbar() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = Settings::new(config);
         assert_eq!(widget.mut_vertical_scroll_handler().is_some(), true);
         assert_eq!(widget.vertical_scroll_handler().is_some(), true);
@@ -254,9 +257,98 @@ mod tests {
 
     #[test]
     fn must_have_horizontal_scrollbar() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = Settings::new(config);
         assert_eq!(widget.mut_horizontal_scroll_handler().is_some(), true);
         assert_eq!(widget.horizontal_scroll_handler().is_some(), true);
+    }
+
+    // Widget
+
+    #[test]
+    fn assert_texture_path() {
+        let config = build_config();
+        let widget = Settings::new(config);
+        let result = widget.texture_path();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn assert_dest() {
+        let config = build_config();
+        let widget = Settings::new(config);
+        let result = widget.dest().clone();
+        let expected = Rect::new(16, 24, 992, 812);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn assert_set_dest() {
+        let config = build_config();
+        let mut widget = Settings::new(config);
+        widget.set_dest(&Rect::new(100, 200, 300, 400));
+        assert_ne!(widget.dest(), &Rect::new(100, 200, 300, 400));
+    }
+    #[test]
+    fn assert_source() {
+        let config = build_config();
+        let widget = Settings::new(config);
+        let result = widget.source();
+        assert_eq!(result, &Rect::new(16, 24, 992, 812));
+    }
+    #[test]
+    fn assert_set_source() {
+        let config = build_config();
+        let mut widget = Settings::new(config);
+        widget.set_source(&Rect::new(1, 2, 3, 4));
+        assert_ne!(widget.source(), &Rect::new(1, 2, 3, 4));
+    }
+
+    #[test]
+    fn assert_update() {
+        let config = build_config();
+        let mut widget = Settings::new(config);
+        let result = widget.update(0, &UpdateContext::Nothing);
+        assert_eq!(result, UpdateResult::NoOp);
+    }
+
+    #[test]
+    fn assert_on_left_click() {
+        let config = build_config();
+        let mut widget = Settings::new(config);
+        let result = widget.on_left_click(&Point::new(600, 800), &UpdateContext::Nothing);
+        assert_eq!(result, UpdateResult::NoOp);
+    }
+
+    #[test]
+    fn assert_is_left_click_target() {
+        let config = build_config();
+        let widget = Settings::new(config);
+        let result = widget.is_left_click_target(&Point::new(600, 800), &UpdateContext::Nothing);
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn assert_use_clipping() {
+        let config = build_config();
+        let widget = Settings::new(config);
+        let result = widget.use_clipping();
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn assert_render() {
+        build_test_renderer!(renderer);
+        let mut canvas = CanvasMock::new();
+        let widget = Settings::new(config);
+        let result = widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
+        assert_eq!(result, ());
+    }
+    #[test]
+    fn assert_prepare_ui() {
+        build_test_renderer!(renderer);
+        let mut widget = Settings::new(config);
+        let result = widget.prepare_ui(&mut renderer);
+        assert_eq!(result, ());
     }
 }

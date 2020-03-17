@@ -14,6 +14,7 @@ pub struct EditorFileToken {
     characters: Vec<TextCharacter>,
     token_type: TokenType,
     config: Arc<RwLock<Config>>,
+    dest: Rect,
 }
 
 impl EditorFileToken {
@@ -23,6 +24,7 @@ impl EditorFileToken {
             characters: vec![],
             token_type: token_type.clone(),
             config,
+            dest: Rect::new(0, 0, 0, 0),
         }
     }
 
@@ -132,22 +134,68 @@ impl TextCollection for EditorFileToken {
     }
 }
 
-impl EditorFileToken {
+impl Widget for EditorFileToken {
+    fn texture_path(&self) -> Option<String> {
+        None
+    }
+
+    fn dest(&self) -> &Rect {
+        &self.dest
+    }
+
+    fn set_dest(&mut self, rect: &Rect) {
+        self.dest = rect.clone();
+    }
+
+    fn source(&self) -> &Rect {
+        &self.dest
+    }
+
+    fn set_source(&mut self, rect: &Rect) {
+        self.dest = rect.clone();
+    }
+
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
+        for text_character in self.characters.iter_mut() {
+            text_character.update(ticks, context);
+        }
+        self.set_dest(&self.full_rect());
+        UR::NoOp
+    }
+
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UR {
+        for text_character in self.characters.iter_mut() {
+            if text_character.is_left_click_target(point, context) {
+                return text_character.on_left_click(point, context);
+            }
+        }
+        UR::NoOp
+    }
+
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
+        for text_character in self.characters.iter() {
+            if text_character.is_left_click_target(point, context) {
+                return true;
+            }
+        }
+        false
+    }
+
     /**
      * Must first create targets so even if new line appear renderer will know
      * where move render starting point
      */
-    pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
+    fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
-        R: Renderer + ConfigHolder,
         C: CanvasAccess,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         for text_character in self.characters.iter() {
             text_character.render(canvas, renderer, context);
         }
     }
 
-    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
+    fn prepare_ui<R>(&mut self, renderer: &mut R)
     where
         R: ConfigHolder + CharacterSizeManager + Renderer,
     {
@@ -169,35 +217,6 @@ impl EditorFileToken {
             text_character.prepare_ui(renderer);
             self.characters.push(text_character);
         }
-    }
-}
-
-impl Update for EditorFileToken {
-    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
-        for text_character in self.characters.iter_mut() {
-            text_character.update(ticks, context);
-        }
-        UR::NoOp
-    }
-}
-
-impl ClickHandler for EditorFileToken {
-    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UR {
-        for text_character in self.characters.iter_mut() {
-            if text_character.is_left_click_target(point, context) {
-                return text_character.on_left_click(point, context);
-            }
-        }
-        UR::NoOp
-    }
-
-    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
-        for text_character in self.characters.iter() {
-            if text_character.is_left_click_target(point, context) {
-                return true;
-            }
-        }
-        false
     }
 }
 
@@ -230,8 +249,8 @@ impl<'a> std::iter::Iterator for EditorFileTokenIterator<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::support::build_config;
-    use crate::tests::support::CanvasMock;
+
+    use crate::tests::*;
     use rider_lexers::Token;
     use sdl2::pixels::PixelFormatEnum;
     use sdl2::render::Texture;

@@ -39,6 +39,7 @@ pub enum UpdateContext<'l> {
     Nothing,
     ParentPosition(Point),
     CurrentFile(&'l mut EditorFile),
+    ScrolledBy(Point),
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -187,7 +188,9 @@ pub trait Widget {
 
     fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
         match *context {
-            UpdateContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest()),
+            UpdateContext::ParentPosition(p) | UpdateContext::ScrolledBy(p) => {
+                move_render_point(p.clone(), &self.dest())
+            }
             _ => self.dest().clone(),
         }
         .contains_point(point.clone())
@@ -246,7 +249,7 @@ pub trait Widget {
 
     fn prepare_ui<'l, T>(&mut self, _renderer: &mut T)
     where
-        T: Renderer + CharacterSizeManager,
+        T: Renderer + CharacterSizeManager + ConfigHolder,
     {
     }
 }
@@ -254,7 +257,8 @@ pub trait Widget {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::support;
+    use crate::tests::*;
+    use rider_derive::*;
     use std::ops::{Deref, DerefMut};
 
     struct ConfigWrapper {
@@ -324,7 +328,7 @@ mod tests {
 
     #[test]
     fn must_build_font_details() {
-        let config = support::build_config();
+        let config = build_config();
         let wrapper = ConfigWrapper {
             inner: config.clone(),
         };
@@ -336,29 +340,29 @@ mod tests {
 
     //    #[test]
     //    fn mut_return_character_rectangle() {
-    //        let config = support::build_config();
-    //        let mut renderer = support::SimpleRendererMock::new(config);
+    //        let config = build_config();
+    //        let mut renderer = SimpleRendererMock::new(config);
     //        let result = get_text_character_rect('a', &mut renderer);
     //        assert_eq!(result, Some(Rect::new(0, 0, 10, 10)));
     //    }
 
     #[test]
     fn check_texture_path() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = Dummy::new(config);
         assert_eq!(widget.texture_path(), None);
     }
 
     #[test]
     fn check_dest() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = Dummy::new(config);
         assert_eq!(widget.dest(), &Rect::new(4, 5, 6, 7));
     }
 
     #[test]
     fn check_set_dest() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = Dummy::new(config);
         assert_eq!(widget.set_dest(&Rect::new(9, 8, 7, 6)), ());
         assert_eq!(widget.dest(), &Rect::new(9, 8, 7, 6));
@@ -366,14 +370,14 @@ mod tests {
 
     #[test]
     fn check_source() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = Dummy::new(config);
         assert_eq!(widget.source(), &Rect::new(0, 1, 2, 3));
     }
 
     #[test]
     fn check_set_source() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = Dummy::new(config);
         assert_eq!(widget.set_source(&Rect::new(9, 8, 7, 6)), ());
         assert_eq!(widget.source(), &Rect::new(9, 8, 7, 6));
@@ -381,7 +385,7 @@ mod tests {
 
     #[test]
     fn check_update() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = Dummy::new(config);
         assert_eq!(
             widget.update(0, &UpdateContext::Nothing),
@@ -391,7 +395,7 @@ mod tests {
 
     #[test]
     fn check_on_left_click() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = Dummy::new(config);
         assert_eq!(
             widget.on_left_click(&Point::new(0, 1), &UpdateContext::Nothing),
@@ -401,7 +405,7 @@ mod tests {
 
     #[test]
     fn check_is_left_click_target() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = Dummy::new(config);
         assert_eq!(
             widget.is_left_click_target(&Point::new(0, 1), &UpdateContext::Nothing),
@@ -411,7 +415,7 @@ mod tests {
 
     #[test]
     fn check_render_start_point() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = Dummy::new(config);
         assert_eq!(
             widget.render_start_point(),
@@ -421,7 +425,7 @@ mod tests {
 
     #[test]
     fn check_clipping() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = Dummy::new(config);
         assert_eq!(
             widget.clipping(&Rect::new(0, 0, 1, 1)),
@@ -431,30 +435,28 @@ mod tests {
 
     #[test]
     fn check_padding_width() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = Dummy::new(config);
         assert_eq!(widget.padding_width(), 0);
     }
 
     #[test]
     fn check_padding_height() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = Dummy::new(config);
         assert_eq!(widget.padding_height(), 0);
     }
 
     #[test]
     fn check_use_clipping() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = Dummy::new(config);
         assert_eq!(widget.use_clipping(), false);
     }
 
     #[test]
     fn check_render() {
-        let config = support::build_config();
-        let mut canvas = support::CanvasMock::new();
-        let mut renderer = support::SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let widget = Dummy::new(config);
         assert_eq!(
             widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing),
@@ -464,8 +466,7 @@ mod tests {
 
     #[test]
     fn check_prepare_ui() {
-        let config = support::build_config();
-        let mut renderer = support::SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = Dummy::new(config);
         assert_eq!(widget.prepare_ui(&mut renderer), ());
     }
