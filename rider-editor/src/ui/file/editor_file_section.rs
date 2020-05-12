@@ -328,4 +328,40 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn check_texture_path() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let widget = EditorFileSection::new(path, buffer, config);
+        let result = widget.texture_path();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn check_set_dest() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFileSection::new(path, buffer, config);
+        let rect = Rect::new(2, 4, 6, 8);
+        widget.set_dest(&rect);
+        assert_eq!(format!("{:?}", widget.dest()), format!("{:?}", rect));
+    }
+
+    #[test]
+    fn check_source() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFileSection::new(path, buffer, config);
+        let rect = Rect::new(2, 4, 6, 8);
+        widget.set_source(&rect);
+        assert_eq!(format!("{:?}", widget.source()), format!("{:?}", rect));
+        assert_eq!(
+            format!("{:?}", widget.source()),
+            format!("{:?}", widget.dest())
+        );
+    }
 }
