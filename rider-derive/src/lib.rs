@@ -1,7 +1,6 @@
 use proc_macro;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-// use syn;
 
 #[proc_macro]
 pub fn build_test_renderer(input: TokenStream) -> TokenStream {

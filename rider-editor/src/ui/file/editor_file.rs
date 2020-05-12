@@ -93,9 +93,8 @@ impl TextCollection for EditorFile {
     fn get_line(&self, line: &usize) -> Option<Vec<&TextCharacter>> {
         let mut vec: Vec<&TextCharacter> = vec![];
         for section in self.sections.iter() {
-            match section.get_line(line) {
-                Some(v) => vec.append(&mut v.clone()),
-                _ => (),
+            if let Some(v) = section.get_line(line) {
+                vec.append(&mut v.clone());
             }
         }
 
@@ -154,6 +153,7 @@ impl Widget for EditorFile {
     fn set_dest(&mut self, rect: &Rect) {
         self.dest = rect.clone();
     }
+
     fn source(&self) -> &Rect {
         self.dest()
     }
@@ -301,9 +301,24 @@ impl<'a> Iterator for EditorFileIterator<'a> {
 mod tests {
     use crate::tests::*;
 
+    use crate::app::UpdateResult;
     use crate::ui::*;
     use rider_derive::*;
     use sdl2::rect::{Point, Rect};
+
+    #[test]
+    fn check_get_line() {
+        build_test_renderer!(renderer);
+        let mut file =
+            EditorFile::new("./foo.txt".to_owned(), "a b c d".to_owned(), config.clone());
+        file.prepare_ui(&mut renderer);
+
+        let result = file.get_line(&0);
+        assert_eq!(result.is_some(), true);
+
+        let result = file.get_line(&1);
+        assert_eq!(result.is_some(), false);
+    }
 
     //##################################################
     // iterator
@@ -410,5 +425,130 @@ mod tests {
         let result = widget.render_start_point().clone();
         let expected = Point::new(0, 0);
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn check_get_section_at_mut() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFile::new(path, buffer, config);
+        let result = widget.get_section_at_mut(12);
+        assert!(result.is_none());
+    }
+
+    //#######################################################
+    // widget
+    //#######################################################
+
+    #[test]
+    fn check_texture_path() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let widget = EditorFile::new(path, buffer, config);
+        let result = widget.texture_path();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn check_set_dest() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFile::new(path, buffer, config);
+        let rect = Rect::new(2, 4, 6, 8);
+        widget.set_dest(&rect);
+        assert_eq!(format!("{:?}", widget.dest()), format!("{:?}", rect));
+    }
+
+    #[test]
+    fn check_source() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFile::new(path, buffer, config);
+        let rect = Rect::new(2, 4, 6, 8);
+        widget.set_source(&rect);
+        assert_eq!(format!("{:?}", widget.source()), format!("{:?}", rect));
+        assert_eq!(
+            format!("{:?}", widget.source()),
+            format!("{:?}", widget.dest())
+        );
+    }
+
+    #[test]
+    fn check_update() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFile::new(path, buffer, config);
+        let result = widget.update(0, &UpdateContext::Nothing);
+        assert_eq!(result, UpdateResult::NoOp);
+    }
+
+    #[test]
+    fn check_on_left_click() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFile::new(path, buffer, config);
+        let result = widget.on_left_click(&Point::new(0, 0), &UpdateContext::Nothing);
+        assert_eq!(result, UpdateResult::NoOp);
+    }
+
+    #[test]
+    fn check_on_left_click_with_sections() {
+        build_test_renderer!(renderer);
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFile::new(path, buffer, config.clone());
+        widget.sections = vec![EditorFileSection::new(
+            "a b c d".to_string(),
+            "".to_string(),
+            config,
+        )];
+        widget.prepare_ui(&mut renderer);
+        let result = widget.on_left_click(&Point::new(0, 0), &UpdateContext::Nothing);
+        assert_eq!(
+            result,
+            UpdateResult::MoveCaret(Rect::new(0, 0, 13, 14), CaretPosition::new(0, 0, 0))
+        );
+    }
+
+    #[test]
+    fn check_is_left_click_target() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFile::new(path, buffer, config);
+        let result = widget.is_left_click_target(&Point::new(0, 0), &UpdateContext::Nothing);
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn check_is_left_click_target_with_sections() {
+        build_test_renderer!(renderer);
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFile::new(path, buffer, config.clone());
+        widget.sections = vec![EditorFileSection::new(
+            "a b c d".to_string(),
+            "".to_string(),
+            config,
+        )];
+        widget.prepare_ui(&mut renderer);
+        let result = widget.is_left_click_target(&Point::new(0, 0), &UpdateContext::Nothing);
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn check_render() {
+        build_test_renderer!(renderer);
+        let buffer = "a b c".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFile::new(path, buffer, config.clone());
+        widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
+        assert!(true);
     }
 }

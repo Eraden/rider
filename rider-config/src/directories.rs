@@ -21,10 +21,8 @@ impl Directories {
         config_dir.push(path);
         config_dir.push("rider");
 
-        let path = match project_dir {
-            Some(s) => s,
-            None => dirs::runtime_dir().unwrap().to_str().unwrap().to_owned(),
-        };
+        let path = project_dir
+            .unwrap_or_else(|| dirs::runtime_dir().unwrap().to_str().unwrap().to_owned());
         let mut project_dir = PathBuf::new();
         project_dir.push(path);
         project_dir.push(".rider");
@@ -56,19 +54,12 @@ pub fn themes_dir(config_dir: &PathBuf) -> PathBuf {
 }
 
 pub fn fonts_dir(config_dir: &PathBuf) -> PathBuf {
-    let path = config_dir.to_str().unwrap().to_owned();
-    let mut path_buf = PathBuf::new();
-    path_buf.push(path);
-    path_buf.push("fonts");
-    path_buf
+    PathBuf::from(config_dir.to_str().unwrap().to_owned()).join("fonts")
 }
 
+#[cfg_attr(tarpaulin, skip)]
 pub fn project_dir() -> PathBuf {
-    let path = dirs::runtime_dir().unwrap().to_str().unwrap().to_owned();
-    let mut path_buf = PathBuf::new();
-    path_buf.push(path);
-    path_buf.push(".rider");
-    path_buf
+    PathBuf::from(dirs::runtime_dir().unwrap().to_str().unwrap().to_owned()).join(".rider")
 }
 
 #[cfg_attr(tarpaulin, skip)]
@@ -110,11 +101,10 @@ pub fn binaries_directory() -> Result<PathBuf, String> {
     Err("Cannot find binaries!".to_string())
 }
 
+#[cfg_attr(tarpaulin, skip)]
 pub fn get_binary_path(name: &str) -> Result<String, String> {
     if cfg!(test) {
         use std::fs;
-        println!("#[cfg(test)]");
-
         let mut current_dir = env::current_dir().unwrap();
         current_dir.push("target");
         current_dir.push("debug");
@@ -132,7 +122,6 @@ pub fn get_binary_path(name: &str) -> Result<String, String> {
         }
         Err(format!("Cannot find {:?}", name))
     } else {
-        println!("#[cfg(not(test))]");
         let r = binaries_directory();
         let mut binaries: PathBuf = r.unwrap_or_else(|e| panic!(e));
         binaries.push(name.to_string());
