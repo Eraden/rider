@@ -584,6 +584,24 @@ mod tests {
         assert_eq!(widget.dest(), &Rect::new(0, 0, 53, 14));
     }
 
+    #[test]
+    fn assert_set_dest() {
+        let config = build_config();
+        let mut widget = DirectoryView::new("/foo".to_owned(), config);
+        let rect = Rect::new(1, 2, 3, 4);
+        widget.set_dest(&rect);
+        assert_ne!(widget.dest(), &rect);
+    }
+
+    #[test]
+    fn assert_set_source() {
+        let config = build_config();
+        let mut widget = DirectoryView::new("/foo".to_owned(), config);
+        let rect = Rect::new(1, 2, 3, 4);
+        widget.set_source(&rect);
+        assert_ne!(widget.source(), &rect);
+    }
+
     //##########################################################
     // update
     //##########################################################
@@ -791,11 +809,72 @@ mod tests {
         );
         widget.prepare_ui(&mut renderer);
         widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
+        widget.expanded = true;
         let p = Point::new(0, 0);
         let context = UpdateContext::ParentPosition(Point::new(0, 0));
         assert_eq!(
             widget.on_left_click(&p, &context),
             UpdateResult::OpenDirectory("/tmp/rider-editor/directory-view-test".to_owned())
         );
+    }
+
+    #[test]
+    fn assert_on_left_click_not_expanded() {
+        build_path("/tmp/rider-editor/directory-view-test".to_owned());
+
+        build_test_renderer!(renderer);
+        let mut canvas = CanvasMock::new();
+        let mut widget =
+            DirectoryView::new("/tmp/rider-editor/directory-view-test".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        widget.open_directory("/tmp".to_owned(), &mut renderer);
+        widget.open_directory("/tmp/rider-editor".to_owned(), &mut renderer);
+        widget.open_directory(
+            "/tmp/rider-editor/directory-view-test".to_owned(),
+            &mut renderer,
+        );
+        widget.prepare_ui(&mut renderer);
+        widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
+        widget.expanded = false;
+        let p = Point::new(0, 0);
+        let context = UpdateContext::ParentPosition(Point::new(0, 0));
+        assert_eq!(
+            widget.on_left_click(&p, &context),
+            UpdateResult::OpenDirectory("/tmp/rider-editor/directory-view-test".to_owned())
+        );
+    }
+
+    #[test]
+    fn assert_on_left_click_expanded_with_sub() {
+        build_path("/tmp/rider-editor/directory-view-test/foo/bar".to_owned());
+
+        build_test_renderer!(renderer);
+        let mut widget =
+            DirectoryView::new("/tmp/rider-editor/directory-view-test".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        widget.open_directory("/tmp".to_owned(), &mut renderer);
+        widget.open_directory("/tmp/rider-editor".to_owned(), &mut renderer);
+        widget.prepare_ui(&mut renderer);
+        widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
+
+        let p = Point::new(0, 0);
+        let context = UpdateContext::ParentPosition(Point::new(0, 0));
+        assert_eq!(
+            widget.on_left_click(&p, &context),
+            UpdateResult::OpenDirectory("/tmp/rider-editor/directory-view-test".to_owned())
+        );
+    }
+
+    #[test]
+    fn check_config() {
+        build_path("/tmp/rider-editor/directory-view-test".to_owned());
+
+        build_test_renderer!(renderer);
+        let mut canvas = CanvasMock::new();
+        let mut widget =
+            DirectoryView::new("/tmp/rider-editor/directory-view-test".to_owned(), config);
+        widget.prepare_ui(&mut renderer);
+        widget.config();
+        assert!(true)
     }
 }

@@ -17,6 +17,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt::Error;
 use std::fmt::Formatter;
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::*;
 
@@ -376,12 +377,3 @@ impl<'r> CanvasAccess for sdl2::render::Canvas<sdl2::surface::Surface<'r>> {
         self.clip_rect()
     }
 }
-//    impl<'l> ManagersHolder<'l> for SimpleRendererMock {
-//        fn font_manager(&mut self) -> &mut FontManager {
-//            &mut self.font_manager
-//        }
-//
-//        fn texture_manager(&mut self) -> &mut TextureManager<'l> {
-//            &mut self.texture_manager
-//        }
-//    }
