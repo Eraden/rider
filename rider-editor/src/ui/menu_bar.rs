@@ -5,8 +5,8 @@ use rider_config::{ConfigAccess, ConfigHolder};
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 
-const SAVE_BUTTON_OFFSET_LEFT: i32 = 16;
-const SAVE_BUTTON_OFFSET_TOP: i32 = 10;
+pub const SAVE_BUTTON_OFFSET_LEFT: i32 = 16;
+pub const SAVE_BUTTON_OFFSET_TOP: i32 = 10;
 
 pub struct MenuBar {
     border_color: Color,
@@ -60,7 +60,7 @@ impl MenuBar {
                 move_render_point(relative_position.clone(), &self.dest),
                 self.background_color.clone(),
             )
-            .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
+            .expect("Failed to draw main menu background");
         canvas
             .render_border(
                 match context.borrow() {
@@ -69,7 +69,7 @@ impl MenuBar {
                 },
                 self.border_color.clone(),
             )
-            .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
+            .expect("Failed to draw main menu background");
 
         self.save_button.render(
             canvas,
@@ -264,37 +264,113 @@ mod test_click_handler {
 
 #[cfg(test)]
 mod test_render {
+    use crate::app::UpdateResult;
     use crate::tests::*;
     use crate::ui::*;
     use rider_derive::*;
-    use sdl2::rect::Rect;
+    use rider_match_widget::*;
+    use sdl2::pixels::PixelFormatEnum;
+
+    #[test]
+    #[match_widgets(
+        fn_name = "assert_save_button_child",
+        widget = "MenuBar",
+        contains = "save_button",
+        x = 16i32,
+        y = 10i32,
+        w = 16u32,
+        h = 16u32,
+        widget_dump_path = "/tmp/rider-images/MenuBar-saveButton.png",
+        child_dump_path = "/tmp/rider-images/SaveButton.png",
+        background_from = "background_color",
+        widget_variable = "widget"
+    )]
+    fn assert_save_button_child() {}
+
+    #[test]
+    #[match_widgets(
+        fn_name = "assert_settings_button",
+        widget = "MenuBar",
+        contains = "settings_button",
+        x = 32i32,
+        y = 10i32,
+        w = 16u32,
+        h = 16u32,
+        widget_dump_path = "/tmp/rider-images/MenuBar-settingsButton.png",
+        child_dump_path = "/tmp/rider-images/SettingsButton.png",
+        background_from = "background_color",
+        widget_variable = "widget"
+    )]
+    fn assert_settings_button() {}
 
     #[test]
     fn assert_render() {
-        let rect_color = sdl2::pixels::Color::RGBA(18, 18, 18, 0);
-        let border_color = sdl2::pixels::Color::RGBA(200, 200, 200, 0);
+        let _rect_color = sdl2::pixels::Color::RGBA(18, 18, 18, 0);
+        let _border_color = sdl2::pixels::Color::RGBA(200, 200, 200, 0);
         let context = RenderContext::Nothing;
         build_test_renderer!(renderer);
-        let mut canvas = CanvasMock::new();
+        surface_canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 255, 255));
+
         let mut widget = MenuBar::new(config.clone());
         widget.prepare_ui();
-        widget.render(&mut canvas, &mut renderer, &context);
-        assert_eq!(widget.dest(), Rect::new(0, 0, 1024, 40));
-        assert_eq!(
-            canvas.find_rect_with_color(Rect::new(0, 0, 1024, 40), rect_color.clone()),
-            Some(&RendererRect::new(
-                Rect::new(0, 0, 1024, 40),
-                rect_color,
-                CanvasShape::Rectangle
-            ))
+
+        let size = sdl2::rect::Rect::new(
+            0,
+            0,
+            16 + SAVE_BUTTON_OFFSET_LEFT as u32,
+            16 + SAVE_BUTTON_OFFSET_TOP as u32,
         );
-        assert_eq!(
-            canvas.find_border_with_color(Rect::new(0, 0, 1024, 40), border_color.clone()),
-            Some(&RendererRect::new(
-                Rect::new(0, 0, 1024, 40),
-                border_color,
-                CanvasShape::Border
-            ))
-        );
+
+        let expected_pixels = {
+            surface_canvas
+                .render_rect(size.clone(), widget.background_color.clone())
+                .unwrap();
+            widget.save_button.render(
+                &mut surface_canvas,
+                &mut renderer,
+                &RenderContext::ParentPosition(
+                    size.top_left()
+                        .offset(SAVE_BUTTON_OFFSET_LEFT, SAVE_BUTTON_OFFSET_TOP),
+                ),
+            );
+            surface_canvas
+                .read_pixels(size.clone(), PixelFormatEnum::RGBA8888)
+                .unwrap()
+        };
+        surface_canvas.dump_ui("/tmp/rider-images/a.bmp");
+
+        widget.render(&mut surface_canvas, &mut renderer, &context);
+        surface_canvas.dump_ui("/tmp/rider-images/b.bmp");
+
+        let result_pixels = surface_canvas
+            .read_pixels(size, PixelFormatEnum::RGBA8888)
+            .unwrap();
+        assert_eq!(result_pixels, expected_pixels);
+        assert_eq!(widget.dest(), sdl2::rect::Rect::new(0, 0, 1024, 40));
+        // assert_eq!(
+        //     canvas.find_rect_with_color(Rect::new(0, 0, 1024, 40), rect_color.clone()),
+        //     Some(&RendererRect::new(
+        //         Rect::new(0, 0, 1024, 40),
+        //         rect_color,
+        //         CanvasShape::Rectangle
+        //     ))
+        // );
+        // assert_eq!(
+        //     canvas.find_border_with_color(Rect::new(0, 0, 1024, 40), border_color.clone()),
+        //     Some(&RendererRect::new(
+        //         Rect::new(0, 0, 1024, 40),
+        //         border_color,
+        //         CanvasShape::Border
+        //     ))
+        // );
+    }
+
+    #[test]
+    fn assert_update() {
+        build_test_renderer!(renderer);
+        let mut widget = MenuBar::new(config.clone());
+        widget.prepare_ui();
+        let result = widget.update(0, &UpdateContext::Nothing);
+        assert_eq!(result, UpdateResult::NoOp);
     }
 }

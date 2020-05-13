@@ -521,7 +521,7 @@ mod tests {
         let config = build_config();
         let buffer = "".to_owned();
         let path = "/example.txt".to_owned();
-        let mut widget = EditorFile::new(path, buffer, config);
+        let widget = EditorFile::new(path, buffer, config);
         let result = widget.is_left_click_target(&Point::new(0, 0), &UpdateContext::Nothing);
         assert_eq!(result, false);
     }
@@ -547,7 +547,7 @@ mod tests {
         build_test_renderer!(renderer);
         let buffer = "a b c".to_owned();
         let path = "/example.txt".to_owned();
-        let mut widget = EditorFile::new(path, buffer, config.clone());
+        let widget = EditorFile::new(path, buffer, config.clone());
         widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
         assert!(true);
     }

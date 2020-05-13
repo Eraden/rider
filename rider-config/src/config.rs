@@ -102,20 +102,15 @@ impl Config {
 impl Config {
     pub fn load_theme(&self, theme_name: String) -> Theme {
         let home_dir = dirs::config_dir().unwrap();
-        let mut config_dir = home_dir;
-        config_dir.push("rider");
-        fs::create_dir_all(&config_dir)
+        #[cfg_attr(tarpaulin, skip)]
+        fs::create_dir_all(&home_dir.join("rider"))
             .unwrap_or_else(|_| panic!("Cannot create config directory"));
         self.load_theme_content(format!("{}.json", theme_name).as_str())
     }
 
     fn load_theme_content(&self, file_name: &str) -> Theme {
-        let mut config_file = self.directories.themes_dir.clone();
-        config_file.push(file_name);
-        let contents = match fs::read_to_string(&config_file) {
-            Ok(s) => s,
-            Err(_) => fs::read_to_string(&config_file).unwrap_or_else(|_| "".to_owned()),
-        };
+        let config_file = self.directories.themes_dir.clone();
+        let contents = fs::read_to_string(&config_file.join(file_name)).unwrap_or_default();
         serde_json::from_str(&contents).unwrap_or_default()
     }
 }
@@ -194,21 +189,21 @@ mod test_getters {
         assert_eq!(result, expected);
     }
 
-    //    #[test]
-    //    fn assert_editor_config() {
-    //        let config = Config::new();
-    //        let result = config.editor_config();
-    //        let expected = 1;
-    //        assert_eq!(result, expected);
-    //    }
+    #[test]
+    fn assert_editor_config() {
+        let config = Config::new();
+        let result = config.editor_config();
+        let expected = EditorConfig::new(&Directories::new(None, None));
+        assert_eq!(result, &expected);
+    }
 
-    //    #[test]
-    //    fn assert_theme() {
-    //        let config = Config::new();
-    //        let result = config.theme();
-    //        let expected = 1;
-    //        assert_eq!(result, expected);
-    //    }
+    #[test]
+    fn assert_theme() {
+        let config = Config::new();
+        let result = config.theme();
+        let expected = Theme::default();
+        assert_eq!(result, &expected);
+    }
 
     #[test]
     fn assert_menu_height() {

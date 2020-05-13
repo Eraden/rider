@@ -11,6 +11,7 @@ pub struct SaveButton {
     inner: WidgetInner,
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl std::ops::Deref for SaveButton {
     type Target = WidgetInner;
 
@@ -19,6 +20,7 @@ impl std::ops::Deref for SaveButton {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl std::ops::DerefMut for SaveButton {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner

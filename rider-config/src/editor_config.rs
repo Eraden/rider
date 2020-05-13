@@ -1,5 +1,6 @@
 use crate::directories::Directories;
 
+#[cfg_attr(test, derive(PartialEq))]
 #[derive(Debug, Clone)]
 pub struct EditorConfig {
     character_size: u16,
@@ -26,8 +27,15 @@ impl EditorConfig {
         self.character_size
     }
 
-    pub fn font_path(&self) -> &String {
-        &self.font_path
+    pub fn font_path(&self) -> &str {
+        self.font_path.as_str()
+    }
+
+    pub fn set_font_path<S>(&mut self, path: S)
+    where
+        S: Into<String>,
+    {
+        self.font_path = path.into();
     }
 
     pub fn current_theme(&self) -> &String {
@@ -49,9 +57,14 @@ mod test {
     #[test]
     fn assert_font_path() {
         let directories = Directories::new(Some("/tmp".to_owned()), None);
-        let config = EditorConfig::new(&directories);
-        let path = config.font_path().to_owned();
-        let expected: String = "/tmp/rider/fonts/DejaVuSansMono.ttf".to_owned();
+        let mut config = EditorConfig::new(&directories);
+        let path = config.font_path();
+        let expected = "/tmp/rider/fonts/DejaVuSansMono.ttf";
+        assert_eq!(path, expected);
+
+        config.set_font_path("/a");
+        let path = config.font_path();
+        let expected = "/a";
         assert_eq!(path, expected);
     }
 

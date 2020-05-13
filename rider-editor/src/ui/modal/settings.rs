@@ -218,7 +218,7 @@ impl Settings {
             background_color,
             border_color,
             font_label: Label::new("Font path".into(), config.clone()),
-            font_value: Label::new(c.editor_config().font_path().clone(), config.clone()),
+            font_value: Label::new(c.editor_config().font_path().to_string(), config.clone()),
             character_size_label: Label::new("Character size".into(), config.clone()),
             character_size_value: Label::new(
                 format!("{}", c.editor_config().character_size()).to_owned(),

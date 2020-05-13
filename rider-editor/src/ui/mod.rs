@@ -111,7 +111,7 @@ where
 {
     let c = config_holder.config().read().unwrap();
     (
-        c.editor_config().font_path().as_str(),
+        c.editor_config().font_path(),
         c.editor_config().character_size(),
     )
         .into()
@@ -242,7 +242,7 @@ pub trait Widget {
                 dest.set_height(self.dest().height());
                 canvas
                     .render_image(texture.clone(), self.source().clone(), dest.clone())
-                    .unwrap_or_else(|_| panic!("Failed to draw widget texture"));
+                    .unwrap_or_else(|e| panic!("Failed to draw widget texture. {}", e));
                 Some(())
             });
     }

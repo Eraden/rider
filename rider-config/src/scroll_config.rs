@@ -54,6 +54,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn assert_default() {
+        let config = ScrollConfig::default();
+        assert_eq!(config.width, 4);
+        assert_eq!(config.margin_right, 5);
+        assert_eq!(config.speed, 10);
+    }
+
+    #[test]
     fn assert_width() {
         let config = ScrollConfig::new();
         let result = config.width();
