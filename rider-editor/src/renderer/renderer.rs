@@ -58,13 +58,13 @@ impl<'l> CharacterSizeManager for CanvasRenderer<'l> {
         let (font_path, font_size) = {
             let config = self.config().read().unwrap();
             (
-                config.editor_config().font_path().clone(),
+                config.editor_config().font_path().to_string(),
                 config.editor_config().character_size().clone(),
             )
         };
         let details = TextCharacterDetails {
             c: c.clone(),
-            font_path,
+            font_path: font_path.to_string(),
             font_size,
         };
         self.character_sizes

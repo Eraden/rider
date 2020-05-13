@@ -41,7 +41,7 @@ pub struct FontDetails {
 
 impl From<&EditorConfig> for FontDetails {
     fn from(config: &EditorConfig) -> Self {
-        FontDetails::new(config.font_path().as_str(), config.character_size().clone())
+        FontDetails::new(config.font_path(), config.character_size().clone())
     }
 }
 

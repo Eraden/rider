@@ -11,7 +11,6 @@ use sdl2::pixels::{Color, PixelFormatEnum};
 use sdl2::rect::Point;
 use sdl2::rect::Rect;
 use sdl2::render::{Texture, TextureCreator};
-//    use sdl2::surface::Surface;
 use sdl2::ttf::{Font, Sdl2TtfContext};
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -339,7 +338,10 @@ impl<'l> ConfigHolder for SimpleRendererMock<'l> {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-impl<'r> CanvasAccess for sdl2::render::Canvas<sdl2::surface::Surface<'r>> {
+pub type TestCanvas<'r> = sdl2::render::Canvas<sdl2::surface::Surface<'r>>;
+
+#[cfg_attr(tarpaulin, skip)]
+impl<'r> CanvasAccess for TestCanvas<'r> {
     fn render_rect(&mut self, rect: Rect, color: sdl2::pixels::Color) -> Result<(), String> {
         self.set_draw_color(color);
         self.fill_rect(rect)
@@ -376,6 +378,28 @@ impl<'r> CanvasAccess for sdl2::render::Canvas<sdl2::surface::Surface<'r>> {
         self.clip_rect()
     }
 }
+
+#[cfg_attr(tarpaulin, skip)]
+pub trait DumpImage {
+    fn dump_ui<S>(&self, path: S)
+    where
+        S: Into<String>;
+}
+
+#[cfg_attr(tarpaulin, skip)]
+impl<'r> DumpImage for TestCanvas<'r> {
+    fn dump_ui<S>(&self, path: S)
+    where
+        S: Into<String>,
+    {
+        let p = std::path::PathBuf::from(path.into());
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        self.surface()
+            .save_bmp(p)
+            .expect("Failed to save canvas as BMP file");
+    }
+}
+
 //    impl<'l> ManagersHolder<'l> for SimpleRendererMock {
 //        fn font_manager(&mut self) -> &mut FontManager {
 //            &mut self.font_manager
