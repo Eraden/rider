@@ -70,7 +70,7 @@ impl ToTokens for AssertBuilder {
             let mut character_sizes = std::collections::HashMap::new();
             let config = build_config();
             let mut surface =
-                sdl2::surface::Surface::new( #x as u32 + #w as u32 , #y as u32 + #h as u32, sdl2::pixels::PixelFormatEnum::RGB24).unwrap();
+                sdl2::surface::Surface::new( #x as u32 + #w as u32 , #y as u32 + #h as u32, sdl2::pixels::PixelFormatEnum::RGBA8888).unwrap();
             let mut surface_canvas = sdl2::render::Canvas::from_surface(surface).unwrap();
             let mut texture_creator = surface_canvas.texture_creator();
             let mut texture_manager = crate::renderer::managers::TextureManager::new(&texture_creator);
