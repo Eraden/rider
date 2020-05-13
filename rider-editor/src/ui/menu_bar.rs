@@ -304,68 +304,6 @@ mod test_render {
     fn assert_settings_button() {}
 
     #[test]
-    fn assert_render() {
-        let _rect_color = sdl2::pixels::Color::RGBA(18, 18, 18, 0);
-        let _border_color = sdl2::pixels::Color::RGBA(200, 200, 200, 0);
-        let context = RenderContext::Nothing;
-        build_test_renderer!(renderer);
-        surface_canvas.set_draw_color(sdl2::pixels::Color::RGB(255, 255, 255));
-
-        let mut widget = MenuBar::new(config.clone());
-        widget.prepare_ui();
-
-        let size = sdl2::rect::Rect::new(
-            0,
-            0,
-            16 + SAVE_BUTTON_OFFSET_LEFT as u32,
-            16 + SAVE_BUTTON_OFFSET_TOP as u32,
-        );
-
-        let expected_pixels = {
-            surface_canvas
-                .render_rect(size.clone(), widget.background_color.clone())
-                .unwrap();
-            widget.save_button.render(
-                &mut surface_canvas,
-                &mut renderer,
-                &RenderContext::ParentPosition(
-                    size.top_left()
-                        .offset(SAVE_BUTTON_OFFSET_LEFT, SAVE_BUTTON_OFFSET_TOP),
-                ),
-            );
-            surface_canvas
-                .read_pixels(size.clone(), PixelFormatEnum::RGBA8888)
-                .unwrap()
-        };
-        surface_canvas.dump_ui("/tmp/rider-images/a.bmp");
-
-        widget.render(&mut surface_canvas, &mut renderer, &context);
-        surface_canvas.dump_ui("/tmp/rider-images/b.bmp");
-
-        let result_pixels = surface_canvas
-            .read_pixels(size, PixelFormatEnum::RGBA8888)
-            .unwrap();
-        assert_eq!(result_pixels, expected_pixels);
-        assert_eq!(widget.dest(), sdl2::rect::Rect::new(0, 0, 1024, 40));
-        // assert_eq!(
-        //     canvas.find_rect_with_color(Rect::new(0, 0, 1024, 40), rect_color.clone()),
-        //     Some(&RendererRect::new(
-        //         Rect::new(0, 0, 1024, 40),
-        //         rect_color,
-        //         CanvasShape::Rectangle
-        //     ))
-        // );
-        // assert_eq!(
-        //     canvas.find_border_with_color(Rect::new(0, 0, 1024, 40), border_color.clone()),
-        //     Some(&RendererRect::new(
-        //         Rect::new(0, 0, 1024, 40),
-        //         border_color,
-        //         CanvasShape::Border
-        //     ))
-        // );
-    }
-
-    #[test]
     fn assert_update() {
         build_test_renderer!(renderer);
         let mut widget = MenuBar::new(config.clone());
