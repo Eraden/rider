@@ -34,7 +34,7 @@ where
     let move_to = file_editor
         .file()
         .and_then(|f| f.get_character_at(position.text_position()))
-        .map(|character| character.dest())
+        .map(|character| character.dest().clone())
         .map(|dest| (position, Point::new(dest.x(), dest.y())));
     match move_to {
         Some((position, point)) => file_editor.caret_mut().move_caret(position, point),
@@ -171,7 +171,7 @@ mod tests {
     use super::*;
     use crate::renderer::managers::FontDetails;
     use crate::renderer::managers::TextDetails;
-    use crate::tests::support;
+    use crate::tests::*;
     use sdl2::rect::Rect;
     use sdl2::render::Texture;
     use sdl2::ttf::Font;
@@ -226,7 +226,7 @@ mod tests {
 
     #[test]
     fn must_return_empty_string_when_no_file() {
-        let config = support::build_config();
+        let config = build_config();
         let mut editor = FileEditor::new(config);
         let result = current_file_path(&mut editor);
         assert_eq!(result, String::new());
@@ -234,7 +234,7 @@ mod tests {
 
     #[test]
     fn must_return_path_string_when_file_was_set() {
-        let config = support::build_config();
+        let config = build_config();
         let mut editor = FileEditor::new(Arc::clone(&config));
         let file = EditorFile::new(
             "/foo/bar".to_owned(),
@@ -252,7 +252,7 @@ mod tests {
 
     #[test]
     fn assert_insert_text_without_file() {
-        let config = support::build_config();
+        let config = build_config();
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = FileEditor::new(config.clone());
         widget.prepare_ui(&mut renderer);
@@ -263,7 +263,7 @@ mod tests {
 
     #[test]
     fn assert_insert_text_to_empty_file() {
-        let config = support::build_config();
+        let config = build_config();
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = FileEditor::new(config.clone());
         let file = EditorFile::new("".to_owned(), "".to_owned(), config.clone());
@@ -276,7 +276,7 @@ mod tests {
 
     #[test]
     fn assert_insert_text_to_file_without_new_line() {
-        let config = support::build_config();
+        let config = build_config();
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = FileEditor::new(config.clone());
         let mut file = EditorFile::new("".to_owned(), "bar".to_owned(), config.clone());
@@ -294,7 +294,7 @@ mod tests {
 
     #[test]
     fn assert_insert_text_to_file_with_new_line() {
-        let config = support::build_config();
+        let config = build_config();
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = FileEditor::new(config.clone());
         let mut file = EditorFile::new("".to_owned(), "bar\n".to_owned(), config.clone());
@@ -312,7 +312,7 @@ mod tests {
 
     #[test]
     fn assert_insert_text_to_file_with_new_line_with_caret_at_new_line() {
-        let config = support::build_config();
+        let config = build_config();
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = FileEditor::new(config.clone());
         let mut file = EditorFile::new("".to_owned(), "old content\n".to_owned(), config.clone());
@@ -335,7 +335,7 @@ mod tests {
 
     #[test]
     fn assert_insert_new_line_without_file() {
-        let config = support::build_config();
+        let config = build_config();
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = FileEditor::new(config.clone());
         widget.prepare_ui(&mut renderer);
@@ -344,12 +344,12 @@ mod tests {
         let expected = CaretPosition::new(0, 0, 0);
         assert_eq!(widget.caret().position(), &expected);
         let expected = Rect::new(0, 0, 6, 15);
-        assert_eq!(widget.caret().dest(), expected);
+        assert_eq!(widget.caret().dest(), &expected);
     }
 
     #[test]
     fn assert_insert_new_line_to_empty_file() {
-        let config = support::build_config();
+        let config = build_config();
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = FileEditor::new(config.clone());
         let file = EditorFile::new("".to_owned(), "".to_owned(), config.clone());
@@ -360,12 +360,12 @@ mod tests {
         let expected = CaretPosition::new(1, 1, 0);
         assert_eq!(widget.caret().position(), &expected);
         let expected = Rect::new(0, 13, 6, 15);
-        assert_eq!(widget.caret().dest(), expected);
+        assert_eq!(widget.caret().dest(), &expected);
     }
 
     #[test]
     fn assert_insert_new_line_to_file_at_beginning() {
-        let config = support::build_config();
+        let config = build_config();
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = FileEditor::new(config.clone());
         let file = EditorFile::new("".to_owned(), "foo".to_owned(), config.clone());
@@ -376,14 +376,14 @@ mod tests {
         let expected = CaretPosition::new(1, 1, 0);
         assert_eq!(widget.caret().position(), &expected);
         let expected = Rect::new(0, 13, 6, 15);
-        assert_eq!(widget.caret().dest(), expected);
+        assert_eq!(widget.caret().dest(), &expected);
         assert_eq!(widget.file().is_some(), true);
         assert_eq!(widget.file().unwrap().buffer(), "\nfoo".to_owned());
     }
 
     #[test]
     fn assert_insert_new_line_to_file_in_middle() {
-        let config = support::build_config();
+        let config = build_config();
         let mut renderer = RendererMock::new(config.clone());
         let mut widget = FileEditor::new(config.clone());
         let mut file = EditorFile::new("hello.txt".to_owned(), "abcd".to_owned(), config.clone());
@@ -397,7 +397,7 @@ mod tests {
         let expected = CaretPosition::new(3, 1, 0);
         assert_eq!(widget.caret().position(), &expected);
         let expected = Rect::new(0, 13, 6, 15);
-        assert_eq!(widget.caret().dest(), expected);
+        assert_eq!(widget.caret().dest(), &expected);
         assert_eq!(widget.file().is_some(), true);
         assert_eq!(widget.file().unwrap().buffer(), "ab\ncd".to_owned());
     }

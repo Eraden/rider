@@ -26,7 +26,7 @@ pub trait Renderer {
 pub struct CanvasRenderer<'l> {
     config: ConfigAccess,
     font_manager: FontManager<'l>,
-    texture_manager: TextureManager<'l>,
+    texture_manager: TextureManager<'l, sdl2::video::WindowContext>,
     character_sizes: HashMap<TextCharacterDetails, Rect>,
 }
 
@@ -58,13 +58,13 @@ impl<'l> CharacterSizeManager for CanvasRenderer<'l> {
         let (font_path, font_size) = {
             let config = self.config().read().unwrap();
             (
-                config.editor_config().font_path().clone(),
+                config.editor_config().font_path().to_string(),
                 config.editor_config().character_size().clone(),
             )
         };
         let details = TextCharacterDetails {
             c: c.clone(),
-            font_path,
+            font_path: font_path.to_string(),
             font_size,
         };
         self.character_sizes
@@ -81,17 +81,6 @@ impl<'l> CharacterSizeManager for CanvasRenderer<'l> {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-impl<'l> ManagersHolder<'l> for CanvasRenderer<'l> {
-    fn font_manager(&mut self) -> &mut FontManager<'l> {
-        &mut self.font_manager
-    }
-
-    fn texture_manager(&mut self) -> &mut TextureManager<'l> {
-        &mut self.texture_manager
-    }
-}
-
-#[cfg_attr(tarpaulin, skip)]
 impl<'l> ConfigHolder for CanvasRenderer<'l> {
     fn config(&self) -> &ConfigAccess {
         &self.config
@@ -101,7 +90,7 @@ impl<'l> ConfigHolder for CanvasRenderer<'l> {
 #[cfg_attr(tarpaulin, skip)]
 impl<'l> Renderer for CanvasRenderer<'l> {
     fn load_font(&mut self, details: FontDetails) -> Rc<Font> {
-        self.font_manager()
+        self.font_manager
             .load(&details)
             .unwrap_or_else(|_| panic!("Font not found {:?}", details))
     }
@@ -113,11 +102,10 @@ impl<'l> Renderer for CanvasRenderer<'l> {
     ) -> Result<Rc<Texture>, String> {
         use crate::renderer::managers::*;
         let font = self
-            .font_manager()
+            .font_manager
             .load(&font_details)
             .unwrap_or_else(|_| panic!("Font not found {:?}", details));
-        let tex_manager = self.texture_manager();
-        tex_manager.load_text(details, font)
+        self.texture_manager.load_text(details, font)
     }
 
     fn load_image(&mut self, path: String) -> Result<Rc<Texture>, String> {

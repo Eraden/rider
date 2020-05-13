@@ -1,10 +1,17 @@
-#![feature(clamp)]
+#![feature(
+    clamp,
+    associated_type_bounds,
+    crate_visibility_modifier,
+    proc_macro_hygiene
+)]
 
 extern crate dirs;
 #[macro_use]
 extern crate log;
+extern crate lazy_static;
 extern crate rand;
 extern crate rider_config;
+extern crate rider_derive;
 extern crate rider_lexers;
 extern crate rider_themes;
 extern crate sdl2;
@@ -20,14 +27,12 @@ use std::fs::File;
 
 pub mod app;
 pub mod renderer;
-#[cfg(test)]
+#[macro_use]
 pub mod tests;
 pub mod ui;
 
 #[cfg_attr(tarpaulin, skip)]
 fn init_logger(directories: &Directories) {
-    //    use simplelog::SharedLogger;
-
     let mut log_file_path = directories.log_dir.clone();
     log_file_path.push("rider.log");
 

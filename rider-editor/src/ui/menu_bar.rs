@@ -1,12 +1,12 @@
 use crate::app::UpdateResult as UR;
 use crate::renderer::Renderer;
 use crate::ui::*;
-use rider_config::ConfigAccess;
+use rider_config::{ConfigAccess, ConfigHolder};
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 
-const SAVE_BUTTON_OFFSET_LEFT: i32 = 16;
-const SAVE_BUTTON_OFFSET_TOP: i32 = 10;
+pub const SAVE_BUTTON_OFFSET_LEFT: i32 = 16;
+pub const SAVE_BUTTON_OFFSET_TOP: i32 = 10;
 
 pub struct MenuBar {
     border_color: Color,
@@ -45,7 +45,7 @@ impl MenuBar {
     pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
         C: CanvasAccess,
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         use std::borrow::*;
 
@@ -60,7 +60,7 @@ impl MenuBar {
                 move_render_point(relative_position.clone(), &self.dest),
                 self.background_color.clone(),
             )
-            .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
+            .expect("Failed to draw main menu background");
         canvas
             .render_border(
                 match context.borrow() {
@@ -69,7 +69,7 @@ impl MenuBar {
                 },
                 self.border_color.clone(),
             )
-            .unwrap_or_else(|_| panic!("Failed to draw main menu background"));
+            .expect("Failed to draw main menu background");
 
         self.save_button.render(
             canvas,
@@ -158,7 +158,7 @@ mod test_getters {
 
     #[test]
     fn assert_background_color() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = MenuBar::new(Arc::clone(&config));
         let result = widget.background_color().clone();
         let expected = Color::RGBA(18, 18, 18, 0);
@@ -167,7 +167,7 @@ mod test_getters {
 
     #[test]
     fn assert_dest() {
-        let config = support::build_config();
+        let config = build_config();
         let (w, h) = {
             let c = config.read().unwrap();
             (c.width() as u32, c.menu_height() as u32)
@@ -188,7 +188,7 @@ mod test_render_box {
 
     #[test]
     fn must_return_top_left_point() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = MenuBar::new(Arc::clone(&config));
         let result = widget.render_start_point();
         let expected = Point::new(0, 0);
@@ -206,7 +206,7 @@ mod test_click_handler {
 
     #[test]
     fn refute_when_not_click_target() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = MenuBar::new(Arc::clone(&config));
         let point = Point::new(9999, 9999);
         let context = UpdateContext::Nothing;
@@ -216,7 +216,7 @@ mod test_click_handler {
 
     #[test]
     fn assert_when_click_target() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = MenuBar::new(Arc::clone(&config));
         let point = Point::new(20, 30);
         let context = UpdateContext::Nothing;
@@ -226,7 +226,7 @@ mod test_click_handler {
 
     #[test]
     fn refute_when_not_click_target_because_parent() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = MenuBar::new(Arc::clone(&config));
         let point = Point::new(20, 30);
         let context = UpdateContext::ParentPosition(Point::new(9999, 9999));
@@ -236,7 +236,7 @@ mod test_click_handler {
 
     #[test]
     fn assert_when_click_target_because_parent() {
-        let config = support::build_config();
+        let config = build_config();
         let (w, h) = {
             (
                 config.read().unwrap().width(),
@@ -252,7 +252,7 @@ mod test_click_handler {
 
     #[test]
     fn assert_on_click_do_nothing() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = MenuBar::new(Arc::clone(&config));
         let point = Point::new(12, 34);
         let context = UpdateContext::ParentPosition(Point::new(678, 293));
@@ -264,38 +264,51 @@ mod test_click_handler {
 
 #[cfg(test)]
 mod test_render {
-    use crate::tests::support::SimpleRendererMock;
+    use crate::app::UpdateResult;
     use crate::tests::*;
     use crate::ui::*;
-    use sdl2::rect::Rect;
+    use rider_derive::*;
+    use rider_match_widget::*;
+    use sdl2::pixels::PixelFormatEnum;
 
     #[test]
-    fn assert_render() {
-        let rect_color = sdl2::pixels::Color::RGBA(18, 18, 18, 0);
-        let border_color = sdl2::pixels::Color::RGBA(200, 200, 200, 0);
-        let context = RenderContext::Nothing;
-        let config = support::build_config();
-        let mut canvas = support::CanvasMock::new();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+    #[match_widgets(
+        fn_name = "assert_save_button_child",
+        widget = "MenuBar",
+        contains = "save_button",
+        x = 16i32,
+        y = 10i32,
+        w = 16u32,
+        h = 16u32,
+        widget_dump_path = "/tmp/rider-images/MenuBar-saveButton.png",
+        child_dump_path = "/tmp/rider-images/SaveButton.png",
+        background_from = "background_color",
+        widget_variable = "widget"
+    )]
+    fn assert_save_button_child() {}
+
+    #[test]
+    #[match_widgets(
+        fn_name = "assert_settings_button",
+        widget = "MenuBar",
+        contains = "settings_button",
+        x = 32i32,
+        y = 10i32,
+        w = 16u32,
+        h = 16u32,
+        widget_dump_path = "/tmp/rider-images/MenuBar-settingsButton.png",
+        child_dump_path = "/tmp/rider-images/SettingsButton.png",
+        background_from = "background_color",
+        widget_variable = "widget"
+    )]
+    fn assert_settings_button() {}
+
+    #[test]
+    fn assert_update() {
+        build_test_renderer!(renderer);
         let mut widget = MenuBar::new(config.clone());
         widget.prepare_ui();
-        widget.render(&mut canvas, &mut renderer, &context);
-        assert_eq!(widget.dest(), Rect::new(0, 0, 1024, 40));
-        assert_eq!(
-            canvas.find_rect_with_color(Rect::new(0, 0, 1024, 40), rect_color.clone()),
-            Some(&support::RendererRect::new(
-                Rect::new(0, 0, 1024, 40),
-                rect_color,
-                support::CanvasShape::Rectangle
-            ))
-        );
-        assert_eq!(
-            canvas.find_border_with_color(Rect::new(0, 0, 1024, 40), border_color.clone()),
-            Some(&support::RendererRect::new(
-                Rect::new(0, 0, 1024, 40),
-                border_color,
-                support::CanvasShape::Border
-            ))
-        );
+        let result = widget.update(0, &UpdateContext::Nothing);
+        assert_eq!(result, UpdateResult::NoOp);
     }
 }

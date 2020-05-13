@@ -8,6 +8,8 @@ edition = "2018"
 rider-config = { path = "../rider-config", version = "0.1.0" }
 rider-lexers = { path = "../rider-lexers", version = "0.1.0" }
 rider-themes = { path = "../rider-themes", version = "0.1.0" }
+rider-derive = { path = "../rider-derive", version = "0.1.0" }
+rider-match-widget = { path = "../rider-match-widget", version = "0.1.0" }
 rand = "0.5"
 dirs = "*"
 serde = "*"

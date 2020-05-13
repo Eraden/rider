@@ -16,6 +16,7 @@ pub struct EditorFileSection {
     tokens: Vec<EditorFileToken>,
     language: Language,
     config: Arc<RwLock<Config>>,
+    dest: Rect,
 }
 
 impl EditorFileSection {
@@ -48,6 +49,7 @@ impl EditorFileSection {
             tokens,
             language,
             config,
+            dest: Rect::new(0, 0, 0, 0),
         }
     }
 
@@ -61,25 +63,6 @@ impl EditorFileSection {
         }
     }
 
-    pub fn render<R, C>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
-    where
-        R: Renderer + ConfigHolder,
-        C: CanvasAccess,
-    {
-        for token in self.tokens.iter() {
-            token.render(canvas, renderer, context);
-        }
-    }
-
-    pub fn prepare_ui<'l, T>(&mut self, renderer: &mut T)
-    where
-        T: ConfigHolder + CharacterSizeManager + Renderer,
-    {
-        for token in self.tokens.iter_mut() {
-            token.prepare_ui(renderer);
-        }
-    }
-
     #[inline]
     pub fn iter_char(&self) -> EditorFileSectionIterator {
         EditorFileSectionIterator::new(self)
@@ -87,6 +70,83 @@ impl EditorFileSection {
 
     pub fn tokens(&self) -> &Vec<EditorFileToken> {
         &self.tokens
+    }
+}
+
+impl Widget for EditorFileSection {
+    fn texture_path(&self) -> Option<String> {
+        None
+    }
+
+    fn dest(&self) -> &Rect {
+        &self.dest
+    }
+
+    fn set_dest(&mut self, rect: &Rect) {
+        self.dest = rect.clone();
+    }
+
+    fn source(&self) -> &Rect {
+        &self.dest
+    }
+
+    fn set_source(&mut self, rect: &Rect) {
+        self.dest = rect.clone();
+    }
+
+    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
+        let mut result = UR::NoOp;
+        for token in self.tokens.iter_mut() {
+            result = token.update(ticks, context)
+        }
+        result
+    }
+
+    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UR {
+        for token in self.tokens.iter_mut() {
+            if token.is_left_click_target(point, context) {
+                return token.on_left_click(point, context);
+            }
+        }
+        UR::NoOp
+    }
+
+    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
+        let mut i = 0;
+        loop {
+            if i == self.tokens.len() {
+                break;
+            }
+            match self.tokens.get(i) {
+                Some(token) => {
+                    if token.is_left_click_target(point, context) {
+                        return true;
+                    }
+                }
+                None => break,
+            }
+            i += 1;
+        }
+        false
+    }
+
+    fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
+    where
+        C: CanvasAccess,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
+    {
+        for token in self.tokens.iter() {
+            token.render(canvas, renderer, context);
+        }
+    }
+
+    fn prepare_ui<'l, T>(&mut self, renderer: &mut T)
+    where
+        T: Renderer + CharacterSizeManager + ConfigHolder,
+    {
+        for token in self.tokens.iter_mut() {
+            token.prepare_ui(renderer);
+        }
     }
 }
 
@@ -157,46 +217,6 @@ impl TextCollection for EditorFileSection {
     }
 }
 
-impl Update for EditorFileSection {
-    fn update(&mut self, ticks: i32, context: &UpdateContext) -> UR {
-        let mut result = UR::NoOp;
-        for token in self.tokens.iter_mut() {
-            result = token.update(ticks, context)
-        }
-        result
-    }
-}
-
-impl ClickHandler for EditorFileSection {
-    fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UR {
-        for token in self.tokens.iter_mut() {
-            if token.is_left_click_target(point, context) {
-                return token.on_left_click(point, context);
-            }
-        }
-        UR::NoOp
-    }
-
-    fn is_left_click_target(&self, point: &Point, context: &UpdateContext) -> bool {
-        let mut i = 0;
-        loop {
-            if i == self.tokens.len() {
-                break;
-            }
-            match self.tokens.get(i) {
-                Some(token) => {
-                    if token.is_left_click_target(point, context) {
-                        return true;
-                    }
-                }
-                None => break,
-            }
-            i += 1;
-        }
-        false
-    }
-}
-
 pub struct EditorFileSectionIterator<'a> {
     section: &'a EditorFileSection,
     current_token: usize,
@@ -243,7 +263,8 @@ impl<'a> std::iter::Iterator for EditorFileSectionIterator<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::support::{build_config, SimpleRendererMock};
+    use crate::tests::*;
+    use rider_derive::*;
 
     impl EditorFileSection {
         pub fn tokens_count(&self) -> usize {
@@ -269,8 +290,7 @@ mod tests {
 
     #[test]
     fn assert_simple_char_iteration() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut section = EditorFileSection::new("a b c d".to_owned(), ".txt".to_owned(), config);
         section.prepare_ui(&mut renderer);
         for (index, c) in section.iter_char().enumerate() {
@@ -289,8 +309,7 @@ mod tests {
 
     #[test]
     fn assert_complex_char_iteration() {
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut section = EditorFileSection::new("let a = 1".to_owned(), ".rs".to_owned(), config);
         section.prepare_ui(&mut renderer);
         assert_eq!(section.tokens.len(), 7);
@@ -308,5 +327,41 @@ mod tests {
                 _ => assert_eq!("must have 9 entries", "have more than 9 entries"),
             }
         }
+    }
+
+    #[test]
+    fn check_texture_path() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let widget = EditorFileSection::new(path, buffer, config);
+        let result = widget.texture_path();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn check_set_dest() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFileSection::new(path, buffer, config);
+        let rect = Rect::new(2, 4, 6, 8);
+        widget.set_dest(&rect);
+        assert_eq!(format!("{:?}", widget.dest()), format!("{:?}", rect));
+    }
+
+    #[test]
+    fn check_source() {
+        let config = build_config();
+        let buffer = "".to_owned();
+        let path = "/example.txt".to_owned();
+        let mut widget = EditorFileSection::new(path, buffer, config);
+        let rect = Rect::new(2, 4, 6, 8);
+        widget.set_source(&rect);
+        assert_eq!(format!("{:?}", widget.source()), format!("{:?}", rect));
+        assert_eq!(
+            format!("{:?}", widget.source()),
+            format!("{:?}", widget.dest())
+        );
     }
 }

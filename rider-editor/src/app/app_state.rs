@@ -21,13 +21,13 @@ pub struct AppState {
 impl AppState {
     pub fn new(config: Arc<RwLock<Config>>) -> Self {
         Self {
-            menu_bar: MenuBar::new(Arc::clone(&config)),
+            menu_bar: MenuBar::new(config.clone()),
             project_tree: ProjectTreeSidebar::new(
                 Application::current_working_directory(),
                 config.clone(),
             ),
             files: vec![],
-            file_editor: FileEditor::new(Arc::clone(&config)),
+            file_editor: FileEditor::new(config.clone()),
             modal: None,
             config,
         }
@@ -67,7 +67,7 @@ impl AppState {
 
     pub fn open_settings<R>(&mut self, renderer: &mut R) -> Result<(), String>
     where
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         match self.modal {
             None => {
@@ -87,7 +87,7 @@ impl AppState {
 
     pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R)
     where
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         match self.modal.as_mut() {
             Some(ModalType::OpenFile(modal)) => modal.open_directory(dir_path, renderer),
@@ -145,14 +145,16 @@ impl AppState {
         R: Renderer + ConfigHolder + CharacterSizeManager,
     {
         // file editor
-        self.file_editor.render(canvas, renderer);
+        self.file_editor
+            .render(canvas, renderer, &RenderContext::Nothing);
 
         // menu bar
         self.menu_bar
             .render(canvas, renderer, &RenderContext::Nothing);
 
         // project tree
-        self.project_tree.render(canvas, renderer);
+        self.project_tree
+            .render(canvas, renderer, &RenderContext::Nothing);
 
         // settings modal
         match self.modal.as_ref() {
@@ -168,7 +170,7 @@ impl AppState {
 
     pub fn prepare_ui<R>(&mut self, renderer: &mut R)
     where
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         self.menu_bar.prepare_ui();
         self.project_tree.prepare_ui(renderer);
@@ -189,7 +191,7 @@ impl AppState {
         self.menu_bar.update(ticks, context);
 
         // sidebar
-        self.project_tree.update(ticks);
+        self.project_tree.update(ticks, context);
 
         // file editor
         let context = UpdateContext::ParentPosition(
@@ -253,21 +255,21 @@ impl ConfigHolder for AppState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::support;
-    use std::sync::Arc;
+    use crate::tests::*;
+    use rider_derive::*;
 
     #[test]
     fn must_return_none_for_default_file() {
-        let config = support::build_config();
-        let state = AppState::new(Arc::clone(&config));
+        let config = build_config();
+        let state = AppState::new(config.clone());
         let file = state.file_editor().file();
         assert_eq!(file.is_none(), true);
     }
 
     #[test]
     fn must_scroll_file_when_no_modal() {
-        let config = support::build_config();
-        let mut state = AppState::new(Arc::clone(&config));
+        let config = build_config();
+        let mut state = AppState::new(config.clone());
         let old_scroll = state.file_editor().scroll();
         state.set_open_file_modal(None);
         state.scroll_by(10, 10);
@@ -276,9 +278,9 @@ mod tests {
 
     #[test]
     fn must_scroll_modal_when_modal_was_set() {
-        let config = support::build_config();
-        let mut state = AppState::new(Arc::clone(&config));
-        let modal = OpenFile::new("/".to_owned(), 100, 100, Arc::clone(&config));
+        let config = build_config();
+        let mut state = AppState::new(config.clone());
+        let modal = OpenFile::new("/".to_owned(), 100, 100, config.clone());
         let file_scroll = state.file_editor().scroll();
         let old_scroll = state.file_editor().scroll();
         state.set_open_file_modal(Some(modal));
@@ -295,8 +297,8 @@ mod tests {
 
     #[test]
     fn must_fail_save_file_when_none_is_open() {
-        let config = support::build_config();
-        let state = AppState::new(Arc::clone(&config));
+        let config = build_config();
+        let state = AppState::new(config.clone());
         let result = state.save_file();
         assert_eq!(result, Err(format!("No buffer found")));
     }
@@ -313,9 +315,8 @@ mod tests {
             true
         );
 
-        let config = support::build_config();
-        let mut renderer = support::SimpleRendererMock::new(config.clone());
-        let mut state = AppState::new(Arc::clone(&config));
+        build_test_renderer!(renderer);
+        let mut state = AppState::new(config.clone());
         let result = state.open_file(
             format!("/tmp/must_succeed_save_file_when_file_is_open.md"),
             &mut renderer,
@@ -337,9 +338,8 @@ mod tests {
             true
         );
 
-        let config = support::build_config();
-        let mut renderer = support::SimpleRendererMock::new(config.clone());
-        let mut state = AppState::new(Arc::clone(&config));
+        build_test_renderer!(renderer);
+        let mut state = AppState::new(config.clone());
         let result = state.open_file(
             format!("/tmp/must_succeed_save_file_when_file_does_not_exists.md"),
             &mut renderer,
@@ -351,34 +351,32 @@ mod tests {
 
     #[test]
     fn must_close_modal_when_no_modal_is_open() {
-        let config = support::build_config();
-        let mut state = AppState::new(Arc::clone(&config));
+        let config = build_config();
+        let mut state = AppState::new(config.clone());
         assert_eq!(state.close_modal(), Ok(()));
     }
 
     #[test]
     fn must_close_modal_when_some_modal_is_open() {
-        let config = support::build_config();
-        let mut state = AppState::new(Arc::clone(&config));
-        let modal = OpenFile::new("/".to_owned(), 100, 100, Arc::clone(&config));
+        let config = build_config();
+        let mut state = AppState::new(config.clone());
+        let modal = OpenFile::new("/".to_owned(), 100, 100, config.clone());
         state.set_open_file_modal(Some(modal));
         assert_eq!(state.close_modal(), Ok(()));
     }
 
     #[test]
     fn open_settings_when_there_is_no_other_modal() {
-        let config = support::build_config();
-        let mut renderer = support::SimpleRendererMock::new(config.clone());
-        let mut state = AppState::new(Arc::clone(&config));
+        build_test_renderer!(renderer);
+        let mut state = AppState::new(config.clone());
         assert_eq!(state.open_settings(&mut renderer), Ok(()));
     }
 
     #[test]
     fn open_settings_when_other_modal_is_open() {
-        let config = support::build_config();
-        let mut renderer = support::SimpleRendererMock::new(config.clone());
-        let mut state = AppState::new(Arc::clone(&config));
-        let modal = OpenFile::new("/".to_owned(), 100, 100, Arc::clone(&config));
+        build_test_renderer!(renderer);
+        let mut state = AppState::new(config.clone());
+        let modal = OpenFile::new("/".to_owned(), 100, 100, config.clone());
         state.set_open_file_modal(Some(modal));
         assert_eq!(state.open_settings(&mut renderer), Ok(()));
     }
@@ -390,9 +388,8 @@ mod tests {
             true
         );
 
-        let config = support::build_config();
-        let mut renderer = support::SimpleRendererMock::new(config.clone());
-        let mut state = AppState::new(Arc::clone(&config));
+        build_test_renderer!(renderer);
+        let mut state = AppState::new(config.clone());
         state.open_directory("/must_open_directory".to_owned(), &mut renderer);
     }
 }

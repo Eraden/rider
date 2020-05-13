@@ -10,14 +10,16 @@ members = [
     "rider-config",
     "rider-themes",
     "rider-lexers",
-    "rider-editor"
+    "rider-editor",
+    "rider-match-widget"
 ]
 default-members = [
     "rider-generator",
     "rider-config",
     "rider-themes",
     "rider-lexers",
-    "rider-editor"
+    "rider-editor",
+    "rider-match-widget"
 ]
 
 [dependencies]

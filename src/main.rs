@@ -1,6 +1,7 @@
 extern crate rider_config;
 use std::process::Command;
 
+#[cfg_attr(tarpaulin, skip)]
 fn main() {
     let generator = rider_config::directories::get_binary_path("rider-generator").unwrap();
     println!("generator will be {:?}", generator);

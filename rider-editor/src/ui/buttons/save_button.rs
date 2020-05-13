@@ -11,6 +11,7 @@ pub struct SaveButton {
     inner: WidgetInner,
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl std::ops::Deref for SaveButton {
     type Target = WidgetInner;
 
@@ -19,6 +20,7 @@ impl std::ops::Deref for SaveButton {
     }
 }
 
+#[cfg_attr(tarpaulin, skip)]
 impl std::ops::DerefMut for SaveButton {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
@@ -79,11 +81,11 @@ impl SaveButton {
 mod test {
     use super::*;
     use crate::app::UpdateResult;
-    use crate::tests::support;
+    use crate::tests::*;
 
     #[test]
     fn must_return_save_on_left_click() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = SaveButton::new(config);
         assert_eq!(
             widget.on_left_click(&Point::new(0, 0), &UpdateContext::Nothing),
@@ -93,7 +95,7 @@ mod test {
 
     #[test]
     fn must_use_inner() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = SaveButton::new(config);
 
         assert_eq!(
@@ -113,7 +115,7 @@ mod test {
 
     #[test]
     fn must_have_padding() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = SaveButton::new(config);
         assert_eq!(widget.padding_width(), ICON_DEST_WIDTH);
         assert_eq!(widget.padding_height(), ICON_DEST_HEIGHT);

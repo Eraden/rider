@@ -80,11 +80,11 @@ impl SettingsButton {
 mod test {
     use super::*;
     use crate::app::UpdateResult;
-    use crate::tests::support;
+    use crate::tests::*;
 
     #[test]
     fn must_return_open_settings_on_left_click() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = SettingsButton::new(config);
         assert_eq!(
             widget.on_left_click(&Point::new(0, 0), &UpdateContext::Nothing),
@@ -94,7 +94,7 @@ mod test {
 
     #[test]
     fn must_use_inner() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = SettingsButton::new(config);
 
         assert_eq!(
@@ -114,7 +114,7 @@ mod test {
 
     #[test]
     fn must_have_padding() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = SettingsButton::new(config);
         assert_eq!(widget.padding_width(), ICON_DEST_WIDTH);
         assert_eq!(widget.padding_height(), ICON_DEST_HEIGHT);

@@ -84,26 +84,46 @@ impl OpenFile {
 
     pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R)
     where
-        R: Renderer + CharacterSizeManager,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         self.directory_view.open_directory(dir_path, renderer);
         {
-            let dest = self.directory_view.dest();
-            let full_dest = Rect::new(
-                dest.x(),
-                dest.y(),
-                dest.width() + (2 * CONTENT_MARGIN_LEFT as u32),
-                dest.height() + (2 * CONTENT_MARGIN_TOP as u32),
+            self.full_dest = Rect::new(
+                self.directory_view.dest().x(),
+                self.directory_view.dest().y(),
+                self.directory_view.dest().width() + (2 * CONTENT_MARGIN_LEFT as u32),
+                self.directory_view.dest().height() + (2 * CONTENT_MARGIN_TOP as u32),
             );
-            self.full_dest = full_dest;
         }
     }
 
     pub fn full_rect(&self) -> &Rect {
         &self.full_dest
     }
+}
 
-    pub fn update(&mut self, ticks: i32, context: &UC) -> UR {
+impl Widget for OpenFile {
+    fn texture_path(&self) -> Option<String> {
+        None
+    }
+
+    fn dest(&self) -> &Rect {
+        &self.dest
+    }
+
+    fn set_dest(&mut self, rect: &Rect) {
+        self.dest = rect.clone();
+    }
+
+    fn source(&self) -> &Rect {
+        self.dest()
+    }
+
+    fn set_source(&mut self, rect: &Rect) {
+        self.set_dest(rect)
+    }
+
+    fn update(&mut self, ticks: i32, context: &UC) -> UR {
         let (window_width, window_height, color, scroll_width, scroll_margin) = {
             let c = self.config.read().unwrap();
             (
@@ -141,7 +161,44 @@ impl OpenFile {
         UR::NoOp
     }
 
-    pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RC)
+    fn on_left_click(&mut self, point: &Point, context: &UC) -> UR {
+        let dest = match context {
+            UC::ParentPosition(p) => move_render_point(*p, &self.dest),
+            _ => self.dest,
+        };
+        let context = UC::ParentPosition(
+            dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP) + self.scroll(),
+        );
+        let res = self.directory_view.on_left_click(point, &context);
+        {
+            let dest = self.directory_view.dest();
+            let full_dest = Rect::new(
+                dest.x(),
+                dest.y(),
+                dest.width() + (2 * CONTENT_MARGIN_LEFT as u32),
+                dest.height() + (2 * CONTENT_MARGIN_TOP as u32),
+            );
+            self.full_dest = full_dest;
+        }
+        res
+    }
+
+    fn is_left_click_target(&self, point: &Point, context: &UC) -> bool {
+        let dest = match context {
+            UC::ParentPosition(p) => move_render_point(p.clone(), &self.dest()),
+            _ => self.dest().clone(),
+        };
+        let p =
+            dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP) + self.scroll();
+        let context = UC::ParentPosition(p);
+        if self.directory_view.is_left_click_target(point, &context) {
+            true
+        } else {
+            Rect::new(p.x(), p.y(), dest.width(), dest.height()).contains_point(point.clone())
+        }
+    }
+
+    fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
         C: CanvasAccess,
         R: Renderer + CharacterSizeManager + ConfigHolder,
@@ -174,64 +231,19 @@ impl OpenFile {
             .render(canvas, &RenderContext::ParentPosition(self.dest.top_left()));
     }
 
-    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
+    fn prepare_ui<'l, T>(&mut self, renderer: &mut T)
     where
-        R: Renderer + CharacterSizeManager,
+        T: Renderer + CharacterSizeManager + ConfigHolder,
     {
         self.directory_view.prepare_ui(renderer);
-    }
-
-    pub fn render_start_point(&self) -> Point {
-        self.dest.top_left()
-    }
-
-    pub fn dest(&self) -> Rect {
-        self.dest.clone()
-    }
-
-    pub fn on_left_click(&mut self, point: &Point, context: &UC) -> UR {
-        let dest = match context {
-            UC::ParentPosition(p) => move_render_point(*p, &self.dest),
-            _ => self.dest,
-        };
-        let context = UC::ParentPosition(
-            dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP) + self.scroll(),
-        );
-        let res = self.directory_view.on_left_click(point, &context);
-        {
-            let dest = self.directory_view.dest();
-            let full_dest = Rect::new(
-                dest.x(),
-                dest.y(),
-                dest.width() + (2 * CONTENT_MARGIN_LEFT as u32),
-                dest.height() + (2 * CONTENT_MARGIN_TOP as u32),
-            );
-            self.full_dest = full_dest;
-        }
-        res
-    }
-
-    pub fn is_left_click_target(&self, point: &Point, context: &UC) -> bool {
-        let dest = match context {
-            UC::ParentPosition(p) => move_render_point(p.clone(), &self.dest()),
-            _ => self.dest().clone(),
-        };
-        let p =
-            dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP) + self.scroll();
-        let context = UC::ParentPosition(p);
-        if self.directory_view.is_left_click_target(point, &context) {
-            true
-        } else {
-            Rect::new(p.x(), p.y(), dest.width(), dest.height()).contains_point(point.clone())
-        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::support::SimpleRendererMock;
-    use crate::tests::support::{build_config, CanvasMock};
+    use crate::tests::*;
+    use rider_derive::*;
     use std::fs;
 
     //#######################################################################
@@ -254,7 +266,7 @@ mod tests {
     fn assert_dest() {
         let config = build_config();
         let widget = OpenFile::new("/tmp".to_owned(), 120, 130, config);
-        assert_eq!(widget.dest(), Rect::new(452, 365, 120, 130));
+        assert_eq!(widget.dest(), &Rect::new(452, 365, 120, 130));
     }
 
     //#######################################################################
@@ -276,8 +288,7 @@ mod tests {
     fn assert_open_directory() {
         let path = "/tmp/rider/test-open-file/open-directory";
         fs::create_dir_all(path).unwrap();
-        let config = build_config();
-        let mut renderer = SimpleRendererMock::new(config);
+        build_test_renderer!(renderer);
         let mut widget = OpenFile::new(path.to_owned(), 120, 130, renderer.config().clone());
         widget.open_directory(path.to_owned(), &mut renderer);
     }
@@ -383,9 +394,8 @@ mod tests {
 
     #[test]
     fn assert_render() {
-        let config = build_config();
         let path = "/tmp/rider/test-open-file/open-directory";
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut canvas = CanvasMock::new();
         let widget = OpenFile::new(path.to_owned(), 100, 100, config);
         let p = Point::new(100, 100);
@@ -399,9 +409,8 @@ mod tests {
 
     #[test]
     fn assert_prepare_ui() {
-        let config = build_config();
         let path = "/tmp/rider/test-open-file/open-directory";
-        let mut renderer = SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let mut widget = OpenFile::new(path.to_owned(), 100, 100, config);
         widget.prepare_ui(&mut renderer);
     }

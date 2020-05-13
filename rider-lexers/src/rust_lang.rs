@@ -25,7 +25,7 @@ pub mod lexer {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 
-        r"(let|fn|type|struct|pub|impl|for|self|Self|mod|use|enum|(iu)(8|16|32)|usize|bool)" => (TokenType::Keyword {
+        r"(let|fn|type|struct|trait|pub|impl|for|self|Self|mod|use|enum|(iu)(8|16|32)|usize|bool)" => (TokenType::Keyword {
             token: Token::new(text.to_string(), 0, 0, 0, 0)
         }, text),
 

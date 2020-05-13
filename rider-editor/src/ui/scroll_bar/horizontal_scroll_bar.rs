@@ -84,7 +84,7 @@ impl ScrollWidget for HorizontalScrollBar {
 #[cfg(test)]
 mod test_update {
     use super::*;
-    use crate::tests::support;
+    use crate::tests::*;
     use std::sync::*;
 
     impl HorizontalScrollBar {
@@ -95,7 +95,7 @@ mod test_update {
 
     #[test]
     fn assert_do_nothing_when_small_content() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = HorizontalScrollBar::new(Arc::clone(&config));
         widget.set_viewport(100);
         widget.set_full_size(20);
@@ -108,7 +108,7 @@ mod test_update {
 
     #[test]
     fn assert_update_when_huge_content() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = HorizontalScrollBar::new(Arc::clone(&config));
         widget.set_viewport(100);
         widget.set_full_size(200);
@@ -123,12 +123,12 @@ mod test_update {
 #[cfg(test)]
 mod test_scrollable {
     use super::*;
-    use crate::tests::support;
+    use crate::tests::*;
     use std::sync::*;
 
     #[test]
     fn assert_scroll_to() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = HorizontalScrollBar::new(Arc::clone(&config));
         let old = widget.scroll_value();
         widget.scroll_to(157);
@@ -140,14 +140,14 @@ mod test_scrollable {
 
     #[test]
     fn assert_scroll_value() {
-        let config = support::build_config();
+        let config = build_config();
         let widget = HorizontalScrollBar::new(Arc::clone(&config));
         assert_eq!(widget.scroll_value(), 0);
     }
 
     #[test]
     fn assert_set_viewport() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = HorizontalScrollBar::new(Arc::clone(&config));
         let old = widget.viewport();
         widget.set_viewport(157);
@@ -159,7 +159,7 @@ mod test_scrollable {
 
     #[test]
     fn assert_set_full_size() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = HorizontalScrollBar::new(Arc::clone(&config));
         let old = widget.full;
         widget.set_full_size(157);
@@ -171,7 +171,7 @@ mod test_scrollable {
 
     #[test]
     fn assert_set_location() {
-        let config = support::build_config();
+        let config = build_config();
         let mut widget = HorizontalScrollBar::new(Arc::clone(&config));
         let old = widget.rect().y();
         widget.set_location(157);

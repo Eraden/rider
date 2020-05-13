@@ -54,7 +54,7 @@ impl Widget for Label {
     fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, context: &RenderContext)
     where
         C: CanvasAccess,
-        R: Renderer,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
     {
         let dest = match context {
             &RenderContext::ParentPosition(p) => move_render_point(p.clone(), &self.dest),
@@ -62,7 +62,9 @@ impl Widget for Label {
         };
         let mut d = dest.clone();
         d.set_x(dest.x() + NAME_MARGIN);
-        canvas.set_clipping(d.clone());
+        if self.use_clipping() {
+            canvas.set_clipping(d.clone());
+        }
 
         let font_details = build_font_details(self);
         for c in self.name.chars() {
@@ -147,13 +149,14 @@ impl ConfigHolder for Label {
 mod test {
     use super::*;
     use crate::app::UpdateResult;
-    use crate::tests::support;
+    use crate::tests::*;
     use crate::ui::{UpdateContext, Widget};
+    use rider_derive::*;
     use sdl2::rect::Point;
 
     #[test]
     fn must_return_noop_on_left_click() {
-        let config = support::build_config();
+        let config = build_config();
         let name = "Hello world".to_owned();
         let mut widget = Label::new(name, config);
         assert_eq!(
@@ -164,8 +167,7 @@ mod test {
 
     #[test]
     fn must_use_inner() {
-        let config = support::build_config();
-        let mut renderer = support::SimpleRendererMock::new(config.clone());
+        build_test_renderer!(renderer);
         let name = "Hello world".to_owned();
         let mut widget = Label::new(name.clone(), config);
         let dest = Rect::new(0, 0, DEST_WIDTH, DEST_HEIGHT);

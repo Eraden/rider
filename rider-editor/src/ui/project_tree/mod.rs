@@ -4,7 +4,6 @@ use crate::ui::filesystem::directory::DirectoryView;
 use crate::ui::horizontal_scroll_bar::HorizontalScrollBar;
 use crate::ui::text_character::CharacterSizeManager;
 use crate::ui::vertical_scroll_bar::VerticalScrollBar;
-use crate::ui::ClickHandler;
 use crate::ui::RenderContext;
 use crate::ui::UpdateContext;
 use crate::ui::{move_render_point, ScrollView};
@@ -33,31 +32,24 @@ pub struct ProjectTreeSidebar {
     horizontal_scroll_bar: HorizontalScrollBar,
 }
 
-impl ProjectTreeSidebar {
-    pub fn new(root: String, config: Arc<RwLock<Config>>) -> Self {
-        let (background_color, border_color, h): (Color, Color, u32) = {
-            let c = config.read().unwrap();
-            (
-                c.theme().background().into(),
-                c.theme().border_color().into(),
-                c.height(),
-            )
-        };
-
-        Self {
-            dest: Rect::new(0, 0, 200, h),
-            full_dest: Rect::new(0, 0, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE),
-            dir_view: DirectoryView::new(root.clone(), config.clone()),
-            vertical_scroll_bar: VerticalScrollBar::new(Arc::clone(&config)),
-            horizontal_scroll_bar: HorizontalScrollBar::new(Arc::clone(&config)),
-            config,
-            root,
-            background_color,
-            border_color,
-        }
+impl Widget for ProjectTreeSidebar {
+    fn texture_path(&self) -> Option<String> {
+        None
     }
 
-    pub fn update(&mut self, ticks: i32) {
+    fn dest(&self) -> &Rect {
+        &self.dest
+    }
+
+    fn set_dest(&mut self, _rect: &Rect) {}
+
+    fn source(&self) -> &Rect {
+        &self.dest
+    }
+
+    fn set_source(&mut self, _rect: &Rect) {}
+
+    fn update(&mut self, ticks: i32, _context: &UpdateContext) -> UpdateResult {
         let config = self.config.read().unwrap();
         let height = config.height();
         //        let left_margin = config.editor_left_margin();
@@ -66,70 +58,9 @@ impl ProjectTreeSidebar {
         self.dest.set_y(top_margin);
         self.dest.set_height(height - top_margin as u32);
         self.dir_view.update(ticks, &UpdateContext::Nothing);
+        UpdateResult::NoOp
     }
 
-    pub fn prepare_ui<R>(&mut self, renderer: &mut R)
-    where
-        R: Renderer + CharacterSizeManager,
-    {
-        let config = self.config.read().unwrap();
-        let height = config.height();
-        let left_margin = 0;
-        let top_margin = config.menu_height() as i32;
-        self.dest.set_x(left_margin);
-        self.dest.set_y(top_margin);
-        self.dest.set_height(height);
-        self.dir_view.prepare_ui(renderer);
-        self.dir_view.open_directory(self.root.clone(), renderer);
-    }
-
-    pub fn render<C, R>(&self, canvas: &mut C, renderer: &mut R)
-    where
-        R: Renderer + CharacterSizeManager,
-        C: CanvasAccess,
-    {
-        canvas.set_clipping(self.dest.clone());
-        canvas
-            .render_rect(self.dest.clone(), self.background_color.clone())
-            .unwrap();
-        canvas
-            .render_border(self.dest.clone(), self.border_color.clone())
-            .unwrap();
-
-        // dir view
-        let context = RenderContext::ParentPosition(
-            self.dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP),
-        );
-        self.dir_view.render(canvas, renderer, &context);
-    }
-
-    pub fn full_rect(&self) -> Rect {
-        self.dest.clone()
-    }
-
-    pub fn root(&self) -> String {
-        self.root.clone()
-    }
-
-    pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R)
-    where
-        R: Renderer + CharacterSizeManager,
-    {
-        self.dir_view.open_directory(dir_path, renderer);
-        {
-            let dest = self.dir_view.dest();
-            let full_dest = Rect::new(
-                dest.x(),
-                dest.y(),
-                dest.width() + (2 * CONTENT_MARGIN_LEFT as u32),
-                dest.height() + (2 * CONTENT_MARGIN_TOP as u32),
-            );
-            self.full_dest = full_dest;
-        }
-    }
-}
-
-impl ClickHandler for ProjectTreeSidebar {
     fn on_left_click(&mut self, point: &Point, context: &UpdateContext) -> UpdateResult {
         let dest = match context {
             UpdateContext::ParentPosition(p) => move_render_point(*p, &self.dest),
@@ -166,6 +97,95 @@ impl ClickHandler for ProjectTreeSidebar {
             Rect::new(p.x(), p.y(), dest.width(), dest.height()).contains_point(point.clone())
         }
     }
+
+    fn use_clipping(&self) -> bool {
+        true
+    }
+
+    fn render<C, R>(&self, canvas: &mut C, renderer: &mut R, _context: &RenderContext)
+    where
+        C: CanvasAccess,
+        R: Renderer + CharacterSizeManager + ConfigHolder,
+    {
+        if self.use_clipping() {
+            canvas.set_clipping(self.dest.clone());
+        }
+        canvas
+            .render_rect(self.dest.clone(), self.background_color.clone())
+            .unwrap();
+        canvas
+            .render_border(self.dest.clone(), self.border_color.clone())
+            .unwrap();
+
+        // dir view
+        let context = RenderContext::ParentPosition(
+            self.dest.top_left() + Point::new(CONTENT_MARGIN_LEFT, CONTENT_MARGIN_TOP),
+        );
+        self.dir_view.render(canvas, renderer, &context);
+    }
+
+    fn prepare_ui<R>(&mut self, renderer: &mut R)
+    where
+        R: Renderer + CharacterSizeManager + ConfigHolder,
+    {
+        let config = self.config.read().unwrap();
+        let height = config.height();
+        let left_margin = 0;
+        let top_margin = config.menu_height() as i32;
+        self.dest.set_x(left_margin);
+        self.dest.set_y(top_margin);
+        self.dest.set_height(height);
+        self.dir_view.prepare_ui(renderer);
+        self.dir_view.open_directory(self.root.clone(), renderer);
+    }
+}
+
+impl ProjectTreeSidebar {
+    pub fn new(root: String, config: Arc<RwLock<Config>>) -> Self {
+        let (background_color, border_color, h): (Color, Color, u32) = {
+            let c = config.read().unwrap();
+            (
+                c.theme().background().into(),
+                c.theme().border_color().into(),
+                c.height(),
+            )
+        };
+
+        Self {
+            dest: Rect::new(0, 0, 200, h),
+            full_dest: Rect::new(0, 0, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE),
+            dir_view: DirectoryView::new(root.clone(), config.clone()),
+            vertical_scroll_bar: VerticalScrollBar::new(Arc::clone(&config)),
+            horizontal_scroll_bar: HorizontalScrollBar::new(Arc::clone(&config)),
+            config,
+            root,
+            background_color,
+            border_color,
+        }
+    }
+
+    pub fn full_rect(&self) -> Rect {
+        self.dest.clone()
+    }
+
+    pub fn root(&self) -> String {
+        self.root.clone()
+    }
+
+    pub fn open_directory<R>(&mut self, dir_path: String, renderer: &mut R)
+    where
+        R: Renderer + CharacterSizeManager + ConfigHolder,
+    {
+        self.dir_view.open_directory(dir_path, renderer);
+        {
+            self.full_dest = Rect::new(
+                self.dir_view.dest().x(),
+                self.dir_view.dest().y(),
+                self.dir_view.dest().width() + (2 * CONTENT_MARGIN_LEFT as u32),
+                self.dir_view.dest().height() + (2 * CONTENT_MARGIN_TOP as u32),
+            );
+        }
+    }
 }
 
 impl ConfigHolder for ProjectTreeSidebar {
@@ -197,13 +217,12 @@ mod tests {
     use crate::renderer::managers::FontDetails;
     use crate::renderer::managers::TextDetails;
     use crate::renderer::renderer::Renderer;
-    use crate::tests::support::build_config;
-    use crate::tests::support::CanvasMock;
+    use crate::tests::*;
     use crate::ui::project_tree::ProjectTreeSidebar;
     use crate::ui::scroll_bar::ScrollView;
     use crate::ui::text_character::CharacterSizeManager;
-    use crate::ui::ClickHandler;
-    use crate::ui::UpdateContext;
+    use crate::ui::Widget;
+    use crate::ui::{RenderContext, UpdateContext};
     use rider_config::ConfigAccess;
     use rider_config::ConfigHolder;
     use sdl2::rect::Point;
@@ -270,7 +289,7 @@ mod tests {
     fn assert_update() {
         let config = build_config();
         let mut widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
-        widget.update(0);
+        widget.update(0, &UpdateContext::Nothing);
         assert_eq!(widget.full_rect(), Rect::new(0, 40, 200, 820));
     }
 
@@ -289,7 +308,7 @@ mod tests {
         let mut renderer = RendererMock::new(config.clone());
         let mut canvas = CanvasMock::new();
         let widget = ProjectTreeSidebar::new("/tmp".to_owned(), config);
-        widget.render(&mut canvas, &mut renderer);
+        widget.render(&mut canvas, &mut renderer, &RenderContext::Nothing);
     }
 
     //#######################################################################

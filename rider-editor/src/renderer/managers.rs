@@ -41,7 +41,13 @@ pub struct FontDetails {
 
 impl From<&EditorConfig> for FontDetails {
     fn from(config: &EditorConfig) -> Self {
-        FontDetails::new(config.font_path().as_str(), config.character_size().clone())
+        FontDetails::new(config.font_path(), config.character_size().clone())
+    }
+}
+
+impl From<(&str, u16)> for FontDetails {
+    fn from((path, size): (&str, u16)) -> Self {
+        FontDetails::new(path, size)
     }
 }
 
@@ -97,17 +103,9 @@ impl<'a> From<&'a FontDetails> for FontDetails {
 
 #[cfg_attr(tarpaulin, skip)]
 //noinspection RsWrongLifetimeParametersNumber
-pub type TextureManager<'l> =
-    ResourceManager<'l, String, Texture<'l>, TextureCreator<sdl2::video::WindowContext>>;
+pub type TextureManager<'l, T> = ResourceManager<'l, String, Texture<'l>, TextureCreator<T>>;
 #[cfg_attr(tarpaulin, skip)]
 pub type FontManager<'l> = ResourceManager<'l, FontDetails, Font<'l, 'static>, Sdl2TtfContext>;
-
-#[cfg_attr(tarpaulin, skip)]
-pub trait ManagersHolder<'l> {
-    fn font_manager(&mut self) -> &mut FontManager<'l>;
-
-    fn texture_manager(&mut self) -> &mut TextureManager<'l>;
-}
 
 #[cfg_attr(tarpaulin, skip)]
 #[derive(Clone)]
@@ -160,7 +158,7 @@ impl<'l, T> ResourceLoader<'l, Texture<'l>> for TextureCreator<T> {
     type Args = str;
 
     fn load(&'l self, path: &str) -> Result<Texture, String> {
-        println!("Loading {}...", path);
+        debug!("Loading {}...", path);
         self.load_texture(path)
     }
 }
@@ -170,7 +168,7 @@ impl<'l> ResourceLoader<'l, Font<'l, 'static>> for Sdl2TtfContext {
     type Args = FontDetails;
 
     fn load(&'l self, data: &FontDetails) -> Result<Font<'l, 'static>, String> {
-        info!("Loading font {}...", data.path);
+        debug!("Loading font {}...", data.path);
         self.load_font(&data.path, data.size)
     }
 }
@@ -186,7 +184,7 @@ pub trait TextTextureManager<'l> {
 }
 
 #[cfg_attr(tarpaulin, skip)]
-impl<'l> TextTextureManager<'l> for TextureManager<'l> {
+impl<'l, T> TextTextureManager<'l> for TextureManager<'l, T> {
     //noinspection RsWrongLifetimeParametersNumber
     fn load_text(
         &mut self,
@@ -203,9 +201,6 @@ impl<'l> TextTextureManager<'l> for TextureManager<'l> {
                 let texture = self.loader.create_texture_from_surface(&surface).unwrap();
                 let resource = Rc::new(texture);
                 self.cache.insert(key, resource.clone());
-                //                for c in details.text.chars() {
-                //                    info!("texture for '{:?}' created", c);
-                //                }
                 Ok(resource)
             },
             Ok,
